@@ -1,0 +1,1856 @@
+{% extends 'base.html' %}
+{% load thai_dates %}
+{% block title %}<title>ใบงาน #{{ wo.id }} | CMMS</title>{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ============================================
+       Work Order Detail — Redesign
+       ============================================ */
+    :root {
+        --wo-primary: #4f46e5;
+        --wo-primary-light: #eef2ff;
+        --wo-primary-dark: #3730a3;
+        --wo-success: #059669;
+        --wo-success-light: #ecfdf5;
+        --wo-warning: #d97706;
+        --wo-warning-light: #fffbeb;
+        --wo-danger: #dc2626;
+        --wo-danger-light: #fef2f2;
+        --wo-cyan: #0891b2;
+        --wo-cyan-light: #ecfeff;
+        --wo-gray-50: #f8fafc;
+        --wo-gray-100: #f1f5f9;
+        --wo-gray-200: #e2e8f0;
+        --wo-gray-300: #cbd5e1;
+        --wo-gray-400: #94a3b8;
+        --wo-gray-500: #64748b;
+        --wo-gray-600: #475569;
+        --wo-gray-700: #334155;
+        --wo-gray-800: #1e293b;
+        --wo-gray-900: #0f172a;
+        --wo-radius: 14px;
+        --wo-radius-sm: 10px;
+        --wo-radius-xs: 8px;
+        --wo-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        --wo-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+        --wo-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+        --wo-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ---- Page Shell ---- */
+    .wo-page { padding: 1.25rem 0 3rem; }
+
+    /* ---- Top Bar ---- */
+    .wo-topbar {
+        display: flex; align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem; gap: 1rem; flex-wrap: wrap;
+    }
+    .wo-topbar-left { display: flex; align-items: center; gap: 1rem; }
+    .btn-back {
+        display: inline-flex; align-items: center; gap: 0.375rem;
+        color: var(--wo-gray-500); text-decoration: none; font-size: 0.8125rem;
+        font-weight: 500; padding: 0.375rem 0.75rem; border-radius: var(--wo-radius-xs);
+        border: 1px solid var(--wo-gray-200); background: #fff;
+        transition: all var(--wo-transition);
+    }
+    .btn-back:hover { color: var(--wo-primary); border-color: var(--wo-primary); background: var(--wo-primary-light); }
+    .wo-topbar-actions { display: flex; gap: 0.5rem; }
+
+    /* ---- Hero Header ---- */
+    .wo-hero {
+        background: #fff; border: 1px solid var(--wo-gray-200);
+        border-radius: var(--wo-radius); padding: 1.5rem 1.75rem;
+        margin-bottom: 1.25rem; box-shadow: var(--wo-shadow);
+    }
+    .wo-hero-top {
+        display: flex; justify-content: space-between;
+        align-items: flex-start; gap: 1rem; flex-wrap: wrap;
+    }
+    .wo-hero-id {
+        display: inline-flex; align-items: center; gap: 0.375rem;
+        font-size: 0.75rem; font-weight: 700; color: var(--wo-primary);
+        text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.375rem;
+    }
+    .wo-hero-id .id-chip {
+        background: var(--wo-primary-light); color: var(--wo-primary);
+        padding: 0.2rem 0.5rem; border-radius: 6px;
+    }
+    .wo-hero h1 {
+        font-size: 1.375rem; font-weight: 700; color: var(--wo-gray-900);
+        margin: 0 0 0.625rem; line-height: 1.35;
+    }
+    .wo-hero h1 .suggest-chip {
+        display: inline-flex; align-items: center; gap: 0.25rem;
+        font-size: 0.6875rem; font-weight: 600; color: var(--wo-primary);
+        background: var(--wo-primary-light); padding: 0.2rem 0.5rem;
+        border-radius: 6px; vertical-align: middle;
+    }
+
+    /* ---- Badges ---- */
+    .wo-badges { display: flex; gap: 0.375rem; flex-wrap: wrap; }
+    .wo-badge {
+        display: inline-flex; align-items: center; gap: 0.25rem;
+        padding: 0.25rem 0.625rem; border-radius: 50px;
+        font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.01em;
+    }
+    .wo-badge i { font-size: 0.625rem; }
+    .wo-badge.s-open { background: #dbeafe; color: #1e40af; }
+    .wo-badge.s-assigned { background: #ede9fe; color: #5b21b6; }
+    .wo-badge.s-in_progress { background: #fef3c7; color: #92400e; }
+    .wo-badge.s-completed { background: #d1fae5; color: #065f46; }
+    .wo-badge.s-verified { background: #cffafe; color: #155e75; }
+    .wo-badge.s-on_hold { background: #ffedd5; color: #c2410c; }
+    .wo-badge.s-closed { background: var(--wo-gray-100); color: var(--wo-gray-600); }
+    .wo-badge.p-low { background: #d1fae5; color: #065f46; }
+    .wo-badge.p-medium { background: #fef3c7; color: #92400e; }
+    .wo-badge.p-high { background: #fee2e2; color: #991b1b; }
+    .wo-badge.badge-type { background: var(--wo-gray-100); color: var(--wo-gray-600); }
+    .wo-badge.badge-sr { background: var(--wo-primary-light); color: var(--wo-primary); text-decoration: none; }
+    .wo-badge.badge-sr:hover { background: var(--wo-primary); color: #fff; }
+
+    /* Hero Meta */
+    .wo-hero-meta {
+        display: flex; flex-direction: column; gap: 0.25rem;
+        font-size: 0.8rem; color: var(--wo-gray-500); text-align: right;
+    }
+    .wo-hero-meta div { display: flex; align-items: center; gap: 0.375rem; justify-content: flex-end; }
+    .wo-hero-meta i { color: var(--wo-gray-400); font-size: 0.75rem; width: 1rem; text-align: center; }
+    .wo-hero-meta .meta-val { color: var(--wo-gray-700); font-weight: 500; }
+
+    /* ---- Stepper ---- */
+    .wo-stepper-bar {
+        background: #fff; border: 1px solid var(--wo-gray-200);
+        border-radius: var(--wo-radius); padding: 1rem 1.5rem;
+        margin-bottom: 1.25rem; box-shadow: var(--wo-shadow); overflow-x: auto;
+    }
+    .wo-stepper { display: flex; align-items: flex-start; min-width: 460px; }
+    .s-step {
+        display: flex; flex-direction: column; align-items: center;
+        flex: 0 0 auto; position: relative;
+    }
+    .s-dot {
+        width: 32px; height: 32px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem; font-weight: 700;
+        background: var(--wo-gray-100); color: var(--wo-gray-400);
+        border: 2px solid var(--wo-gray-200);
+        transition: all 0.3s; z-index: 1;
+    }
+    .s-dot i { font-size: 0.7rem; }
+    .s-step.done .s-dot { background: var(--wo-success); color: #fff; border-color: var(--wo-success); }
+    .s-step.active .s-dot {
+        background: var(--wo-primary); color: #fff; border-color: var(--wo-primary);
+        box-shadow: 0 0 0 4px rgba(79,70,229,0.15);
+    }
+    .s-label {
+        font-size: 0.6875rem; font-weight: 500;
+        color: var(--wo-gray-400); margin-top: 0.375rem; white-space: nowrap;
+    }
+    .s-step.done .s-label { color: var(--wo-success); }
+    .s-step.active .s-label { color: var(--wo-primary); font-weight: 600; }
+    .s-line {
+        flex: 1; height: 2px; background: var(--wo-gray-200);
+        margin: 15px 0.375rem 0; border-radius: 1px;
+        min-width: 24px; transition: background 0.3s;
+    }
+    .s-line.done { background: var(--wo-success); }
+
+    /* ---- Tab Navigation ---- */
+    .wo-tabs {
+        display: flex; gap: 0; border-bottom: 2px solid var(--wo-gray-100);
+        margin-bottom: 1.25rem;
+    }
+    .wo-tab {
+        padding: 0.625rem 1rem; font-size: 0.8125rem; font-weight: 500;
+        color: var(--wo-gray-400); cursor: pointer; white-space: nowrap;
+        border-bottom: 2px solid transparent; margin-bottom: -2px;
+        transition: all var(--wo-transition); background: none;
+        border-top: none; border-left: none; border-right: none;
+        display: inline-flex; align-items: center; gap: 0.375rem;
+    }
+    .wo-tab:hover { color: var(--wo-gray-700); }
+    .wo-tab.active { color: var(--wo-primary); border-bottom-color: var(--wo-primary); font-weight: 600; }
+    .wo-tab .tab-count {
+        background: var(--wo-gray-100); color: var(--wo-gray-500);
+        font-size: 0.625rem; font-weight: 700; padding: 0.1rem 0.4rem;
+        border-radius: 50px; min-width: 1.25rem; text-align: center;
+    }
+    .wo-tab.active .tab-count { background: var(--wo-primary-light); color: var(--wo-primary); }
+    .wo-tab-panel { display: none; }
+    .wo-tab-panel.active { display: block; }
+
+    /* ---- Cards ---- */
+    .wo-card {
+        background: #fff; border: 1px solid var(--wo-gray-200);
+        border-radius: var(--wo-radius); box-shadow: var(--wo-shadow);
+        overflow: hidden; margin-bottom: 1.25rem;
+    }
+    .wo-card-hdr {
+        padding: 0.875rem 1.25rem; border-bottom: 1px solid var(--wo-gray-100);
+        display: flex; align-items: center; gap: 0.5rem;
+    }
+    .wo-card-hdr .hdr-icon {
+        width: 28px; height: 28px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem; background: var(--wo-primary-light); color: var(--wo-primary);
+    }
+    .wo-card-hdr h5 { margin: 0; font-size: 0.875rem; font-weight: 600; color: var(--wo-gray-800); }
+    .wo-card-hdr .hdr-sub { font-size: 0.75rem; color: var(--wo-gray-400); margin-left: auto; }
+    .wo-card-body { padding: 1.25rem; }
+
+    /* ---- Action Cards ---- */
+    .wo-action-card { position: relative; }
+    .wo-action-card::before {
+        content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+        width: 4px; border-radius: var(--wo-radius) 0 0 var(--wo-radius);
+    }
+    .wo-action-card.act-accept::before { background: #3b82f6; }
+    .wo-action-card.act-accept .hdr-icon { background: #eff6ff; color: #2563eb; }
+    .wo-action-card.act-tech::before { background: var(--wo-warning); }
+    .wo-action-card.act-tech .hdr-icon { background: var(--wo-warning-light); color: var(--wo-warning); }
+    .wo-action-card.act-verify::before { background: var(--wo-cyan); }
+    .wo-action-card.act-verify .hdr-icon { background: var(--wo-cyan-light); color: var(--wo-cyan); }
+
+    /* ---- Buttons ---- */
+    .wo-btn {
+        display: inline-flex; align-items: center; gap: 0.375rem;
+        padding: 0.5rem 1rem; border-radius: var(--wo-radius-xs);
+        font-weight: 600; font-size: 0.8125rem; border: none;
+        color: #fff; cursor: pointer; transition: all var(--wo-transition);
+        text-decoration: none;
+    }
+    .wo-btn:hover { transform: translateY(-1px); color: #fff; }
+    .wo-btn:active { transform: translateY(0); }
+    .wo-btn-sm { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
+    .wo-btn-primary { background: var(--wo-primary); }
+    .wo-btn-primary:hover { box-shadow: 0 4px 12px rgba(79,70,229,0.35); }
+    .wo-btn-success { background: var(--wo-success); }
+    .wo-btn-success:hover { box-shadow: 0 4px 12px rgba(5,150,105,0.35); }
+    .wo-btn-warning { background: var(--wo-warning); }
+    .wo-btn-warning:hover { box-shadow: 0 4px 12px rgba(217,119,6,0.35); }
+    .wo-btn-danger { background: var(--wo-danger); }
+    .wo-btn-danger:hover { box-shadow: 0 4px 12px rgba(220,38,38,0.35); }
+    .wo-btn-cyan { background: var(--wo-cyan); }
+    .wo-btn-cyan:hover { box-shadow: 0 4px 12px rgba(8,145,178,0.35); }
+    .wo-btn-outline {
+        background: #fff; color: var(--wo-gray-600); border: 1.5px solid var(--wo-gray-200);
+    }
+    .wo-btn-outline:hover { color: var(--wo-primary); border-color: var(--wo-primary); background: var(--wo-primary-light); }
+    .wo-btn-ghost { background: none; color: var(--wo-gray-500); padding: 0.375rem 0.625rem; }
+    .wo-btn-ghost:hover { color: var(--wo-primary); background: var(--wo-primary-light); }
+    .wo-btn.is-loading { pointer-events: none; opacity: 0.65; }
+    .wo-btn.is-loading .spinner-border { width: 0.875rem; height: 0.875rem; border-width: 2px; }
+
+    /* ---- Sidebar Cards ---- */
+    .wo-side-card {
+        background: #fff; border: 1px solid var(--wo-gray-200);
+        border-radius: var(--wo-radius); box-shadow: var(--wo-shadow);
+        overflow: hidden; margin-bottom: 1rem;
+    }
+    .wo-side-hdr {
+        padding: 0.75rem 1rem; border-bottom: 1px solid var(--wo-gray-100);
+        display: flex; align-items: center; gap: 0.375rem;
+    }
+    .wo-side-hdr i { color: var(--wo-primary); font-size: 0.875rem; }
+    .wo-side-hdr h6 { margin: 0; font-weight: 600; font-size: 0.8125rem; color: var(--wo-gray-800); }
+    .wo-side-body { padding: 1rem; }
+
+    /* ---- Form Elements ---- */
+    .wo-textarea {
+        border-radius: var(--wo-radius-xs) !important;
+        border: 1.5px solid var(--wo-gray-200) !important;
+        padding: 0.75rem 0.875rem !important; font-size: 0.8125rem;
+        transition: all var(--wo-transition) !important;
+        resize: vertical; background: var(--wo-gray-50);
+    }
+    .wo-textarea:focus {
+        border-color: var(--wo-primary) !important;
+        box-shadow: 0 0 0 3px rgba(79,70,229,0.12) !important; background: #fff;
+    }
+    .wo-select {
+        border-radius: var(--wo-radius-xs) !important;
+        border: 1.5px solid var(--wo-gray-200) !important;
+        padding: 0.5rem 0.875rem !important; font-size: 0.8125rem;
+        background: var(--wo-gray-50); transition: all var(--wo-transition) !important;
+    }
+    .wo-select:focus {
+        border-color: var(--wo-primary) !important;
+        box-shadow: 0 0 0 3px rgba(79,70,229,0.12) !important;
+    }
+    .wo-input {
+        border-radius: var(--wo-radius-xs) !important;
+        border: 1.5px solid var(--wo-gray-200) !important;
+        padding: 0.5rem 0.875rem !important; font-size: 0.8125rem;
+        background: var(--wo-gray-50); transition: all var(--wo-transition) !important;
+    }
+    .wo-input:focus {
+        border-color: var(--wo-primary) !important;
+        box-shadow: 0 0 0 3px rgba(79,70,229,0.12) !important; background: #fff;
+    }
+    .wo-label {
+        font-size: 0.75rem; font-weight: 600;
+        color: var(--wo-gray-600); margin-bottom: 0.375rem; display: block;
+    }
+
+    /* ---- Info Rows ---- */
+    .wo-info {
+        display: flex; align-items: baseline; padding: 0.4rem 0;
+        font-size: 0.8125rem; border-bottom: 1px solid var(--wo-gray-100);
+    }
+    .wo-info:last-child { border-bottom: none; }
+    .wo-info-label {
+        color: var(--wo-gray-400); min-width: 80px;
+        font-weight: 500; font-size: 0.75rem;
+    }
+    .wo-info-value { color: var(--wo-gray-800); font-weight: 500; flex: 1; }
+
+    /* ---- Comments ---- */
+    .wo-comment {
+        display: flex; gap: 0.625rem; padding: 0.75rem 0;
+        border-bottom: 1px solid var(--wo-gray-100);
+    }
+    .wo-comment:last-of-type { border-bottom: none; }
+    .wo-avatar {
+        width: 32px; height: 32px; min-width: 32px; border-radius: 50%;
+        background: var(--wo-primary); color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem; font-weight: 700;
+    }
+    .wo-comment-body { flex: 1; min-width: 0; }
+    .wo-comment-top {
+        display: flex; justify-content: space-between;
+        align-items: center; margin-bottom: 0.125rem;
+    }
+    .wo-comment-top strong { font-size: 0.8125rem; color: var(--wo-gray-800); }
+    .wo-comment-time { font-size: 0.6875rem; color: var(--wo-gray-400); }
+    .wo-comment-body p { margin: 0; font-size: 0.8125rem; color: var(--wo-gray-600); line-height: 1.5; }
+
+    /* ---- Timeline ---- */
+    .wo-timeline { position: relative; padding-left: 1.25rem; }
+    .wo-timeline::before {
+        content: ''; position: absolute; left: 5px; top: 0; bottom: 0;
+        width: 2px; background: var(--wo-gray-100);
+    }
+    .wo-tl-item { position: relative; padding-bottom: 1rem; padding-left: 1.25rem; }
+    .wo-tl-item:last-child { padding-bottom: 0; }
+    .wo-tl-dot {
+        position: absolute; left: -1.25rem; top: 3px;
+        width: 12px; height: 12px; border-radius: 50%;
+        background: #fff; border: 2.5px solid var(--wo-primary);
+    }
+    .wo-tl-item.tl-success .wo-tl-dot { border-color: var(--wo-success); }
+    .wo-tl-item.tl-warning .wo-tl-dot { border-color: var(--wo-warning); }
+    .wo-tl-item.tl-danger .wo-tl-dot { border-color: var(--wo-danger); }
+    .wo-tl-head { display: flex; justify-content: space-between; align-items: center; }
+    .wo-tl-head strong { font-size: 0.8125rem; color: var(--wo-gray-800); }
+    .wo-tl-time { font-size: 0.6875rem; color: var(--wo-gray-400); }
+    .wo-tl-actor { font-size: 0.75rem; color: var(--wo-gray-500); }
+    .wo-tl-note {
+        font-size: 0.75rem; color: var(--wo-gray-600); margin-top: 0.25rem;
+        padding: 0.375rem 0.625rem; background: var(--wo-gray-50);
+        border-radius: 6px; border-left: 3px solid var(--wo-gray-200);
+    }
+
+    /* ---- Attachments ---- */
+    .wo-attach {
+        display: flex; align-items: center; gap: 0.625rem;
+        padding: 0.5rem 0; border-bottom: 1px solid var(--wo-gray-100);
+        font-size: 0.8125rem;
+    }
+    .wo-attach:last-of-type { border-bottom: none; }
+    .wo-attach-thumb {
+        width: 40px; height: 40px; min-width: 40px;
+        border-radius: 8px; object-fit: cover;
+        border: 1.5px solid var(--wo-gray-200);
+        cursor: pointer; transition: all var(--wo-transition);
+    }
+    .wo-attach-thumb:hover { border-color: var(--wo-primary); transform: scale(1.05); }
+    .wo-attach-icon {
+        width: 40px; height: 40px; min-width: 40px;
+        border-radius: 8px; background: var(--wo-gray-50);
+        border: 1.5px solid var(--wo-gray-200);
+        display: flex; align-items: center; justify-content: center; font-size: 1rem;
+    }
+    .wo-attach-info { flex: 1; min-width: 0; }
+    .wo-attach-name {
+        font-weight: 500; color: var(--wo-gray-800);
+        display: block; overflow: hidden; text-overflow: ellipsis;
+        white-space: nowrap; text-decoration: none; font-size: 0.8125rem;
+    }
+    .wo-attach-name:hover { color: var(--wo-primary); }
+    .wo-attach-meta { font-size: 0.6875rem; color: var(--wo-gray-400); }
+    .wo-attach-type {
+        display: inline-flex; align-items: center;
+        padding: 0.1rem 0.4rem; border-radius: 999px;
+        font-size: 0.625rem; font-weight: 600;
+        color: var(--wo-primary-dark); background: var(--wo-primary-light);
+        margin-right: 0.35rem;
+    }
+
+    /* ---- Description Block ---- */
+    .wo-desc-text {
+        white-space: pre-wrap; font-size: 0.8125rem;
+        color: var(--wo-gray-700); line-height: 1.6;
+    }
+    .wo-tech-report {
+        margin-top: 1rem; padding: 0.875rem 1rem;
+        background: var(--wo-success-light); border-radius: var(--wo-radius-xs);
+        border-left: 4px solid var(--wo-success);
+    }
+    .wo-tech-report-label {
+        font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.04em; color: var(--wo-success); margin-bottom: 0.375rem;
+        display: flex; align-items: center; gap: 0.375rem;
+    }
+    .wo-tech-report-text {
+        white-space: pre-wrap; font-size: 0.8125rem;
+        color: var(--wo-gray-700); line-height: 1.6;
+    }
+
+    /* ---- Spare Parts Table ---- */
+    .wo-sp-table { width: 100%; font-size: 0.8125rem; border-collapse: collapse; }
+    .wo-sp-table th {
+        background: var(--wo-gray-50); color: var(--wo-gray-500);
+        font-weight: 600; font-size: 0.6875rem; text-transform: uppercase;
+        letter-spacing: 0.03em; padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--wo-gray-200);
+    }
+    .wo-sp-table td {
+        padding: 0.5rem 0.75rem; color: var(--wo-gray-700);
+        border-bottom: 1px solid var(--wo-gray-100); vertical-align: middle;
+    }
+    .wo-sp-table tr:last-child td { border-bottom: none; }
+    .wo-sp-table tr.sp-custom { background: var(--wo-warning-light); }
+    .sp-chip {
+        display: inline-flex; align-items: center; gap: 0.25rem;
+        padding: 0.125rem 0.4rem; border-radius: 5px;
+        font-size: 0.6875rem; font-weight: 600;
+    }
+    .sp-chip-code { background: #ede9fe; color: #5b21b6; }
+    .sp-chip-custom { background: #fef3c7; color: #92400e; }
+    .sp-chip-ok { background: #d1fae5; color: #065f46; }
+    .sp-chip-pending { background: #fef3c7; color: #92400e; }
+
+    /* ---- Spare Parts Picker ---- */
+    .wo-sp-picker {
+        background: var(--wo-gray-50); border: 1.5px solid var(--wo-gray-200);
+        border-radius: var(--wo-radius-xs); padding: 0.875rem; margin-bottom: 0.875rem;
+    }
+    .wo-sp-custom-area {
+        background: var(--wo-warning-light); border: 1.5px dashed var(--wo-warning);
+        border-radius: var(--wo-radius-xs); padding: 0.875rem; margin-bottom: 0.875rem;
+    }
+
+    /* ---- Tech Action Options ---- */
+    .tech-action-option {
+        display: flex; align-items: flex-start; gap: 0.75rem; cursor: pointer;
+        padding: 0.875rem 1rem; margin-bottom: 0.5rem;
+        border: 1.5px solid var(--wo-gray-200); border-radius: var(--wo-radius-xs);
+        background: #fff; transition: all 0.2s ease;
+    }
+    .tech-action-option:hover { border-color: var(--wo-gray-300); background: var(--wo-gray-50); }
+    .tech-action-option.active { border-color: var(--wo-primary); background: #eff6ff; box-shadow: 0 0 0 3px rgba(79,70,229,0.08); }
+    .tao-radio {
+        width: 18px; height: 18px; min-width: 18px; border-radius: 50%;
+        border: 2px solid var(--wo-gray-300); display: flex; align-items: center;
+        justify-content: center; margin-top: 2px; transition: border-color 0.15s;
+    }
+    .tech-action-option.active .tao-radio { border-color: var(--wo-primary); }
+    .tao-radio-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: transparent; transition: background 0.15s;
+    }
+    .tech-action-option.active .tao-radio-dot { background: var(--wo-primary); }
+    .tao-body { flex: 1; min-width: 0; }
+    .tao-title { font-size: 0.8125rem; font-weight: 600; color: var(--wo-gray-800); display: flex; align-items: center; gap: 0.375rem; }
+    .tao-desc { font-size: 0.75rem; color: var(--wo-gray-500); margin-top: 0.125rem; line-height: 1.4; }
+
+    /* ---- Toast Messages ---- */
+    .wo-toast-wrap {
+        position: fixed; top: 1rem; right: 1rem; z-index: 9999;
+        display: flex; flex-direction: column; gap: 0.5rem; max-width: 380px;
+    }
+    .wo-toast {
+        display: flex; align-items: center; gap: 0.625rem;
+        padding: 0.75rem 1rem; border-radius: var(--wo-radius-xs);
+        font-size: 0.8125rem; font-weight: 500;
+        box-shadow: var(--wo-shadow-lg);
+        animation: toastSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1); color: #fff;
+    }
+    .wo-toast.t-success { background: var(--wo-success); }
+    .wo-toast.t-error { background: var(--wo-danger); }
+    .wo-toast.t-warning { background: var(--wo-warning); }
+    .wo-toast.t-info { background: var(--wo-primary); }
+    .wo-toast .t-close {
+        margin-left: auto; background: none; border: none;
+        color: rgba(255,255,255,0.6); cursor: pointer;
+        font-size: 1rem; padding: 0; line-height: 1;
+    }
+    .wo-toast .t-close:hover { color: #fff; }
+    @keyframes toastSlide {
+        from { opacity: 0; transform: translateX(80px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ---- Lightbox ---- */
+    .wo-lightbox {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.88); z-index: 10000;
+        justify-content: center; align-items: center; cursor: pointer;
+    }
+    .wo-lightbox.show { display: flex; }
+    .wo-lightbox img {
+        max-width: 90vw; max-height: 90vh;
+        border-radius: var(--wo-radius); box-shadow: 0 0 60px rgba(0,0,0,0.3);
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 991.98px) {
+        .wo-hero-top { flex-direction: column; }
+        .wo-hero-meta { text-align: left; }
+        .wo-hero-meta div { justify-content: flex-start; }
+        .wo-side-sticky { position: static !important; }
+    }
+    @media (max-width: 767.98px) {
+        .wo-hero { padding: 1rem 1.25rem; }
+        .wo-hero h1 { font-size: 1.125rem; }
+        .wo-tabs { gap: 0; }
+        .wo-tab { padding: 0.5rem 0.625rem; font-size: 0.75rem; }
+    }
+
+    /* ---- Print ---- */
+    @media print {
+        body { background: #fff !important; font-size: 11pt; }
+        .wo-topbar-actions, .wo-action-card, .wo-tabs,
+        .wo-sp-picker, .wo-sp-custom-area,
+        .wo-toast-wrap, .wo-lightbox,
+        .wo-textarea, .wo-select, .wo-input,
+        #comment, #attachment,
+        nav, .sidebar, footer,
+        .wo-btn, .btn-back { display: none !important; }
+        .wo-hero { border: 2px solid #333; box-shadow: none; }
+        .wo-card, .wo-side-card { box-shadow: none !important; break-inside: avoid; }
+        .wo-tab-panel { display: block !important; }
+        .col-lg-8, .col-lg-4 { width: 100% !important; max-width: 100% !important; }
+    }
+
+    /* ---- Sticky Sidebar ---- */
+    @media (min-width: 992px) {
+        .wo-side-sticky { position: sticky; top: 1rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Toast Messages -->
+{% if messages %}
+<div class="wo-toast-wrap" id="wo-toasts">
+    {% for message in messages %}
+    <div class="wo-toast t-{{ message.tags|default:'info' }}">
+        <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% elif message.tags == 'error' %}bi-x-circle-fill{% elif message.tags == 'warning' %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %}"></i>
+        <span>{{ message }}</span>
+        <button class="t-close" onclick="this.parentElement.remove()">&times;</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="container wo-page">
+
+    <!-- ====== Top Bar ====== -->
+    <div class="wo-topbar">
+        <div class="wo-topbar-left">
+            <a href="{% url 'workorder_list' %}" class="btn-back">
+                <i class="bi bi-arrow-left"></i> กลับรายการ
+            </a>
+        </div>
+        <div class="wo-topbar-actions">
+            <button type="button" class="wo-btn wo-btn-outline wo-btn-sm" onclick="window.print()">
+                <i class="bi bi-printer"></i> พิมพ์
+            </button>
+        </div>
+    </div>
+
+    <!-- ====== Hero Header ====== -->
+    <div class="wo-hero">
+        <div class="wo-hero-top">
+            <div>
+                <div class="wo-hero-id">
+                    <span class="id-chip">WO-{{ wo.id }}</span>
+                </div>
+                <h1>
+                    {{ wo.title }}
+                    {% if wo.accepted_title_suggestion %}
+                        <span class="suggest-chip"><i class="bi bi-lightbulb-fill"></i> คำแนะนำ</span>
+                    {% endif %}
+                </h1>
+                <div class="wo-badges">
+                    <span class="wo-badge s-{{ wo.status }}"><i class="bi bi-circle-fill"></i> {{ wo.get_status_display }}</span>
+                    <span class="wo-badge p-{{ wo.priority }}">
+                        {% if wo.priority == 'intime' %}<i class="bi bi-exclamation-triangle-fill"></i>{% endif %}
+                        {{ wo.get_priority_label }}
+                    </span>
+                    <!-- {% if wo.workorder_type %}
+                        <span class="wo-badge badge-type"><i class="bi bi-tag-fill"></i> {{ wo.get_workorder_type_display }}</span>
+                    {% endif %} -->
+                    {% if wo.origin_request %}
+                        <a href="{% url 'service_request_detail' wo.origin_request.id %}" class="wo-badge badge-sr">
+                            <i class="bi bi-link-45deg"></i> {{ wo.origin_request.display_id }}
+                        </a>
+                    {% endif %}
+                    {% if wo.follow_up_needed %}
+                        <span class="wo-badge" style="background:#ecfdf5; color:#059669; border-color:#a7f3d0;"><i class="bi bi-arrow-repeat"></i> รอนัดติดตั้ง</span>
+                    {% endif %}
+                    {% if wo.follow_up_for %}
+                        <a href="{% url 'workorder_detail' wo.follow_up_for.id %}" class="wo-badge" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe;">
+                            <i class="bi bi-link-45deg"></i> WO#{{ wo.follow_up_for.id }} (ต้นทาง)
+                        </a>
+                    {% endif %}
+                    {% if wo.follow_up_orders.exists %}
+                        {% for fu in wo.follow_up_orders.all %}
+                        <a href="{% url 'workorder_detail' fu.id %}" class="wo-badge" style="background:#f0fdf4; color:#16a34a; border-color:#bbf7d0;">
+                            <i class="bi bi-arrow-return-right"></i> Follow-up WO#{{ fu.id }}
+                        </a>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="wo-hero-meta">
+                <div><i class="bi bi-person"></i> <span class="meta-val">{{ wo.reported_by|default:"-" }}</span></div>
+                <div><i class="bi bi-calendar3"></i> <span class="meta-val">{{ wo.reported_at|thai_datetime }}</span></div>
+                {% if wo.equipment %}
+                <div><i class="bi bi-cpu"></i> <span class="meta-val">{{ wo.equipment.equipment_id }}</span></div>
+                {% endif %}
+                {% if wo.assigned_to %}
+                <div><i class="bi bi-wrench"></i> <span class="meta-val">{{ wo.assigned_to.get_full_name|default:wo.assigned_to.username }}</span></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== Workflow Stepper ====== -->
+    {% with s=wo.status %}
+    <div class="wo-stepper-bar">
+        <div class="wo-stepper">
+            <div class="s-step {% if s == 'open' %}active{% else %}done{% endif %}">
+                <div class="s-dot">{% if s != 'open' %}<i class="bi bi-check-lg"></i>{% else %}1{% endif %}</div>
+                <span class="s-label">เปิด</span>
+            </div>
+            <div class="s-line {% if s != 'open' %}done{% endif %}"></div>
+
+            <div class="s-step {% if s == 'assigned' %}active{% elif s == 'in_progress' or s == 'on_hold' or s == 'completed' or s == 'verified' or s == 'closed' %}done{% endif %}">
+                <div class="s-dot">{% if s == 'in_progress' or s == 'on_hold' or s == 'completed' or s == 'verified' or s == 'closed' %}<i class="bi bi-check-lg"></i>{% else %}2{% endif %}</div>
+                <span class="s-label">มอบหมาย</span>
+            </div>
+            <div class="s-line {% if s == 'in_progress' or s == 'on_hold' or s == 'completed' or s == 'verified' or s == 'closed' %}done{% endif %}"></div>
+
+            <div class="s-step {% if s == 'in_progress' %}active{% elif s == 'on_hold' or s == 'completed' or s == 'verified' or s == 'closed' %}done{% endif %}">
+                <div class="s-dot">{% if s == 'on_hold' or s == 'completed' or s == 'verified' or s == 'closed' %}<i class="bi bi-check-lg"></i>{% else %}3{% endif %}</div>
+                <span class="s-label">ดำเนินงาน</span>
+            </div>
+            <div class="s-line {% if s == 'on_hold' %}done{% elif s == 'completed' or s == 'verified' or s == 'closed' %}done{% endif %}"></div>
+
+            {% if s == 'on_hold' %}
+            <div class="s-step active">
+                <div class="s-dot" style="background:#c2410c; border-color:#c2410c; box-shadow:0 0 0 4px rgba(194,65,12,0.15);">
+                    <i class="bi bi-pause-fill"></i>
+                </div>
+                <span class="s-label" style="color:#c2410c; font-weight:600;">ระงับ</span>
+            </div>
+            <div class="s-line"></div>
+            {% endif %}
+
+            <div class="s-step {% if s == 'completed' %}active{% elif s == 'verified' or s == 'closed' %}done{% endif %}">
+                <div class="s-dot">{% if s == 'verified' or s == 'closed' %}<i class="bi bi-check-lg"></i>{% else %}{% if s == 'on_hold' %}5{% else %}4{% endif %}{% endif %}</div>
+                <span class="s-label">เสร็จสิ้น</span>
+            </div>
+            <div class="s-line {% if s == 'verified' or s == 'closed' %}done{% endif %}"></div>
+
+            <div class="s-step {% if s == 'verified' %}active{% elif s == 'closed' %}done{% endif %}">
+                <div class="s-dot">{% if s == 'closed' %}<i class="bi bi-check-lg"></i>{% else %}{% if s == 'on_hold' %}6{% else %}5{% endif %}{% endif %}</div>
+                <span class="s-label">รับรอง</span>
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+
+    <!-- ====== Main Form ====== -->
+    <form method="post" enctype="multipart/form-data" id="wo-form">
+        {% csrf_token %}
+
+        <div class="row g-3">
+            <!-- ========== Main Column ========== -->
+            <div class="col-lg-8">
+
+                <!-- Accept Request Action -->
+                {% if wo.status == 'open' and perms.cmms.change_workorder %}
+                <div class="wo-card wo-action-card act-accept">
+                    <div class="wo-card-hdr">
+                        <div class="hdr-icon"><i class="bi bi-clipboard-check"></i></div>
+                        <h5>รับคำขอ (Officer Review)</h5>
+                    </div>
+                    <div class="wo-card-body">
+                        <label for="accepted_note" class="wo-label">หมายเหตุการรับคำขอ</label>
+                        <textarea id="accepted_note" name="accepted_note" class="form-control wo-textarea" rows="2" placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)..."></textarea>
+                        <div class="mt-3">
+                            <button type="submit" name="action" value="accept_request" class="wo-btn wo-btn-primary">
+                                <i class="bi bi-check-circle-fill"></i> รับคำขอและส่งต่อ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Tab Navigation -->
+                <div class="wo-tabs" role="tablist">
+                    <button type="button" class="wo-tab active" data-tab="tab-detail" role="tab">
+                        <i class="bi bi-file-text"></i> รายละเอียด
+                    </button>
+                    {% if request.user == wo.assigned_to and wo.status == 'in_progress' or request.user == wo.assigned_to and wo.status == 'assigned' %}
+                    <button type="button" class="wo-tab" data-tab="tab-tech" role="tab">
+                        <i class="bi bi-tools"></i> ดำเนินงาน
+                    </button>
+                    {% endif %}
+                    {% if wo.status == 'on_hold' %}
+                    <button type="button" class="wo-tab" data-tab="tab-hold" role="tab">
+                        <i class="bi bi-pause-circle"></i> ระงับชั่วคราว
+                    </button>
+                    {% endif %}
+                    {% if perms.cmms.change_workorder and wo.status == 'completed' %}
+                    <button type="button" class="wo-tab" data-tab="tab-verify" role="tab">
+                        <i class="bi bi-shield-check"></i> ตรวจสอบ
+                    </button>
+                    {% endif %}
+                    <button type="button" class="wo-tab" data-tab="tab-comments" role="tab">
+                        <i class="bi bi-chat-dots"></i> ความคิดเห็น
+                        {% if comments|length %}<span class="tab-count">{{ comments|length }}</span>{% endif %}
+                    </button>
+                    <button type="button" class="wo-tab" data-tab="tab-history" role="tab">
+                        <i class="bi bi-clock-history"></i> ประวัติ
+                    </button>
+                </div>
+
+                <!-- ---- Tab: Detail ---- -->
+                <div class="wo-tab-panel active" id="tab-detail">
+                    <div class="wo-card">
+                        <div class="wo-card-hdr">
+                            <div class="hdr-icon"><i class="bi bi-card-text"></i></div>
+                            <h5>รายละเอียด / ปัญหาที่พบ</h5>
+                        </div>
+                        <div class="wo-card-body">
+                            {% if wo.description %}
+                                <div class="wo-desc-text">{{ wo.description }}</div>
+                            {% else %}
+                                <p class="text-muted mb-0" style="font-size:0.8125rem;">ไม่มีรายละเอียด</p>
+                            {% endif %}
+                            {% if wo.technician_report %}
+                            <div class="wo-tech-report">
+                                <div class="wo-tech-report-label">
+                                    <i class="bi bi-clipboard2-pulse"></i> รายงานจากช่าง
+                                </div>
+                                <div class="wo-tech-report-text">{{ wo.technician_report }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if used_spare_parts %}
+                    <div class="wo-card">
+                        <div class="wo-card-hdr">
+                            <div class="hdr-icon" style="background:#ede9fe; color:#5b21b6;"><i class="bi bi-box-seam"></i></div>
+                            <h5>อะไหล่ที่เบิกใช้</h5>
+                            <span class="hdr-sub">{{ used_spare_parts|length }} รายการ</span>
+                        </div>
+                        <div class="wo-card-body" style="padding:0;">
+                            <div style="overflow-x:auto;">
+                            <table class="wo-sp-table">
+                                <thead>
+                                    <tr>
+                                        <th>รหัส</th>
+                                        <th>ชื่ออะไหล่</th>
+                                        <th style="text-align:center;">จำนวน</th>
+                                        <th>หน่วย</th>
+                                        <th style="text-align:right;">ราคา/หน่วย</th>
+                                        <th>สถานะ</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for usp in used_spare_parts %}
+                                    <tr{% if usp.is_custom %} class="sp-custom"{% endif %}>
+                                        <td>
+                                            {% if usp.is_custom %}
+                                                <span class="sp-chip sp-chip-custom"><i class="bi bi-box"></i> อื่นๆ</span>
+                                            {% else %}
+                                                <span class="sp-chip sp-chip-code">{{ usp.display_code }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="font-weight:500;">{{ usp.display_name }}</td>
+                                        <td style="text-align:center; font-weight:600;">{{ usp.quantity }}</td>
+                                        <td style="color:var(--wo-gray-500);">{{ usp.display_unit }}</td>
+                                        <td style="text-align:right; color:var(--wo-gray-500);">
+                                            {% if usp.display_unit_cost %}{{ usp.display_unit_cost|floatformat:2 }} ฿{% else %}—{% endif %}
+                                        </td>
+                                        <td>
+                                            {% if usp.is_out_of_stock %}
+                                                <span class="sp-chip sp-chip-pending"><i class="bi bi-cart-plus"></i> รอจัดซื้อ</span>
+                                            {% else %}
+                                                <span class="sp-chip sp-chip-ok"><i class="bi bi-check-circle"></i> เบิกแล้ว</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if usp.is_out_of_stock and perms.cmms.change_workorder %}
+                                                <button type="button" class="wo-btn wo-btn-success wo-btn-sm btn-fulfill-sp"
+                                                    data-usp-id="{{ usp.id }}" data-sp-code="{{ usp.display_code }}"
+                                                    data-sp-name="{{ usp.display_name }}" data-sp-qty="{{ usp.quantity }}"
+                                                    data-sp-stock="{% if usp.spare_part %}{{ usp.spare_part.quantity }}{% else %}0{% endif %}"
+                                                    data-sp-custom="{% if usp.is_custom %}1{% else %}0{% endif %}">
+                                                    <i class="bi bi-box-arrow-in-down"></i> รับแล้ว
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            </div>
+                            {% if has_pending_procurement %}
+                            <div style="margin:0.75rem 1.25rem 1.25rem; padding:0.625rem 0.875rem; background:var(--wo-warning-light); border-radius:var(--wo-radius-xs); border-left:3px solid var(--wo-warning); font-size:0.8125rem; color:#92400e;">
+                                <i class="bi bi-exclamation-triangle-fill"></i> มีอะไหล่รอจัดซื้อ {{ pending_procurement_count }} รายการ
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- <div class="wo-card">
+                        <div class="wo-card-hdr">
+                            <div class="hdr-icon" style="background:#fef3c7; color:#d97706;"><i class="bi bi-sticky"></i></div>
+                            <h5>บันทึก</h5>
+                        </div>
+                        <div class="wo-card-body">
+                            <textarea id="notes" name="notes" class="form-control wo-textarea" rows="3" placeholder="บันทึกเพิ่มเติม...">{{ wo.notes }}</textarea>
+                        </div>
+                    </div> -->
+                </div>
+
+                <!-- ---- Tab: Technician Actions ---- -->
+                {% if request.user == wo.assigned_to %}
+                <div class="wo-tab-panel" id="tab-tech">
+                    {% if wo_is_pm_or_calibration %}
+                    <div class="wo-card">
+                        <div class="wo-card-hdr">
+                            <div class="hdr-icon" style="background:#d1fae5; color:#047857;"><i class="bi bi-list-check"></i></div>
+                            <h5>Checklist บำรุงรักษา/สอบเทียบ</h5>
+                            {% if wo_checklist %}
+                            <span class="hdr-sub">
+                                {% if wo_checklist.overall_result == 'pass' %}<span style="color:#15803d; font-weight:700;"><i class="bi bi-check-circle"></i> ผ่าน</span>
+                                {% elif wo_checklist.overall_result == 'fail' %}<span style="color:#b91c1c; font-weight:700;"><i class="bi bi-x-circle"></i> ไม่ผ่าน</span>
+                                {% else %}<span style="color:#b45309; font-weight:700;"><i class="bi bi-hourglass-split"></i> ยังไม่ครบ</span>{% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="wo-card-body">
+                            {% if wo_checklist %}
+                            <p class="text-muted mb-2" style="font-size:0.8125rem;">
+                                ใช้แบบฟอร์ม: {{ wo_checklist.template.name }}
+                                {% if wo_checklist.completed_at %} — ยืนยันผลแล้วโดย {{ wo_checklist.completed_by }}{% endif %}
+                            </p>
+                            {% else %}
+                            <p class="text-muted mb-2" style="font-size:0.8125rem;">ยังไม่ได้เริ่มกรอก Checklist สำหรับใบงานนี้</p>
+                            {% endif %}
+                            <a href="{% url 'workorder_checklist_fill' wo.id %}" class="wo-btn wo-btn-success wo-btn-sm">
+                                <i class="bi bi-pencil-square"></i> {% if wo_checklist %}เปิด/แก้ไข Checklist{% else %}เริ่มกรอก Checklist{% endif %}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="wo-card wo-action-card act-tech">
+                        <div class="wo-card-hdr">
+                            <div class="hdr-icon"><i class="bi bi-tools"></i></div>
+                            <h5>ดำเนินงาน (ช่าง)</h5>
+                        </div>
+                        <div class="wo-card-body">
+                            {% if wo.status == 'assigned' %}
+                            <div style="text-align:center; padding:2rem 1.5rem; background:linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-radius:var(--wo-radius-xs); margin:-0.25rem;">
+                                <div style="width:64px; height:64px; border-radius:50%; background:var(--wo-warning); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:1.75rem; margin-bottom:1rem; box-shadow:0 4px 16px rgba(217,119,6,0.3); animation:pulse-play 2s infinite;">
+                                    <i class="bi bi-play-fill"></i>
+                                </div>
+                                <h6 style="font-size:1rem; font-weight:700; color:var(--wo-gray-800); margin-bottom:0.375rem;">พร้อมเริ่มดำเนินงาน</h6>
+                                <p style="font-size:0.8125rem; color:var(--wo-gray-500); margin-bottom:1.25rem; max-width:280px; margin-left:auto; margin-right:auto;">กดปุ่มด้านล่างเพื่อเริ่มนับเวลาและบันทึกการดำเนินงาน</p>
+                                <button type="submit" name="action" value="tech_start" class="wo-btn wo-btn-warning" style="padding:0.625rem 2rem; font-size:0.875rem; border-radius:50px; box-shadow:0 4px 14px rgba(217,119,6,0.35);">
+                                    <i class="bi bi-play-fill"></i> เริ่มดำเนินงาน
+                                </button>
+                            </div>
+                            <style>@keyframes pulse-play{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}</style>
+                            {% endif %}
+
+                            {% if wo.status == 'in_progress' %}
+                            <div class="mb-3">
+                                <label for="technician_cause" class="wo-label">สาเหตุ</label>
+                                <textarea id="technician_cause" name="technician_cause" class="form-control wo-textarea" rows="3" placeholder="อาการเสียที่พบเกิดจาก...">{{ prefill_cause }}</textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="technician_analysis" class="wo-label">วิเคราะห์สาเหตุ (RCA)</label>
+                                <select id="technician_analysis" name="technician_analysis" class="form-select wo-select">
+                                    <option value="">-- เลือกการวิเคราะห์สาเหตุ --</option>
+                                    {% for g in rca_groups %}
+                                        <optgroup label="{{ g.group.label }}">
+                                            {% for c in g.children %}
+                                                <option value="{{ c.label|escape }}" {% if prefill_analysis == c.label %}selected{% endif %}>{{ c.label }}</option>
+                                            {% endfor %}
+                                        </optgroup>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="technician_method" class="wo-label">วิธีการดำเนินงาน</label>
+                                <select id="technician_method" name="technician_method" class="form-select wo-select">
+                                    <option value="">ดำเนินการเอง (Inhouse)</option>
+                                    <option value="">ส่งต่อผู้ให้บริการภายนอก (Outsource)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="technician_actions" class="wo-label">แนวทางแก้ไข / รายละเอียดการดำเนินงาน</label>
+                                <textarea id="technician_actions" name="technician_actions" class="form-control wo-textarea" rows="3" placeholder="แนวทางแก้ไข / การแก้ไขที่ทำไปแล้ว...">{{ prefill_actions }}</textarea>
+                            </div>
+                            
+                            <!-- Spare Parts Picker -->
+                            <div class="mb-3">
+                                <label class="wo-label">เบิกอะไหล่</label>
+                                <div class="wo-sp-picker sp-picker">
+                                    <div class="position-relative mb-2">
+                                        <i class="bi bi-search" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--wo-gray-400); font-size:0.8rem;"></i>
+                                        <input type="text" id="sp-search" class="form-control wo-input" style="padding-left:2rem !important;" placeholder="ค้นหาอะไหล่ (รหัส / ชื่อ)..." autocomplete="off">
+                                    </div>
+                                    <div id="sp-results" style="display:none; max-height:200px; overflow-y:auto; border:1px solid var(--wo-gray-200); border-radius:var(--wo-radius-xs); background:#fff; box-shadow:var(--wo-shadow-lg);"></div>
+                                    <div id="sp-selected-wrap" style="display:none; margin-top:0.625rem;">
+                                        <table class="wo-sp-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>รหัส</th>
+                                                    <th>ชื่ออะไหล่</th>
+                                                    <th style="text-align:center; width:70px;">คงเหลือ</th>
+                                                    <th style="text-align:center; width:80px;">เบิก</th>
+                                                    <th style="width:32px;"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="sp-selected-body"></tbody>
+                                        </table>
+                                    </div>
+                                    <input type="hidden" name="spare_parts_data" id="spare_parts_data" value="[]">
+                                </div>
+                            </div>
+
+                            <!-- Custom Spare Part -->
+                            <div class="mb-3">
+                                <div class="wo-sp-custom-area">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <i class="bi bi-plus-circle-fill" style="color:var(--wo-warning);"></i>
+                                        <span style="font-size:0.75rem; font-weight:600; color:#92400e;">เพิ่มอะไหล่อื่นๆ (ไม่มีในคลัง)</span>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-2">
+                                            <input type="text" id="sp-custom-name" class="form-control wo-input" placeholder="รหัสอะไหล่" style="font-size:0.75rem">
+                                        </div>
+                                        <div class="col-5">
+                                            <input type="text" id="sp-custom-name" class="form-control wo-input" placeholder="ชื่ออะไหล่" style="font-size:0.75rem !important;">
+                                        </div>
+                                        <div class="col-1">
+                                            <input type="number" id="sp-custom-qty" class="form-control wo-input" placeholder="จำนวน" min="1" value="1" style="font-size:0.75rem !important; text-align:center;">
+                                        </div>
+                                        <div class="col-1">
+                                            <input type="text" id="sp-custom-unit" class="form-control wo-input" placeholder="หน่วย" value="ชิ้น" style="font-size:0.75rem !important;">
+                                        </div>
+                                        <div class="col-2">
+                                            <input type="number" id="sp-custom-cost" class="form-control wo-input" placeholder="ราคา (บาท)" min="0" step="0.01" style="font-size:0.75rem !important;">
+                                        </div>
+                                        <div class="col-1 d-flex align-items-end">
+                                            <button type="button" id="sp-custom-add-btn" class="wo-btn wo-btn-warning wo-btn-sm" style="width:100%; justify-content:center;" title="เพิ่ม">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <!-- ====== Action Selector ====== -->
+                            <div style="border-top:2px solid var(--wo-gray-100); padding-top:1.25rem; margin-top:0.5rem;">
+                                <div style="font-size:0.8125rem; font-weight:700; color:var(--wo-gray-700); margin-bottom:0.875rem;">
+                                    <i class="bi bi-send-check"></i> สรุปงาน
+                                </div>
+
+
+
+                                <!-- Option 1: Complete -->
+                                <label class="tech-action-option active" id="opt-complete">
+                                    <input type="radio" name="tech_action_choice" value="tech_complete" checked style="display:none;">
+                                    <div class="tao-radio"><div class="tao-radio-dot"></div></div>
+                                    <div class="tao-body">
+                                        <div class="tao-title"><i class="bi bi-check-circle-fill" style="color:var(--wo-success);"></i> เสร็จสิ้น</div>
+                                        <div class="tao-desc">ดำเนินงานเรียบร้อย ส่งให้วิศวกรตรวจสอบ</div>
+                                    </div>
+                                </label>
+
+                                <!-- Option 2: Complete + Follow-up -->
+                                <label class="tech-action-option" id="opt-followup">
+                                    <input type="radio" name="tech_action_choice" value="tech_complete_followup" style="display:none;">
+                                    <div class="tao-radio"><div class="tao-radio-dot"></div></div>
+                                    <div class="tao-body">
+                                        <div class="tao-title"><i class="bi bi-arrow-repeat" style="color:#059669;"></i> เสร็จสิ้น — นัดติดตั้งภายหลัง</div>
+                                        <div class="tao-desc">คืนเครื่องให้ใช้งานได้ก่อน รอนัดติดตั้งอะไหล่ทีหลัง</div>
+                                    </div>
+                                </label>
+
+                                <!-- Option 3: Hold -->
+                                <label class="tech-action-option" id="opt-hold">
+                                    <input type="radio" name="tech_action_choice" value="tech_hold" style="display:none;">
+                                    <div class="tao-radio"><div class="tao-radio-dot"></div></div>
+                                    <div class="tao-body">
+                                        <div class="tao-title"><i class="bi bi-pause-circle-fill" style="color:#c2410c;"></i> อยู่ระหว่างดำเนินการ</div>
+                                        <div class="tao-desc">หยุดใช้งานเครื่อง — รออะไหล่ / รอ Outsource</div>
+                                    </div>
+                                </label>
+
+                                <!-- Hold details (shown only when hold is selected) -->
+                                <div id="hold-options" style="display:none; margin-top:0.5rem; margin-left:2.25rem; padding:1rem; background:#fff7ed; border:1.5px solid #fed7aa; border-radius:var(--wo-radius-xs);">
+                                    <div class="mb-2">
+                                        <label class="wo-label">เหตุผลการระงับ</label>
+                                        <select name="hold_reason" class="form-select wo-select">
+                                            <option value="waiting_parts">รออะไหล่</option>
+                                            <option value="waiting_outsource">รอผู้ให้บริการภายนอก (Outsource)</option>
+                                            <option value="other">อื่นๆ</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-2" id="outsource-fields" style="display:none;">
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <label class="wo-label">ผู้ให้บริการ</label>
+                                                <input type="text" name="outsource_vendor" class="form-control wo-input" placeholder="ชื่อบริษัท...">
+                                            </div>
+                                            <div class="col-3">
+                                                <label class="wo-label">ค่าใช้จ่าย (฿)</label>
+                                                <input type="number" name="outsource_cost" class="form-control wo-input" min="0" step="0.01">
+                                            </div>
+                                            <div class="col-3">
+                                                <label class="wo-label">คาดว่าเสร็จ</label>
+                                                <input type="date" name="outsource_expected_date" class="form-control wo-input">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="wo-label">หมายเหตุ</label>
+                                        <textarea name="hold_note" class="form-control wo-textarea" rows="2" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Single submit button -->
+                                <div style="margin-top:1.25rem;">
+                                    <button type="submit" id="tech-submit-btn" class="wo-btn wo-btn-success" style="width:100%; justify-content:center; padding:0.75rem 1.5rem; font-size:0.875rem;">
+                                        <i class="bi bi-check-all" id="tech-submit-icon"></i>
+                                        <span id="tech-submit-text">บันทึกผลการดำเนินงาน</span>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- ---- Tab: Engineer Verify ---- -->
+                {% if perms.cmms.change_workorder and wo.status == 'completed' %}
+                <div class="wo-tab-panel" id="tab-verify">
+                    <div class="wo-card wo-action-card act-verify">
+                        <div class="wo-card-hdr">
+                            <div class="hdr-icon"><i class="bi bi-shield-check"></i></div>
+                            <h5>ตรวจสอบโดยวิศวกร / หัวหน้า</h5>
+                        </div>
+                        <div class="wo-card-body">
+                            <div class="mb-3">
+                                <label class="wo-label">ประเภทงาน</label>
+                                <div class="wo-info" style="padding:0.5rem 0.75rem; background:var(--wo-gray-50); border-radius:var(--wo-radius-xs); border:1px solid var(--wo-gray-200);">
+                                    {{ workorderTypePills }}
+                                </div>
+                            </div>
+                            <label for="verified_note" class="wo-label">หมายเหตุการตรวจสอบ</label>
+                            <textarea id="verified_note" name="verified_note" class="form-control wo-textarea" rows="2" >{{ wo.verified_note }}</textarea>
+                            <div class="mt-3 d-flex gap-2 flex-wrap">
+                                <button type="submit" name="action" value="engineer_verify" class="wo-btn wo-btn-cyan">
+                                    <i class="bi bi-patch-check-fill"></i> ตรวจสอบและรับรอง
+                                </button>
+                                <button type="submit" name="action" value="engineer_reject" class="wo-btn wo-btn-danger"
+                                    onclick="return confirm('ยืนยันส่งกลับให้ช่างแก้ไข?')">
+                                    <i class="bi bi-arrow-return-left"></i> ส่งกลับแก้ไข
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- ---- Tab: On Hold ---- -->
+                {% if wo.status == 'on_hold' %}
+                <div class="wo-tab-panel" id="tab-hold">
+                    <div class="wo-card wo-action-card" style="border-left:4px solid #c2410c;">
+                        <div class="wo-card-hdr">
+                            <div class="hdr-icon" style="background:#ffedd5; color:#c2410c;"><i class="bi bi-pause-circle-fill"></i></div>
+                            <h5>ระงับชั่วคราว</h5>
+                            <span class="wo-badge s-on_hold" style="margin-left:auto;"><i class="bi bi-pause-fill"></i> {{ wo.get_hold_reason_display }}</span>
+                        </div>
+                        <div class="wo-card-body">
+                            <!-- Hold Details -->
+                            <div style="padding:1rem; background:#fff7ed; border-radius:var(--wo-radius-xs); border-left:3px solid #fb923c; margin-bottom:1rem;">
+                                <div class="wo-info">
+                                    <span class="wo-info-label">เหตุผล</span>
+                                    <span class="wo-info-value" style="color:#c2410c; font-weight:600;">{{ wo.get_hold_reason_display }}</span>
+                                </div>
+                                {% if wo.hold_note %}
+                                <div class="wo-info">
+                                    <span class="wo-info-label">หมายเหตุ</span>
+                                    <span class="wo-info-value">{{ wo.hold_note }}</span>
+                                </div>
+                                {% endif %}
+                                {% if wo.hold_reason == 'waiting_outsource' %}
+                                    {% if wo.outsource_vendor %}
+                                    <div class="wo-info">
+                                        <span class="wo-info-label">ผู้ให้บริการ</span>
+                                        <span class="wo-info-value">{{ wo.outsource_vendor }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if wo.outsource_cost %}
+                                    <div class="wo-info">
+                                        <span class="wo-info-label">ค่าใช้จ่าย</span>
+                                        <span class="wo-info-value">{{ wo.outsource_cost|floatformat:2 }} ฿</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if wo.outsource_expected_date %}
+                                    <div class="wo-info">
+                                        <span class="wo-info-label">คาดว่าเสร็จ</span>
+                                        <span class="wo-info-value">{{ wo.outsource_expected_date }}</span>
+                                    </div>
+                                    {% endif %}
+                                {% endif %}
+                                {% if has_pending_procurement %}
+                                <div style="margin-top:0.75rem; padding:0.5rem 0.75rem; background:var(--wo-warning-light); border-radius:6px; font-size:0.8125rem; color:#92400e;">
+                                    <i class="bi bi-box-seam"></i> อะไหล่รอจัดซื้อ {{ pending_procurement_count }} รายการ
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Officer Actions -->
+                            {% if perms.cmms.change_workorder %}
+                            <div style="padding:1rem; background:var(--wo-gray-50); border-radius:var(--wo-radius-xs); border:1px solid var(--wo-gray-200);">
+                                <div style="font-size:0.75rem; font-weight:700; color:var(--wo-gray-600); margin-bottom:0.75rem; text-transform:uppercase; letter-spacing:0.03em;">
+                                    <i class="bi bi-gear"></i> แก้ไขสถานะการระงับชั่วคราว
+                                </div>
+                                <div class="mb-2">
+                                    <label class="wo-label">หมายเหตุ</label>
+                                    <textarea name="resume_note" class="form-control wo-textarea" rows="2" placeholder="รายละเอียด (ถ้ามี)..."></textarea>
+                                </div>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <button type="submit" name="action" value="resume_from_hold" class="wo-btn wo-btn-success wo-btn-sm">
+                                        <i class="bi bi-play-fill"></i> ดำเนินงานต่อ
+                                    </button>
+                                    <button type="submit" name="action" value="cancel_hold" class="wo-btn wo-btn-outline wo-btn-sm"
+                                        onclick="document.querySelector('input[name=cancel_target]').value='in_progress'">
+                                        <i class="bi bi-arrow-return-left"></i> ยกเลิกการรอ — เปลี่ยนแผน
+                                    </button>
+                                    <button type="submit" name="action" value="cancel_hold" class="wo-btn wo-btn-danger wo-btn-sm"
+                                        onclick="document.querySelector('input[name=cancel_target]').value='closed'; document.querySelector('input[name=cancel_note]').value=document.querySelector('textarea[name=resume_note]').value;">
+                                        <i class="bi bi-x-circle"></i> ยกเลิกการรอ — ปิดใบงาน
+                                    </button>
+                                    <input type="hidden" name="cancel_target" value="in_progress">
+                                    <input type="hidden" name="cancel_note" value="">
+                                </div>
+                            </div>
+                            {% else %}
+                            <p style="font-size:0.8125rem; color:var(--wo-gray-500);">
+                                <i class="bi bi-hourglass-split"></i> รอเจ้าหน้าที่ดำเนินการ...
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- ---- Tab: Comments ---- -->
+                <div class="wo-tab-panel" id="tab-comments">
+                    <div class="wo-card">
+                        <div class="wo-card-hdr">
+                            <div class="hdr-icon" style="background:#fce7f3; color:#db2777;"><i class="bi bi-chat-dots"></i></div>
+                            <h5>ความคิดเห็น</h5>
+                            <span class="hdr-sub">{{ comments|length }}</span>
+                        </div>
+                        <div class="wo-card-body">
+                            {% for c in comments %}
+                            <div class="wo-comment">
+                                <div class="wo-avatar">
+                                    {% if c.author %}{{ c.author.username|slice:":1"|upper }}{% else %}S{% endif %}
+                                </div>
+                                <div class="wo-comment-body">
+                                    <div class="wo-comment-top">
+                                        <strong>{% if c.author %}{{ c.author.username }}{% else %}System{% endif %}</strong>
+                                        <span class="wo-comment-time">{{ c.created_at|thai_datetime }}</span>
+                                    </div>
+                                    <p>{{ c.text }}</p>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted" style="font-size:0.8125rem;">ยังไม่มีความคิดเห็น</p>
+                            {% endfor %}
+
+                            <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--wo-gray-100);">
+                                <label for="comment" class="wo-label">เพิ่มความคิดเห็น</label>
+                                <textarea id="comment" name="comment" class="form-control wo-textarea" rows="3" placeholder="พิมพ์ความคิดเห็น..."></textarea>
+                            </div>
+                            <button type="submit" class="wo-btn wo-btn-primary mt-2" style="justify-content:center;">
+                                <i class="bi bi-floppy-fill"></i> บันทึก
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ---- Tab: History ---- -->
+                <div class="wo-tab-panel" id="tab-history">
+                    <div class="wo-card">
+                        <div class="wo-card-hdr">
+                            <div class="hdr-icon" style="background:#f3e8ff; color:#7c3aed;"><i class="bi bi-clock-history"></i></div>
+                            <h5>ประวัติการดำเนินการ</h5>
+                        </div>
+                        <div class="wo-card-body">
+                            {% if logs and logs.count %}
+                            <div class="wo-timeline">
+                                {% for log in logs %}
+                                <div class="wo-tl-item {% if 'complet' in log.action or 'verif' in log.action %}tl-success{% elif 'reject' in log.action %}tl-danger{% elif 'assign' in log.action or 'accept' in log.action %}tl-warning{% endif %}">
+                                    <div class="wo-tl-dot"></div>
+                                    <div>
+                                        <div class="wo-tl-head">
+                                            <strong>{{ log.action|title }}</strong>
+                                            <span class="wo-tl-time">{{ log.created_at|thai_datetime }}</span>
+                                        </div>
+                                        <div class="wo-tl-actor">
+                                            {% if log.actor %}{{ log.actor.get_full_name|default:log.actor.username }}{% else %}System{% endif %}
+                                        </div>
+                                        {% if log.note %}
+                                        <div class="wo-tl-note">{{ log.note }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted mb-0" style="font-size:0.8125rem;">ยังไม่มีประวัติ</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ========== Sidebar ========== -->
+            <div class="col-lg-4">
+                <div class="wo-side-sticky">
+
+                    <!-- Assignment -->
+                    {% if perms.cmms.change_workorder %}
+                    <div class="wo-side-card">
+                        <div class="wo-side-hdr">
+                            <i class="bi bi-person-check-fill"></i>
+                            <h6>มอบหมายงาน</h6>
+                        </div>
+                        <div class="wo-side-body">
+                            <label for="assigned_to" class="wo-label">ผู้รับผิดชอบงาน</label>
+                            <select id="assigned_to" name="assigned_to" class="form-select wo-select" aria-label="มอบหมายงานให้ช่าง">
+                                <option value="">-- ยังไม่มอบหมาย --</option>
+                                {% for t in technicians %}
+                                    {% if t.user %}
+                                    <option value="{{ t.user.id }}" {% if wo.assigned_to and wo.assigned_to.id == t.user.id %}selected{% endif %}>
+                                        {% if t.prefix_name == 'other' %}{{ t.prefix_name_custom }}{% else %}{{ t.prefix_name }}{% endif %} {{ t.name }}
+                                    </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <button type="submit" name="action" value="assign_to_tech" class="wo-btn wo-btn-primary w-100 mt-2" style="justify-content:center;">
+                                <i class="bi bi-person-plus-fill"></i> มอบหมาย
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Status & Save -->
+                    {% if perms.cmms.change_workorder %}
+                    <div class="wo-side-card">
+                        <div class="wo-side-hdr">
+                            <i class="bi bi-gear-fill"></i>
+                            <h6>สถานะ</h6>
+                        </div>
+                        <div class="wo-side-body">
+                            <select id="status" name="status" class="form-select wo-select" aria-label="สถานะใบงาน">
+                                {% for val, label in wo.STATUS_CHOICES %}
+                                <option value="{{ val }}" {% if wo.status == val %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="wo-btn wo-btn-primary w-100 mt-2" style="justify-content:center;">
+                                <i class="bi bi-floppy-fill"></i> บันทึก
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Equipment Info -->
+                    <div class="wo-side-card">
+                        <div class="wo-side-hdr">
+                            <i class="bi bi-cpu-fill"></i>
+                            <h6>อุปกรณ์</h6>
+                        </div>
+                        <div class="wo-side-body">
+                            {% if wo.equipment %}
+                            <div class="wo-info">
+                                <span class="wo-info-label">รหัส</span>
+                                <span class="wo-info-value">{{ wo.equipment.equipment_id }}</span>
+                            </div>
+                            <div class="wo-info">
+                                <span class="wo-info-label">ชื่อ (TH)</span>
+                                <span class="wo-info-value">{{ wo.equipment.equipment_name_TH|default:"-" }}</span>
+                            </div>
+                            {% if wo.equipment.equipment_name_EN %}
+                            <div class="wo-info">
+                                <span class="wo-info-label">ชื่อ (EN)</span>
+                                <span class="wo-info-value">{{ wo.equipment.equipment_name_EN }}</span>
+                            </div>
+                            {% endif %}
+                            {% if wo.equipment.equipment_brand %}
+                            <div class="wo-info">
+                                <span class="wo-info-label">ยี่ห้อ</span>
+                                <span class="wo-info-value">{{ wo.equipment.equipment_brand }}</span>
+                            </div>
+                            {% endif %}
+                            {% if wo.equipment.equipment_model %}
+                            <div class="wo-info">
+                                <span class="wo-info-label">รุ่น</span>
+                                <span class="wo-info-value">{{ wo.equipment.equipment_model }}</span>
+                            </div>
+                            {% endif %}
+                            {% if wo.equipment.equipment_sn %}
+                            <div class="wo-info">
+                                <span class="wo-info-label">S/N</span>
+                                <span class="wo-info-value">{{ wo.equipment.equipment_sn }}</span>
+                            </div>
+                            {% endif %}
+                            {% if wo.equipment.equipment_user_customer %}
+                            <div class="wo-info">
+                                <span class="wo-info-label">ผู้ใช้งาน</span>
+                                <span class="wo-info-value">{{ wo.equipment.equipment_user_customer }}</span>
+                            </div>
+                            {% endif %}
+
+
+                            
+                            {% else %}
+                            <p class="text-muted small mb-0">ไม่มีข้อมูลอุปกรณ์</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Date Info -->
+                    <div class="wo-side-card">
+                        <div class="wo-side-hdr">
+                            <i class="bi bi-calendar3"></i>
+                            <h6>ไทม์ไลน์</h6>
+                        </div>
+                        <div class="wo-side-body">
+                            <div class="wo-info">
+                                <span class="wo-info-label">แจ้งเมื่อ</span>
+                                <span class="wo-info-value">{{ wo.reported_at|thai_datetime }}</span>
+                            </div>
+                            {% if wo.planned_start %}
+                            <div class="wo-info">
+                                <span class="wo-info-label"><i class="bi bi-flag" style="font-size:0.625rem; color:var(--wo-primary);"></i> แผนเริ่ม</span>
+                                <span class="wo-info-value">{{ wo.planned_start|thai_datetime }}</span>
+                            </div>
+                            {% endif %}
+                            {% if wo.planned_end %}
+                            <div class="wo-info">
+                                <span class="wo-info-label"><i class="bi bi-flag-fill" style="font-size:0.625rem; color:var(--wo-primary);"></i> แผนเสร็จ</span>
+                                <span class="wo-info-value">{{ wo.planned_end|thai_datetime }}</span>
+                            </div>
+                            {% endif %}
+                            {% if wo.accepted_at %}
+                            <div class="wo-info">
+                                <span class="wo-info-label">รับเมื่อ</span>
+                                <span class="wo-info-value">{{ wo.accepted_at|thai_datetime }}</span>
+                            </div>
+                            {% endif %}
+                            {% if wo.actual_start %}
+                            <div class="wo-info">
+                                <span class="wo-info-label">เริ่มงาน</span>
+                                <span class="wo-info-value">{{ wo.actual_start|thai_datetime }}</span>
+                            </div>
+                            {% endif %}
+                            {% if wo.actual_end %}
+                            <div class="wo-info">
+                                <span class="wo-info-label">เสร็จสิ้น</span>
+                                <span class="wo-info-value">{{ wo.actual_end|thai_datetime }}</span>
+                            </div>
+                            {% endif %}
+                            {% if wo.verified_at %}
+                            <div class="wo-info">
+                                <span class="wo-info-label">รับรอง</span>
+                                <span class="wo-info-value">{{ wo.verified_at|thai_datetime }}</span>
+                            </div>
+                            {% endif %}
+                            <div class="wo-info">
+                                <span class="wo-info-label">อัปเดต</span>
+                                <span class="wo-info-value">{{ wo.updated_at|thai_datetime }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Attachments -->
+                    <div class="wo-side-card">
+                        <div class="wo-side-hdr">
+                            <i class="bi bi-paperclip"></i>
+                            <h6>เอกสารแนบ <span class="text-muted fw-normal" style="font-size:0.6875rem;">({{ attachments|length }})</span></h6>
+                        </div>
+                        <div class="wo-side-body">
+                            {% for a in attachments %}
+                            <div class="wo-attach">
+                                {% with fname=a.file.name|lower %}
+                                {% if '.jpg' in fname or '.jpeg' in fname or '.png' in fname or '.gif' in fname or '.webp' in fname %}
+                                    <img src="{{ a.file.url }}" alt="{{ a.file.name }}" class="wo-attach-thumb" onclick="openLightbox('{{ a.file.url }}')">
+                                {% else %}
+                                    <div class="wo-attach-icon">
+                                        {% if '.pdf' in fname %}<i class="bi bi-file-earmark-pdf-fill" style="color:#ef4444;"></i>
+                                        {% elif '.doc' in fname or '.docx' in fname %}<i class="bi bi-file-earmark-word-fill" style="color:#2563eb;"></i>
+                                        {% elif '.xls' in fname or '.xlsx' in fname %}<i class="bi bi-file-earmark-excel-fill" style="color:#16a34a;"></i>
+                                        {% else %}<i class="bi bi-file-earmark-fill"></i>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                                {% endwith %}
+                                <div class="wo-attach-info">
+                                    <a href="{{ a.file.url }}" class="wo-attach-name" target="_blank">
+                                        {{ a.document_name|default:a.file.name|truncatechars:40 }}
+                                    </a>
+                                    <span class="wo-attach-meta">
+                                        <span class="wo-attach-type">{{ a.get_document_type_display }}</span>
+                                        {{ a.uploaded_at|thai_datetime }}{% if a.uploaded_by %} · {{ a.uploaded_by.username }}{% endif %}
+                                    </span>
+                                </div>
+                                {% if perms.cmms.change_workorder %}
+                                <form method="post" action="{% url 'delete_workorder_attachment' wo.id a.id %}" style="margin-left:auto; flex-shrink:0;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="wo-btn wo-btn-danger wo-btn-sm" title="ลบเอกสารแนบ"
+                                        onclick="return confirm('ยืนยันลบเอกสารแนบนี้?')"
+                                        style="padding:0.25rem 0.5rem; min-width:0;">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                            {% empty %}
+                            <p class="text-muted small mb-2">ยังไม่มีเอกสารแนบ</p>
+                            {% endfor %}
+
+                            <div style="padding-top:0.75rem; border-top:1px solid var(--wo-gray-100); margin-top:0.5rem;">
+                                <label for="attachment" class="wo-label">อัพโหลดเอกสาร</label>
+                                <input type="text" id="attachment_name" name="attachment_name" class="form-control wo-input mb-2"
+                                       placeholder="ชื่อเอกสาร (ถ้าไม่กรอกจะใช้ชื่อไฟล์)">
+                                <select id="attachment_type" name="attachment_type" class="form-select wo-select mb-2" aria-label="ประเภทเอกสาร">
+                                    {% for val, label in attachment_type_choices %}
+                                    <option value="{{ val }}" {% if val == 'other' %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="file" id="attachment" name="attachment" class="form-control wo-input"
+                                       accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx,.xls,.xlsx">
+                                <div style="font-size:0.6875rem; color:var(--wo-gray-400); margin-top:0.25rem;">
+                                    PDF, รูปภาพ, Word, Excel · สูงสุด 10MB
+                                </div>
+                            <button type="submit" class="wo-btn wo-btn-primary w-100 mt-2" style="justify-content:center;">
+                                <i class="bi bi-floppy-fill"></i> อัพโหลด
+                            </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Fulfill Spare Part Modal -->
+<div class="modal fade" id="fulfillSpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:var(--wo-radius); border:none; box-shadow:var(--wo-shadow-lg);">
+            <div class="modal-header" style="border-bottom:1px solid var(--wo-gray-100); padding:1rem 1.25rem;">
+                <h5 class="modal-title" style="font-size:0.9375rem; font-weight:700; color:var(--wo-gray-800);">
+                    <i class="bi bi-box-arrow-in-down" style="color:var(--wo-success);"></i> ยืนยันรับอะไหล่
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding:1.25rem;">
+                <p style="font-size:0.8125rem; color:var(--wo-gray-700); margin-bottom:0.5rem;">
+                    <strong>อะไหล่:</strong>
+                    <span id="fulfill-sp-code" class="sp-chip sp-chip-code"></span>
+                    <span id="fulfill-sp-name"></span>
+                </p>
+                <p style="font-size:0.8125rem; color:var(--wo-gray-700); margin-bottom:0.5rem;">
+                    <strong>จำนวน:</strong> <span id="fulfill-sp-qty" style="font-weight:700;"></span>
+                </p>
+                <div id="fulfill-stock-info" style="padding:0.625rem 0.875rem; border-radius:var(--wo-radius-xs); font-size:0.8125rem; margin-bottom:0.5rem;"></div>
+                <p style="font-size:0.75rem; color:var(--wo-gray-400); margin-bottom:0;">หลังกดยืนยัน ระบบจะหักสต็อกอัตโนมัติ</p>
+            </div>
+            <div class="modal-footer" style="border-top:1px solid var(--wo-gray-100); padding:0.75rem 1.25rem;">
+                <button type="button" class="wo-btn wo-btn-outline wo-btn-sm" data-bs-dismiss="modal">ยกเลิก</button>
+                <form method="post" id="fulfill-form" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="fulfill_spare_part">
+                    <input type="hidden" name="usp_id" id="fulfill-usp-id" value="">
+                    <button type="submit" class="wo-btn wo-btn-success wo-btn-sm">
+                        <i class="bi bi-check-circle-fill"></i> ยืนยัน
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lightbox -->
+<div class="wo-lightbox" id="wo-lightbox" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Preview">
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+/* ========== Tab Navigation (with hash persistence) ========== */
+(function() {
+    var tabs = document.querySelectorAll('.wo-tab[data-tab]');
+    var panels = document.querySelectorAll('.wo-tab-panel');
+
+    function activateTab(tabId) {
+        var target = document.querySelector('.wo-tab[data-tab="' + tabId + '"]');
+        if (!target) return false;
+        tabs.forEach(function(t) { t.classList.remove('active'); });
+        panels.forEach(function(p) { p.classList.remove('active'); });
+        target.classList.add('active');
+        var panel = document.getElementById(tabId);
+        if (panel) panel.classList.add('active');
+        return true;
+    }
+
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            activateTab(tab.dataset.tab);
+            history.replaceState(null, '', '#' + tab.dataset.tab);
+        });
+    });
+
+    /* Restore tab from URL hash after page reload / POST redirect */
+    var hash = location.hash.replace('#', '');
+    if (hash) activateTab(hash);
+
+    /* Before form submit, save the current active tab to hash */
+    document.querySelectorAll('button[name="action"]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var panel = btn.closest('.wo-tab-panel');
+            if (panel && panel.id) {
+                history.replaceState(null, '', '#' + panel.id);
+            }
+        });
+    });
+})();
+
+/* ========== Lightbox ========== */
+function openLightbox(url) {
+    document.getElementById('lightbox-img').src = url;
+    document.getElementById('wo-lightbox').classList.add('show');
+}
+function closeLightbox() {
+    document.getElementById('wo-lightbox').classList.remove('show');
+    document.getElementById('lightbox-img').src = '';
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLightbox(); });
+
+/* ========== Toast auto-dismiss ========== */
+(function() {
+    document.querySelectorAll('.wo-toast').forEach(function(t) {
+        setTimeout(function() {
+            t.style.transition = 'opacity 0.4s, transform 0.4s';
+            t.style.opacity = '0';
+            t.style.transform = 'translateX(60px)';
+            setTimeout(function() { t.remove(); }, 400);
+        }, 5000);
+    });
+})();
+
+/* Confirm dialogs removed per user preference: fewer click confirmations wanted */
+
+/* ========== Loading spinner ========== */
+(function() {
+    document.querySelectorAll('form[method="post"]').forEach(function(form) {
+        form.addEventListener('submit', function() {
+            var btn = form.querySelector('button[type="submit"]:focus') || form.querySelector('.wo-btn[type="submit"]');
+            if (btn && !btn.classList.contains('is-loading')) {
+                var orig = btn.innerHTML;
+                btn.classList.add('is-loading');
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> กำลังดำเนินการ...';
+                setTimeout(function() { btn.classList.remove('is-loading'); btn.innerHTML = orig; }, 10000);
+            }
+        });
+    });
+})();
+
+/* ========== File upload validation ========== */
+(function() {
+    var inp = document.getElementById('attachment');
+    if (!inp) return;
+    var max = 10 * 1024 * 1024;
+    var ok = ['.pdf','.jpg','.jpeg','.png','.gif','.webp','.doc','.docx','.xls','.xlsx'];
+    inp.addEventListener('change', function() {
+        if (!this.files.length) return;
+        var f = this.files[0];
+        var ext = '.' + f.name.split('.').pop().toLowerCase();
+        if (ok.indexOf(ext) === -1) {
+            alert('ไฟล์ประเภทนี้ไม่รองรับ\nรองรับ: PDF, รูปภาพ, Word, Excel');
+            this.value = '';
+        } else if (f.size > max) {
+            alert('ไฟล์ใหญ่เกิน 10MB (' + (f.size / 1048576).toFixed(1) + 'MB)');
+            this.value = '';
+        }
+    });
+})();
+
+/* ========== Fulfill spare part modal ========== */
+(function() {
+    document.querySelectorAll('.btn-fulfill-sp').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id = this.dataset.uspId, code = this.dataset.spCode,
+                name = this.dataset.spName, qty = parseInt(this.dataset.spQty),
+                stock = parseInt(this.dataset.spStock), custom = this.dataset.spCustom === '1';
+            document.getElementById('fulfill-usp-id').value = id;
+            document.getElementById('fulfill-sp-code').textContent = code;
+            document.getElementById('fulfill-sp-name').textContent = name;
+            document.getElementById('fulfill-sp-qty').textContent = qty;
+            var info = document.getElementById('fulfill-stock-info');
+            if (custom) {
+                info.style.background = 'var(--wo-warning-light)';
+                info.innerHTML = '<i class="bi bi-box" style="color:var(--wo-warning);"></i> อะไหล่อื่นๆ — กดยืนยันเพื่อเปลี่ยนสถานะ';
+            } else if (stock >= qty) {
+                info.style.background = 'var(--wo-success-light)';
+                info.innerHTML = '<i class="bi bi-check-circle" style="color:var(--wo-success);"></i> สต็อก: <strong>' + stock + '</strong> — เพียงพอ';
+            } else {
+                info.style.background = 'var(--wo-danger-light)';
+                info.innerHTML = '<i class="bi bi-exclamation-triangle" style="color:var(--wo-danger);"></i> สต็อก: <strong>' + stock + '</strong> — ไม่พอ (ต้องการ ' + qty + ')';
+            }
+            new bootstrap.Modal(document.getElementById('fulfillSpModal')).show();
+        });
+    });
+})();
+
+/* ========== Tech Action Selector ========== */
+(function() {
+    var options = document.querySelectorAll('.tech-action-option');
+    var holdPanel = document.getElementById('hold-options');
+    var submitBtn = document.getElementById('tech-submit-btn');
+    var submitIcon = document.getElementById('tech-submit-icon');
+    var submitText = document.getElementById('tech-submit-text');
+    if (!options.length || !submitBtn) return;
+
+    var config = {
+        tech_complete:          { text: 'บันทึกผลการดำเนินงาน',             icon: 'bi-check-all',        cls: 'wo-btn-success' },
+        tech_complete_followup: { text: 'ส่งงาน — นัดติดตั้งภายหลัง',       icon: 'bi-arrow-repeat',     cls: 'wo-btn-success' },
+        tech_hold:              { text: 'ระงับการใช้งานเครื่องมือ',               icon: 'bi-pause-fill',       cls: 'wo-btn-warning' }
+    };
+
+    function update() {
+        var checked = document.querySelector('input[name="tech_action_choice"]:checked');
+        if (!checked) return;
+        var val = checked.value;
+        options.forEach(function(o) { o.classList.toggle('active', o.contains(checked)); });
+        if (holdPanel) holdPanel.style.display = val === 'tech_hold' ? 'block' : 'none';
+        var c = config[val];
+        if (c) {
+            submitIcon.className = 'bi ' + c.icon;
+            submitText.textContent = c.text;
+            submitBtn.className = 'wo-btn ' + c.cls;
+            submitBtn.style.cssText = 'width:100%; justify-content:center; padding:0.75rem 1.5rem; font-size:0.875rem;';
+        }
+    }
+
+    options.forEach(function(opt) { opt.addEventListener('click', update); });
+
+    /* Set hidden action value on submit */
+    submitBtn.addEventListener('click', function(e) {
+        var checked = document.querySelector('input[name="tech_action_choice"]:checked');
+        if (checked) {
+            var h = document.getElementById('tech-action-hidden');
+            if (!h) { h = document.createElement('input'); h.type = 'hidden'; h.name = 'action'; h.id = 'tech-action-hidden'; submitBtn.closest('form').appendChild(h); }
+            h.value = checked.value;
+        }
+    });
+
+    update();
+})();
+
+/* ========== Outsource fields toggle ========== */
+(function() {
+    var sel = document.querySelector('select[name="hold_reason"]');
+    var fields = document.getElementById('outsource-fields');
+    if (!sel || !fields) return;
+    function toggle() { fields.style.display = sel.value === 'waiting_outsource' ? 'block' : 'none'; }
+    sel.addEventListener('change', toggle);
+    toggle();
+})();
+
+/* ========== Spare Parts Picker ========== */
+(function() {
+    var searchInput = document.getElementById('sp-search');
+    if (!searchInput) return;
+
+    var resultsDiv = document.getElementById('sp-results'),
+        selectedBody = document.getElementById('sp-selected-body'),
+        selectedWrap = document.getElementById('sp-selected-wrap'),
+        hiddenInput = document.getElementById('spare_parts_data'),
+        equipmentId = '{{ wo.equipment_id|default:"" }}';
+
+    var selectedParts = {}, debounceTimer = null;
+
+    function syncHidden() {
+        var arr = Object.values(selectedParts).map(function(p) {
+            if (p.isCustom) return {id:'custom', qty:p.qty, custom_name:p.name, custom_unit_cost:p.unitCost||null, custom_unit:p.unit};
+            return {id:p.id, qty:p.qty, out_of_stock:!!p.outOfStock};
+        });
+        hiddenInput.value = JSON.stringify(arr);
+        selectedWrap.style.display = arr.length ? 'block' : 'none';
+    }
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    function renderSelected() {
+        selectedBody.innerHTML = '';
+        Object.values(selectedParts).forEach(function(p) {
+            var tr = document.createElement('tr');
+            if (p.isCustom) {
+                tr.style.background = 'var(--wo-warning-light)';
+                tr.innerHTML =
+                    '<td><span class="sp-chip sp-chip-custom"><i class="bi bi-box"></i> อื่นๆ</span></td>' +
+                    '<td style="font-weight:500;">' + esc(p.name) + ' <small style="color:var(--wo-gray-400);">(' + esc(p.unit) + ')</small>' +
+                    (p.unitCost ? ' <small style="color:var(--wo-warning);">' + p.unitCost + '฿</small>' : '') + '</td>' +
+                    '<td style="text-align:center; color:var(--wo-warning);">—</td>' +
+                    '<td style="text-align:center;"><input type="number" min="1" value="' + p.qty + '" class="form-control form-control-sm" style="width:60px; margin:auto; text-align:center; border-radius:6px; font-weight:600; border:1.5px solid var(--wo-warning);" data-sp-id="' + p.id + '"></td>' +
+                    '<td><button type="button" style="color:var(--wo-danger); padding:0; font-size:1rem; background:none; border:none; cursor:pointer;" data-sp-remove="' + p.id + '"><i class="bi bi-x-circle-fill"></i></button></td>';
+            } else {
+                tr.innerHTML =
+                    '<td><span class="sp-chip sp-chip-code">' + esc(p.code) + '</span></td>' +
+                    '<td style="font-weight:500;">' + esc(p.name) + ' <small style="color:var(--wo-gray-400);">(' + esc(p.unit) + ')</small></td>' +
+                    '<td style="text-align:center; color:var(--wo-gray-500);">' + (p.outOfStock ? '<span style="color:var(--wo-danger); font-weight:600;">0</span>' : p.max) + '</td>' +
+                    '<td style="text-align:center;"><input type="number" min="1"' + (p.outOfStock ? '' : ' max="' + p.max + '"') + ' value="' + p.qty + '" class="form-control form-control-sm" style="width:60px; margin:auto; text-align:center; border-radius:6px; font-weight:600; border:1.5px solid var(--wo-gray-200);" data-sp-id="' + p.id + '"></td>' +
+                    '<td><button type="button" style="color:var(--wo-danger); padding:0; font-size:1rem; background:none; border:none; cursor:pointer;" data-sp-remove="' + p.id + '"><i class="bi bi-x-circle-fill"></i></button></td>';
+            }
+            selectedBody.appendChild(tr);
+        });
+        selectedBody.querySelectorAll('input[data-sp-id]').forEach(function(inp) {
+            inp.addEventListener('change', function() {
+                var id = this.dataset.spId, v = parseInt(this.value) || 1;
+                if (v < 1) v = 1;
+                if (!selectedParts[id].outOfStock && !selectedParts[id].isCustom && v > selectedParts[id].max) v = selectedParts[id].max;
+                this.value = v; selectedParts[id].qty = v; syncHidden();
+            });
+        });
+        selectedBody.querySelectorAll('[data-sp-remove]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                delete selectedParts[this.dataset.spRemove]; renderSelected(); syncHidden();
+            });
+        });
+        syncHidden();
+    }
+
+    function doSearch(q) {
+        var url = '{% url "api_spare_parts_search" %}?q=' + encodeURIComponent(q);
+        if (equipmentId) url += '&equipment_id=' + encodeURIComponent(equipmentId);
+        fetch(url, {credentials:'same-origin'}).then(function(r) { return r.json(); }).then(function(data) {
+            if (!data.results || !data.results.length) {
+                resultsDiv.innerHTML = '<div style="padding:0.625rem 0.875rem; color:var(--wo-gray-400); font-size:0.75rem;">ไม่พบอะไหล่</div>';
+                resultsDiv.style.display = 'block'; return;
+            }
+            resultsDiv.innerHTML = '';
+            data.results.forEach(function(sp) {
+                var picked = selectedParts[sp.id];
+                var el = document.createElement('div');
+                el.style.cssText = 'display:flex; align-items:center; gap:0.625rem; padding:0.5rem 0.875rem; cursor:pointer; border-bottom:1px solid var(--wo-gray-100); transition:background 0.15s; font-size:0.8125rem;';
+                if (picked) el.style.opacity = '0.4';
+                el.innerHTML =
+                    '<span class="sp-chip sp-chip-code">' + esc(sp.code) + '</span>' +
+                    '<div style="flex:1; min-width:0;">' +
+                        '<div style="font-weight:500; color:var(--wo-gray-800); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(sp.name) + '</div>' +
+                        '<div style="font-size:0.6875rem; color:var(--wo-gray-400);">' + esc(sp.location||'-') + ' · คงเหลือ ' + sp.quantity + ' ' + esc(sp.unit) + '</div>' +
+                    '</div>' +
+                    '<span class="sp-chip ' + (sp.quantity > 0 ? 'sp-chip-ok' : 'sp-chip-pending') + '">' + (sp.quantity > 0 ? 'มี' : 'หมด') + '</span>';
+                el.addEventListener('mouseenter', function() { el.style.background = 'var(--wo-gray-50)'; });
+                el.addEventListener('mouseleave', function() { el.style.background = ''; });
+                if (!picked) {
+                    el.addEventListener('click', function() {
+                        selectedParts[sp.id] = {id:sp.id, code:sp.code, name:sp.name, unit:sp.unit, qty:1, max:sp.quantity, outOfStock:sp.quantity<=0};
+                        renderSelected(); resultsDiv.style.display = 'none'; searchInput.value = '';
+                    });
+                }
+                resultsDiv.appendChild(el);
+            });
+            resultsDiv.style.display = 'block';
+        }).catch(function() {
+            resultsDiv.innerHTML = '<div style="padding:0.625rem 0.875rem; color:var(--wo-danger); font-size:0.75rem;">เกิดข้อผิดพลาด</div>';
+            resultsDiv.style.display = 'block';
+        });
+    }
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        var q = this.value.trim();
+        if (q.length < 1) { resultsDiv.style.display = 'none'; return; }
+        debounceTimer = setTimeout(function() { doSearch(q); }, 300);
+    });
+    searchInput.addEventListener('focus', function() { if (this.value.trim().length >= 1) doSearch(this.value.trim()); });
+    document.addEventListener('click', function(e) { if (!e.target.closest('.sp-picker')) resultsDiv.style.display = 'none'; });
+
+    /* Prefill spare parts from previous session (e.g. after resume from hold) */
+    var prefillData = {{ prefill_spare_parts_json|safe }};
+    var customCounter = 0;
+    if (prefillData && prefillData.length) {
+        prefillData.forEach(function(p) {
+            if (p.id === 'custom') {
+                customCounter++;
+                var cId = 'custom_' + customCounter + '_' + Date.now();
+                selectedParts[cId] = {id:cId, code:'อื่นๆ', name:p.custom_name, unit:p.custom_unit||'ชิ้น', qty:p.qty||1, max:0, outOfStock:false, isCustom:true, unitCost:p.custom_unit_cost||null};
+            } else {
+                selectedParts[p.id] = {id:p.id, code:p.code, name:p.name, unit:'', qty:p.qty||1, max:p.stock||0, outOfStock:(p.stock||0)<=0};
+            }
+        });
+        renderSelected();
+    }
+    var customBtn = document.getElementById('sp-custom-add-btn');
+    if (customBtn) {
+        customBtn.addEventListener('click', function() {
+            var ni = document.getElementById('sp-custom-name'),
+                qi = document.getElementById('sp-custom-qty'),
+                ui = document.getElementById('sp-custom-unit'),
+                ci = document.getElementById('sp-custom-cost');
+            var n = ni.value.trim();
+            if (!n) { ni.focus(); return; }
+            customCounter++;
+            var cId = 'custom_' + customCounter + '_' + Date.now();
+            selectedParts[cId] = {id:cId, code:'อื่นๆ', name:n, unit:ui.value.trim()||'ชิ้น', qty:parseInt(qi.value)||1, max:0, outOfStock:false, isCustom:true, unitCost:parseFloat(ci.value)||null};
+            renderSelected();
+            ni.value=''; qi.value='1'; ui.value='ชิ้น'; ci.value=''; ni.focus();
+        });
+    }
+})();
+</script>
+{% endblock %}

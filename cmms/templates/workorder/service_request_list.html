@@ -1,0 +1,791 @@
+{% extends 'base.html' %}
+{% load thai_dates %}
+{% block title %}<title>คำขอรับบริการ - Service Requests</title>{% endblock %}
+{% block content %}
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+        --secondary-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+        --success-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        --danger-gradient: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.08);
+        --shadow-medium: 0 8px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .srl-page {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 50%, #ecfeff 100%);
+        padding: 1.5rem;
+    }
+
+    .srl-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* Header */
+    .srl-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .srl-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .srl-title-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--primary-gradient);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .srl-title h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .srl-title p {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin: 0;
+    }
+
+    /* Stats & Filters */
+    .srl-toolbar {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .srl-stats {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .stat-badge {
+        background: var(--glass-bg);
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: #374151;
+        box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(255,255,255,0.5);
+    }
+
+    .stat-badge strong {
+        color: #6366f1;
+        font-weight: 700;
+    }
+
+    .srl-search {
+        position: relative;
+    }
+
+    .srl-search input {
+        padding: 0.625rem 1rem 0.625rem 2.5rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.875rem;
+        width: 220px;
+        transition: all 0.3s ease;
+    }
+
+    .srl-search input:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .srl-search i {
+        position: absolute;
+        left: 0.875rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+    }
+
+    .srl-filters {
+        display: flex;
+        gap: 0.375rem;
+    }
+
+    .filter-btn {
+        padding: 0.5rem 0.875rem;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .filter-btn:hover {
+        border-color: #6366f1;
+        color: #6366f1;
+    }
+
+    .filter-btn.active {
+        background: var(--primary-gradient);
+        border-color: transparent;
+        color: white;
+    }
+
+    /* Cards Container */
+    .srl-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .srl-card {
+        background: var(--glass-bg);
+        border-radius: 16px;
+        padding: 1.25rem;
+        box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(255,255,255,0.5);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .srl-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-medium);
+    }
+
+    .srl-card-main {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .srl-card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .srl-card-id {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6366f1;
+        background: #eef2ff;
+        padding: 0.25rem 0.625rem;
+        border-radius: 6px;
+    }
+
+    .srl-card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .srl-card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+    }
+
+    .srl-card-meta span {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    .srl-card-meta i {
+        color: #6366f1;
+        opacity: 0.7;
+    }
+
+    .srl-card-desc {
+        font-size: 0.875rem;
+        color: #374151;
+        line-height: 1.5;
+    }
+
+    .srl-card-side {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    .srl-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: white;
+    }
+
+    .srl-status.new { background: var(--secondary-gradient); }
+    .srl-status.reviewed { background: var(--warning-gradient); }
+    .srl-status.converted { background: var(--success-gradient); }
+    .srl-status.rejected { background: var(--danger-gradient); }
+    .srl-status.closed { background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%); }
+    .srl-status.deleted { background: linear-gradient(135deg, #ef4444 0%, #fb7185 100%); }
+
+    .btn-view {
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.8rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+    }
+
+    .btn-view:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+        color: white;
+    }
+
+    .btn-delete {
+        background: linear-gradient(135deg, #ef4444 0%, #fb7185 100%);
+        color: white;
+        border: none;
+        padding: 0.45rem 0.9rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.18);
+    }
+
+    .btn-delete:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239,68,68,0.28); }
+
+    /* Empty State */
+    .srl-empty {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: var(--glass-bg);
+        border-radius: 16px;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .srl-empty i {
+        font-size: 4rem;
+        color: #cbd5e1;
+        margin-bottom: 1rem;
+    }
+
+    .srl-empty h3 {
+        color: #475569;
+        margin-bottom: 0.5rem;
+    }
+
+    .srl-empty p {
+        color: #94a3b8;
+    }
+
+    /* View Toggle */
+    .view-toggle {
+        display: flex;
+        gap: 0.25rem;
+        background: white;
+        padding: 0.25rem;
+        border-radius: 10px;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .view-toggle-btn {
+        padding: 0.5rem 0.75rem;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .view-toggle-btn:hover {
+        color: #6366f1;
+    }
+
+    .view-toggle-btn.active {
+        background: var(--primary-gradient);
+        color: white;
+    }
+
+    /* Table View */
+    .srl-table-container {
+        display: none;
+        background: var(--glass-bg);
+        border-radius: 16px;
+        box-shadow: var(--shadow-soft);
+        overflow: hidden;
+    }
+
+    .srl-table-container.active {
+        display: block;
+    }
+
+    .srl-cards.active {
+        display: flex;
+    }
+
+    .srl-cards:not(.active) {
+        display: none;
+    }
+
+    .srl-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .srl-table thead {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    }
+
+    .srl-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: #475569;
+        border-bottom: 2px solid #e2e8f0;
+        white-space: nowrap;
+    }
+
+    .srl-table td {
+        padding: 0.875rem 1rem;
+        font-size: 0.875rem;
+        color: #374151;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+
+    .srl-table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    .srl-table tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    .srl-table .table-id {
+        font-weight: 600;
+        color: #6366f1;
+    }
+
+    .srl-table .table-title {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .srl-table .table-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .srl-table .btn-view-sm {
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.75rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        transition: all 0.2s ease;
+    }
+
+    .srl-table .btn-view-sm:hover {
+        transform: translateY(-1px);
+        color: white;
+    }
+
+    .srl-table .btn-delete-sm {
+        background: linear-gradient(135deg, #ef4444 0%, #fb7185 100%);
+        color: white;
+        border: none;
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.75rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        transition: all 0.2s ease;
+    }
+
+    .srl-table .btn-delete-sm:hover {
+        transform: translateY(-1px);
+        color: white;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .srl-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .srl-toolbar {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .srl-search input {
+            width: 100%;
+        }
+
+        .srl-card {
+            flex-direction: column;
+        }
+
+        .srl-card-side {
+            flex-direction: row;
+            justify-content: space-between;
+            width: 100%;
+            align-items: center;
+        }
+    }
+</style>
+
+<div class="srl-page">
+    <div class="srl-container">
+        <!-- Header -->
+        <div class="srl-header">
+            <div class="srl-title">
+                <div class="srl-title-icon">
+                    <i class="bi bi-list-check"></i>
+                </div>
+                <div>
+                    <h1>คำขอรับบริการทั้งหมด</h1>
+                    <p>จัดการคำขอทั้งหมดจากผู้ใช้งาน</p>
+                </div>
+            </div>
+
+            <div class="srl-toolbar">
+                <div class="srl-stats">
+                    <div class="stat-badge">
+                        <i class="bi bi-file-earmark-text"></i>
+                        ทั้งหมด <strong>{{ requests|length|default:0 }}</strong>
+                    </div>
+                    <div class="stat-badge">
+                        <i class="bi bi-hourglass-split"></i>
+                        รอ <strong id="stat-new">0</strong>
+                    </div>
+                    <div class="stat-badge">
+                        <i class="bi bi-check-circle"></i>
+                        เสร็จ <strong id="stat-conv">0</strong>
+                    </div>
+                    <a href="{% url 'service_request_trash' %}" class="stat-badge" style="text-decoration:none; color:#ef4444;">
+                        <i class="bi bi-trash3"></i>
+                        ถังขยะ <i class="bi bi-arrow-right-short"></i>
+                    </a>
+                </div>
+
+                <div class="srl-search">
+                    <i class="bi bi-search"></i>
+                    <input type="search" id="searchInput" placeholder="ค้นหา...">
+                </div>
+
+                <div class="srl-filters">
+                    <button class="filter-btn active" data-filter="all">ทั้งหมด</button>
+                    <button class="filter-btn" data-filter="new">รอดำเนินการ</button>
+                    <button class="filter-btn" data-filter="reviewed">ตรวจสอบแล้ว</button>
+                    <button class="filter-btn" data-filter="converted">ดำเนินการแล้ว</button>
+                </div>
+
+                <div class="view-toggle">
+                    <button class="view-toggle-btn active" data-view="table" title="มุมมองตาราง">
+                        <i class="bi bi-list-ul"></i>
+                    </button>
+                    <button class="view-toggle-btn" data-view="card" title="มุมมองการ์ด">
+                        <i class="bi bi-grid-fill"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards -->
+        <div class="srl-cards">
+            {% if requests %}
+                {% for r in requests %}
+                <div class="srl-card" data-status="{{ r.status }}">
+                    <div class="srl-card-main">
+                        <div class="srl-card-header">
+                            <span class="srl-card-id">คำขอรับบริการที่ : {{ r.id }}</span>
+                            <span class="srl-card-title">{{ r.title|default:'(ไม่ระบุหัวข้อ)' }}</span>
+                        </div>
+                        <div class="srl-card-meta">
+
+                            <div class="col-md-6 ms-3">
+                            {% if r.equipment %}
+                            <span><i class="bi bi-cpu"></i> {{ r.equipment.equipment_id }}</span>
+                            <span><i class="bi bi-tools"></i> {{ r.equipment.equipment_name_EN }}</span>
+                            <span><i class="bi bi-box"></i> {{ r.equipment.equipment_brand }}</span>
+                            <span><i class="bi bi-tag"></i> {{ r.equipment.equipment_model }}</span>
+                            <span><i class="bi bi-building"></i> {{ r.equipment.equipment_user_customer }}</span>
+                            {% else %}
+                            <span><i class="bi bi-cpu"></i>ไม่มีรหัสอุปกรณ์</span>
+                            {% endif %}
+
+                                {% if r.description %}
+                                <div class="srl-card-desc"><span><i class="bi bi-chat-text"></i>{{ r.description|truncatewords:50 }}</div>
+                                {% endif %}                            
+                            </div>
+
+                            <div>
+                            <span><i class="bi bi-calendar3"></i> {{ r.requested_at|thai_datetime }}</span>
+                            {% if r.customer_name %}
+                            <span><i class="bi bi-person"></i> {{ r.customer_name }}</span>
+                            <span><i class="bi bi-briefcase"></i> {{ r.customer_position }}</span>
+                            <span><i class="bi bi-telephone"></i> {{ r.customer_telephone }}</span>
+                            <span><i class="bi bi-envelope"></i> {{ r.customer_email }}</span>
+                            <span><i class="bi bi-building"></i> {{ r.customer_department }}</span>
+                            {% elif r.requested_by %}
+                            <span><i class="bi bi-person"></i> {{ r.requested_by.get_full_name }}</span>
+                            {% else %}
+                            <span><i class="bi bi-person"></i> ไม่ระบุ</span>
+                            {% endif %}
+                            </div>
+
+                        </div>
+
+                    </div>
+                    <div class="srl-card-side">
+                        <span class="srl-status {{ r.status }}">
+                            {% if r.status == 'new' %}
+                                <i class="bi bi-hourglass-split"></i> รอดำเนินการ
+                            {% elif r.status == 'reviewed' %}
+                                <i class="bi bi-eye"></i> ตรวจสอบแล้ว
+                            {% elif r.status == 'converted' %}
+                                <i class="bi bi-check-circle"></i> ดำเนินการแล้ว
+                            {% elif r.status == 'rejected' %}
+                                <i class="bi bi-x-circle"></i> ปฏิเสธ
+                            {% elif r.status == 'closed' %}
+                                <i class="bi bi-archive"></i> ปิดแล้ว
+                            {% else %}
+                                {{ r.get_status_display }}
+                            {% endif %}
+                        </span>
+                        <a href="{% url 'service_request_detail' r.id %}" class="btn-view">
+                            <i class="bi bi-eye-fill"></i> ดูรายละเอียด
+                        </a>
+                        {% if user.is_authenticated and r.requested_by_id == user.id and not r.converted_to_id %}
+                        <a href="{% url 'service_request_delete' r.id %}" class="btn-delete" title="ลบคำขอ">
+                            <i class="bi bi-trash-fill"></i> ลบ
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="srl-empty">
+                    <i class="bi bi-inbox"></i>
+                    <h3>ยังไม่มีคำขอรับบริการ</h3>
+                    <p>คำขอรับบริการจากผู้ใช้งานจะแสดงที่นี่</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Table View -->
+        <div class="srl-table-container active">
+            {% if requests %}
+            <table class="srl-table">
+                <thead>
+                    <tr>
+                        <th>รหัส</th>
+                        <th>ประเภทงาน</th>
+                        <th>เครื่องมือ</th>
+                        <th>รายละเอียด</th>
+                        <th>ผู้แจ้ง</th>
+                        <th>โทรศัพท์</th>
+                        <th>วันที่แจ้ง</th>
+                        <th>สถานะ</th>
+                        <th>จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in requests %}
+                    <tr class="srl-table-row" data-status="{{ r.status }}">
+                        <td class="table-id">{{ r.display_id }}</td>
+                        <td class="table-title" title="{{ r.get_request_type_display }}">{{ r.get_request_type_display }}</td>
+                        <td>{% if r.equipment %}{{ r.equipment.equipment_id }}{% else %}-{% endif %}
+                        <br> {% if r.equipment %}{{ r.equipment.equipment_name_EN }}{% else %}-{% endif %}
+                        <br> {% if r.equipment %}{{ r.equipment.equipment_brand }}{% else %}-{% endif %}
+                         {% if r.equipment %}{{ r.equipment.equipment_model }}{% else %}-{% endif %}</td>
+                        <td>{{ r.description|truncatewords:30 }}</td>
+                        <td>
+                            {% if r.customer_name %}
+                                {{ r.customer_name }}
+                            {% elif r.requested_by %}
+                                {{ r.requested_by.get_full_name }}
+                            {% else %}
+                                ไม่ระบุ
+                            {% endif %}
+                        </td>
+                        <td>{% if r.customer_telephone %}{{ r.customer_telephone }}{% else %}-{% endif %}</td>
+                        <td>{{ r.requested_at|thai_datetime }}</td>
+                        <td>
+                            <span class="srl-status {{ r.status }}">
+                                {% if r.status == 'new' %}
+                                    <i class="bi bi-hourglass-split"></i> รอ
+                                {% elif r.status == 'reviewed' %}
+                                    <i class="bi bi-eye"></i> ตรวจสอบ
+                                {% elif r.status == 'converted' %}
+                                    <i class="bi bi-check-circle"></i> เสร็จ
+                                {% elif r.status == 'rejected' %}
+                                    <i class="bi bi-x-circle"></i> ปฏิเสธ
+                                {% elif r.status == 'closed' %}
+                                    <i class="bi bi-archive"></i> ปิด
+                                {% else %}
+                                    {{ r.get_status_display }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="table-actions">
+                                <a href="{% url 'service_request_detail' r.id %}" class="btn-view-sm" target="#">
+                                    <i class="bi bi-eye-fill"></i> ดู
+                                </a>
+                                {% if user.is_authenticated and r.requested_by_id == user.id and not r.converted_to_id %}
+                                <a href="{% url 'service_request_delete' r.id %}" class="btn-delete-sm">
+                                    <i class="bi bi-trash-fill"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="srl-empty">
+                <i class="bi bi-inbox"></i>
+                <h3>ยังไม่มีคำขอรับบริการ</h3>
+                <p>คำขอรับบริการจากผู้ใช้งานจะแสดงที่นี่</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = Array.from(document.querySelectorAll('.srl-card'));
+    const tableRows = Array.from(document.querySelectorAll('.srl-table-row'));
+    const cardsContainer = document.querySelector('.srl-cards');
+    const tableContainer = document.querySelector('.srl-table-container');
+    
+    let newCount = 0, convCount = 0;
+    
+    cards.forEach(c => {
+        const s = c.dataset.status;
+        if (s === 'new') newCount++;
+        if (s === 'converted') convCount++;
+    });
+    
+    document.getElementById('stat-new').textContent = newCount;
+    document.getElementById('stat-conv').textContent = convCount;
+
+    // View Toggle
+    const viewBtns = document.querySelectorAll('.view-toggle-btn');
+    viewBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            viewBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const view = btn.dataset.view;
+            if (view === 'card') {
+                cardsContainer.classList.add('active');
+                tableContainer.classList.remove('active');
+            } else {
+                cardsContainer.classList.remove('active');
+                tableContainer.classList.add('active');
+            }
+        });
+    });
+
+    // Filters
+    const filters = document.querySelectorAll('.filter-btn');
+    filters.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filters.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const f = btn.dataset.filter;
+            // Filter cards
+            cards.forEach(c => {
+                c.style.display = (f === 'all' || c.dataset.status === f) ? '' : 'none';
+            });
+            // Filter table rows
+            tableRows.forEach(r => {
+                r.style.display = (f === 'all' || r.dataset.status === f) ? '' : 'none';
+            });
+        });
+    });
+
+    // Search
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase().trim();
+        // Search cards
+        cards.forEach(c => {
+            const text = c.textContent.toLowerCase();
+            c.style.display = text.includes(q) ? '' : 'none';
+        });
+        // Search table rows
+        tableRows.forEach(r => {
+            const text = r.textContent.toLowerCase();
+            r.style.display = text.includes(q) ? '' : 'none';
+        });
+    });
+});
+</script>
+{% endblock %}

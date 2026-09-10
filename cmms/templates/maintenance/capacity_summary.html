@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4" style="max-width:1400px;">
+
+  <!-- ── Page Header ─────────────────────────────────────────────────────── -->
+  <div class="d-flex align-items-start justify-content-between gap-3 mb-4 flex-wrap">
+    <div>
+      <h4 class="mb-1 fw-bold">
+        <i class="bi bi-calendar2-check text-primary me-2"></i>สรุปอัตรากำลังรายวัน
+      </h4>
+      <p class="text-muted small mb-0">
+        แสดงจำนวนงานที่รับได้เพิ่มในแต่ละวัน แยกตามทักษะช่าง (skills_m)
+      </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      <form method="get" class="d-flex gap-2 align-items-center">
+        <label class="small text-muted mb-0">แสดง</label>
+        <select name="days" class="form-select form-select-sm" style="width:90px;" onchange="this.form.submit()">
+          <option value="7"  {% if days == 7  %}selected{% endif %}>7 วัน</option>
+          <option value="14" {% if days == 14 %}selected{% endif %}>14 วัน</option>
+          <option value="21" {% if days == 21 %}selected{% endif %}>21 วัน</option>
+          <option value="30" {% if days == 30 %}selected{% endif %}>30 วัน</option>
+        </select>
+      </form>
+      <a href="{% url 'technician_availability_report' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-person-lines-fill me-1"></i>สถานะช่าง
+      </a>
+      <a href="{% url 'daily_capacity_management' %}" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-sliders me-1"></i>ตั้งค่า Capacity
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Stats Cards ─────────────────────────────────────────────────────── -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-primary bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width:44px;height:44px;flex-shrink:0;">
+              <i class="bi bi-people-fill text-primary fs-5"></i>
+            </div>
+            <div>
+              <div class="fs-4 fw-bold text-dark lh-1">{{ total_active_techs }}</div>
+              <div class="small text-muted mt-1">ช่างที่ใช้งาน</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-success bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width:44px;height:44px;flex-shrink:0;">
+              <i class="bi bi-calendar-check text-success fs-5"></i>
+            </div>
+            <div>
+              <div class="fs-4 fw-bold text-dark lh-1">{{ working_days }}</div>
+              <div class="small text-muted mt-1">วันทำการใน {{ days }} วัน</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-info bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width:44px;height:44px;flex-shrink:0;">
+              <i class="bi bi-tools text-info fs-5"></i>
+            </div>
+            <div>
+              <div class="fs-4 fw-bold text-dark lh-1">{{ skill_headers|length }}</div>
+              <div class="small text-muted mt-1">ประเภททักษะ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body py-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle {% if has_availability_records %}bg-success{% else %}bg-warning{% endif %} bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width:44px;height:44px;flex-shrink:0;">
+              <i class="bi {% if has_availability_records %}bi-check-circle-fill text-success{% else %}bi-exclamation-circle-fill text-warning{% endif %} fs-5"></i>
+            </div>
+            <div>
+              <div class="fs-6 fw-semibold text-dark lh-1">
+                {% if has_availability_records %}มีข้อมูลจริง{% else %}ค่าเริ่มต้น{% endif %}
+              </div>
+              <div class="small text-muted mt-1">สถานะช่างรายวัน</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Warning banner ──────────────────────────────────────────────────── -->
+  {% if not has_availability_records %}
+  <div class="alert alert-warning d-flex gap-3 mb-4" role="alert">
+    <i class="bi bi-exclamation-triangle-fill fs-5 mt-1 flex-shrink-0"></i>
+    <div>
+      <strong>ยังไม่มีข้อมูลสถานะช่างในช่วงนี้</strong> —
+      ระบบใช้ค่าเริ่มต้น <strong>"ปฏิบัติงาน"</strong> ให้ทุกช่าง
+      ดังนั้น capacity จะคำนวณจาก <code>per_day_capacity</code> ของแต่ละช่างเต็ม 100%
+      <a href="{% url 'technician_availability_report' %}" class="alert-link ms-2">
+        → กรอกสถานะช่างรายวัน
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if skill_headers %}
+
+  <!-- ── Legend + Filter toolbar ────────────────────────────────────────── -->
+  <div class="d-flex flex-wrap gap-2 mb-3 align-items-center justify-content-between">
+    <!-- Legend -->
+    <div class="d-flex gap-2 flex-wrap small align-items-center text-muted">
+      <span class="fw-semibold me-1">สี:</span>
+      <span class="d-flex align-items-center gap-1"><span style="width:10px;height:10px;border-radius:2px;background:#dcfce7;border:1px solid #86efac;display:inline-block;"></span>รับงานได้</span>
+      <span class="d-flex align-items-center gap-1"><span style="width:10px;height:10px;border-radius:2px;background:#fef9c3;border:1px solid #fde047;display:inline-block;"></span>ใกล้เต็ม</span>
+      <span class="d-flex align-items-center gap-1"><span style="width:10px;height:10px;border-radius:2px;background:#fee2e2;border:1px solid #fca5a5;display:inline-block;"></span>เต็ม</span>
+      <span class="d-flex align-items-center gap-1"><span style="width:10px;height:10px;border-radius:2px;background:#f1f5f9;border:1px solid #cbd5e1;display:inline-block;"></span>ไม่มีช่าง</span>
+    </div>
+    <!-- Filters -->
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      <!-- Row filter -->
+      <div class="d-flex gap-1 align-items-center">
+        <span class="text-muted small">แถว:</span>
+        <div class="btn-group btn-group-sm" role="group">
+          <button type="button" class="btn btn-dark cap-row-filter active" data-filter="all" style="font-size:0.72rem;padding:2px 8px;">ทั้งหมด</button>
+          <button type="button" class="btn btn-outline-success cap-row-filter" data-filter="available" style="font-size:0.72rem;padding:2px 8px;">รับงานได้</button>
+          <button type="button" class="btn btn-outline-warning cap-row-filter" data-filter="low" style="font-size:0.72rem;padding:2px 8px;color:#92400e;">ใกล้เต็ม</button>
+          <button type="button" class="btn btn-outline-danger cap-row-filter" data-filter="full" style="font-size:0.72rem;padding:2px 8px;">เต็ม</button>
+          <button type="button" class="btn btn-outline-secondary cap-row-filter" data-filter="none" style="font-size:0.72rem;padding:2px 8px;">ไม่มีช่าง</button>
+        </div>
+        <span id="row-filter-badge" class="badge bg-primary" style="display:none;font-size:0.68rem;"></span>
+      </div>
+      <!-- Month filter -->
+      <div class="d-flex gap-1 align-items-center">
+        <span class="text-muted small">เดือน:</span>
+        <select id="month-filter" class="form-select form-select-sm" style="width:auto;font-size:0.72rem;">
+          <option value="">ทั้งหมด</option>
+          {% for row in date_rows %}{% ifchanged row.date|date:"Y-m" %}<option value="{{ row.date|date:'Y-m' }}">{{ row.date|date:"M Y" }}</option>{% endifchanged %}{% endfor %}
+        </select>
+      </div>
+      <!-- Machine/Skill checkbox dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
+                style="font-size:0.72rem;padding:2px 8px;">
+          <i class="bi bi-cpu me-1"></i>ทักษะ <span id="machine-filter-count" class="badge bg-secondary ms-1" style="display:none;"></span>
+        </button>
+        <div class="dropdown-menu p-2" style="min-width:200px;max-height:260px;overflow-y:auto;">
+          <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+            <small class="text-muted">เลือกทักษะที่แสดง</small>
+            <button type="button" class="btn btn-link btn-sm p-0" id="machine-filter-all" style="font-size:0.68rem;">ยกเลิกทั้งหมด</button>
+          </div>
+          {% for sh in skill_headers %}
+          <div class="form-check">
+            <input class="form-check-input machine-cb" type="checkbox" value="{{ forloop.counter0 }}"
+                   id="mcb-{{ forloop.counter0 }}" checked>
+            <label class="form-check-label" for="mcb-{{ forloop.counter0 }}" style="font-size:0.78rem;cursor:pointer;">{{ sh.label }}</label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Capacity Table ──────────────────────────────────────────────────── -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div id="cap-scroll" class="table-responsive" style="max-height:68vh;overflow:auto;cursor:grab;">
+        <table id="cap-table" class="table table-bordered mb-0 align-middle" style="min-width:700px;font-size:0.82rem;">
+
+          <thead>
+            <tr style="background:#1e293b;color:#ffffff;">
+              <th style="min-width:135px;position:sticky;top:0;left:0;z-index:6;background:#1e293b;white-space:nowrap;border-color:#334155;padding:10px 12px;color: #f1f5f9;">
+                วันที่
+              </th>
+              {% for sh in skill_headers %}
+              <th class="text-center" data-col="{{ forloop.counter0 }}" data-label="{{ sh.label }}" style="min-width:115px;position:sticky;top:0;z-index:4;background:#1e293b;color:#f8fafc;border-color:#334155;vertical-align:top;padding:8px 6px;">
+                <div class="fw-semibold" style="font-size:0.8rem;line-height:1.3;">{{ sh.label }}</div>
+                <div style="font-size:0.62rem;opacity:0.7;margin-top:2px;">
+                  <i class="bi bi-people me-1"></i>{{ sh.tech_count }} คน
+                </div>
+              </th>
+              {% endfor %}
+              <th class="text-center" style="min-width:85px;position:sticky;top:0;z-index:4;background:#0f172a;border-color:#1e293b;padding:8px 6px;">
+                <div class="fw-semibold" style="font-size:0.8rem;color: #ffffff;">รวม</div>
+                <div style="font-size:0.62rem;opacity:0.7;margin-top:2px;color: #ffffff;">ทุก skill</div>
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for row in date_rows %}
+
+            {% if row.is_working %}
+            <!-- Working day -->
+            <tr data-row-type="working" data-month="{{ row.date|date:'Y-m' }}" {% if row.date == today %}style="outline:2px solid #3b82f6;outline-offset:-1px;"{% endif %}>
+              <td style="position:sticky;left:0;z-index:1;background:{% if row.date == today %}#eff6ff{% else %}#ffffff{% endif %};white-space:nowrap;border-right:2px solid #e2e8f0;padding:7px 12px;">
+                {% if row.date == today %}
+                <span class="badge bg-primary mb-1" style="font-size:0.58rem;letter-spacing:.3px;">วันนี้</span><br>
+                {% endif %}
+                <div class="fw-semibold">{{ row.date|date:"j M Y" }}</div>
+                <div class="text-muted" style="font-size:0.7rem;">{{ row.weekday_th }}</div>
+              </td>
+
+              {% for col in row.cols %}
+              {% with pop_id="pop-"|add:row.date|date:"Ymd"|add:"-"|add:forloop.counter|stringformat:"s" %}
+              <td class="text-center cap-cell"
+                  data-col="{{ forloop.counter0 }}"
+                  data-cap-status="{% if col.techs == 0 %}none{% elif col.remaining == 0 %}full{% elif col.remaining <= 3 %}low{% else %}available{% endif %}"
+                  style="padding:6px 4px;cursor:{% if col.techs > 0 %}pointer{% else %}default{% endif %};
+                    {% if col.techs == 0 %}background:#f1f5f9;color:#94a3b8;
+                    {% elif col.remaining == 0 %}background:#fee2e2;
+                    {% elif col.remaining <= 3 %}background:#fef9c3;
+                    {% else %}background:#dcfce7;
+                    {% endif %}"
+                  {% if col.techs > 0 %}
+                  data-bs-toggle="popover"
+                  data-bs-trigger="click"
+                  data-bs-html="true"
+                  data-bs-placement="auto"
+                  data-bs-title="{{ col.eq_type }}"
+                  data-bs-content="<div style='font-size:0.78rem;min-width:160px;'>
+                    <div class='fw-semibold text-success mb-1'><i class='bi bi-person-check-fill'></i> มาทำงาน ({{ col.techs }} คน)</div>
+                    {% for n in col.tech_names %}<div>• {{ n }}</div>{% endfor %}
+                    {% if col.off_names %}<div class='fw-semibold text-danger mt-2 mb-1'><i class='bi bi-person-x-fill'></i> ลา/หยุด ({{ col.off_count }} คน)</div>{% for n in col.off_names %}<div>• {{ n }}</div>{% endfor %}{% endif %}
+                    <hr class='my-1'><div class='text-muted'>cap: {{ col.capacity }} | จอง: {{ col.booked }} | เหลือ: {{ col.remaining }}</div>
+                  </div>"
+                  {% else %}
+                  title="{{ col.eq_type }} — ไม่มีช่างทักษะตรง"
+                  {% endif %}>
+                {% if col.techs == 0 %}
+                  <span class="text-muted" style="font-size:0.9rem;">—</span>
+                {% else %}
+                  <div class="fw-bold lh-1"
+                       style="font-size:1rem;
+                         {% if col.remaining == 0 %}color:#dc2626;
+                         {% elif col.remaining <= 3 %}color:#92400e;
+                         {% else %}color:#166534;
+                         {% endif %}">{{ col.remaining }}</div>
+                  <div class="text-muted" style="font-size:0.62rem;margin-top:2px;">จอง {{ col.booked }}/{{ col.capacity }}</div>
+                  <div style="font-size:0.6rem;margin-top:1px;
+                    {% if col.off_count > 0 %}color:#b45309;{% else %}color:#6b7280;{% endif %}">
+                    <i class="bi bi-person-check"></i> {{ col.techs }}/{{ col.tech_total }}
+                    {% if col.off_count > 0 %}<span>(ลา {{ col.off_count }})</span>{% endif %}
+                  </div>
+                {% endif %}
+              </td>
+              {% endwith %}
+              {% endfor %}
+
+              <!-- Row total -->
+              <td class="text-center" style="background:#f8fafc;padding:6px 4px;border-left:2px solid #e2e8f0;">
+                {% if row.total_cap > 0 %}
+                <div class="fw-bold lh-1"
+                     style="font-size:1rem;
+                       {% if row.total_remaining == 0 %}color:#dc2626;
+                       {% elif row.total_remaining <= 5 %}color:#92400e;
+                       {% else %}color:#166534;
+                       {% endif %}">{{ row.total_remaining }}</div>
+                <div class="text-muted" style="font-size:0.62rem;margin-top:2px;">{{ row.total_booked }}/{{ row.total_cap }}</div>
+                {% else %}
+                <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+            </tr>
+
+            {% else %}
+            <!-- Non-working day -->
+            <tr style="background:#f9fafb;" data-month="{{ row.date|date:'Y-m' }}">
+              <td style="position:sticky;left:0;z-index:1;background:#f1f5f9;border-right:2px solid #e2e8f0;padding:7px 12px;white-space:nowrap;">
+                <div class="fw-semibold text-muted">{{ row.date|date:"j M Y" }}</div>
+                <div style="margin-top:3px;">
+                  {% if row.is_holiday %}
+                  <span class="badge bg-danger" style="font-size:0.58rem;">วันหยุดนักขัตฤกษ์</span>
+                  {% if row.holiday_name %}
+                  <div class="text-muted mt-1" style="font-size:0.68rem;white-space:normal;max-width:110px;">{{ row.holiday_name }}</div>
+                  {% endif %}
+                  {% else %}
+                  <span class="badge bg-secondary" style="font-size:0.58rem;">{{ row.weekday_th }}</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td colspan="{{ skill_headers|length|add:1 }}"
+                  class="text-center fst-italic"
+                  style="background:#f9fafb;color:#9ca3af;font-size:0.78rem;">
+                ไม่มีการรับงาน
+              </td>
+            </tr>
+            {% endif %}
+
+            {% empty %}
+            <tr>
+              <td colspan="{{ skill_headers|length|add:2 }}" class="text-center text-muted py-5">
+                <i class="bi bi-calendar-x d-block mb-2 opacity-25" style="font-size:2rem;"></i>
+                ไม่มีข้อมูลในช่วงที่เลือก
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-muted small mt-2 mb-0">
+    <i class="bi bi-info-circle me-1"></i>
+    ตัวเลขใหญ่ = <strong>จำนวนงานที่รับได้เพิ่ม (remaining)</strong> &nbsp;|&nbsp;
+    ตัวเลขเล็ก = จอง/capacity รวม &nbsp;|&nbsp;
+    capacity คำนวณจาก <code>per_day_capacity</code> ของช่างที่มี skills_m ตรงกัน
+  </p>
+
+  {% else %}
+  <!-- No skills configured -->
+  <div class="alert alert-info d-flex gap-3" role="alert">
+    <i class="bi bi-info-circle-fill fs-5 flex-shrink-0 mt-1"></i>
+    <div>
+      <strong>ยังไม่มีข้อมูลทักษะช่าง (skills_m)</strong><br>
+      กรุณากำหนด <strong>ทักษะ / ประเภทอุปกรณ์</strong> ให้กับช่างอย่างน้อย 1 คน
+      เพื่อให้ระบบสามารถคำนวณ capacity แยกตามประเภทเครื่องมือได้
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ── Drag-to-scroll ───────────────────────────────────────────────────────────
+(function () {
+  var el = document.getElementById('cap-scroll');
+  if (!el) return;
+  var isDown = false, startX, startY, scrollLeft, scrollTop;
+
+  el.addEventListener('mousedown', function (e) {
+    // ignore clicks on interactive elements (popover targets, buttons)
+    if (e.target.closest('[data-bs-toggle="popover"]') || e.target.closest('button,a,input,select')) return;
+    isDown = true;
+    el.style.cursor = 'grabbing';
+    startX = e.pageX - el.offsetLeft;
+    startY = e.pageY - el.offsetTop;
+    scrollLeft = el.scrollLeft;
+    scrollTop  = el.scrollTop;
+    e.preventDefault();
+  });
+  document.addEventListener('mouseup',   function () { isDown = false; el.style.cursor = 'grab'; });
+  document.addEventListener('mouseleave', function () { isDown = false; el.style.cursor = 'grab'; });
+  el.addEventListener('mousemove', function (e) {
+    if (!isDown) return;
+    e.preventDefault();
+    el.scrollLeft = scrollLeft - (e.pageX - el.offsetLeft - startX);
+    el.scrollTop  = scrollTop  - (e.pageY - el.offsetTop  - startY);
+  });
+})();
+(function () {
+  var els  = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+  var pops = els.map(function (el) { return new bootstrap.Popover(el, { sanitize: false }); });
+  document.addEventListener('click', function (e) {
+    pops.forEach(function (p) { if (!p._element.contains(e.target)) p.hide(); });
+  });
+  els.forEach(function (el, i) {
+    el.addEventListener('show.bs.popover', function () {
+      pops.forEach(function (p, j) { if (j !== i) p.hide(); });
+    });
+  });
+})();
+
+// ── Row filter + Month filter + Skill checkbox ────────────────────────────
+(function () {
+  var btns      = document.querySelectorAll('.cap-row-filter');
+  var tbody     = document.querySelector('#cap-table tbody');
+  var badge     = document.getElementById('row-filter-badge');
+  var mthSel    = document.getElementById('month-filter');
+  var mchAllBtn = document.getElementById('machine-filter-all');
+  var mchCount  = document.getElementById('machine-filter-count');
+  if (!tbody) return;
+
+  var allCols = [].slice.call(document.querySelectorAll('#cap-table thead [data-col]'))
+    .map(function (th) { return th.dataset.col; });
+
+  function setColVisible(idx, show) {
+    document.querySelectorAll('[data-col="' + idx + '"]').forEach(function (el) {
+      el.style.display = show ? '' : 'none';
+    });
+  }
+
+  function getCheckedCols() {
+    return [].slice.call(document.querySelectorAll('.machine-cb:checked'))
+      .map(function (cb) { return cb.value; });
+  }
+
+  function applyFilters() {
+    var activeBtn = document.querySelector('.cap-row-filter.active');
+    var f        = activeBtn ? activeBtn.dataset.filter : 'all';
+    var mth      = mthSel ? mthSel.value : '';
+    var checked  = getCheckedCols();
+    var total    = document.querySelectorAll('.machine-cb').length;
+    var allOn    = checked.length === total;
+
+    // update count badge on button
+    if (mchCount) {
+      if (allOn) { mchCount.style.display = 'none'; }
+      else { mchCount.textContent = checked.length + '/' + total; mchCount.style.display = 'inline'; }
+    }
+
+    // Step 1: columns that pass checkbox selection
+    var machCols = allOn ? allCols.slice() : checked;
+
+    // Step 2: filter rows by month + status
+    var workingRows = [].slice.call(tbody.querySelectorAll('tr[data-row-type="working"]'));
+    [].slice.call(tbody.querySelectorAll('tr')).forEach(function (row) {
+      if (mth && (row.dataset.month || '') !== mth) { row.style.display = 'none'; return; }
+      if (row.dataset.rowType !== 'working') { row.style.display = ''; return; }
+      if (f === 'all') { row.style.display = ''; return; }
+      var match = [].slice.call(row.querySelectorAll('.cap-cell[data-cap-status]'))
+        .some(function (c) { return machCols.indexOf(c.dataset.col) !== -1 && c.dataset.capStatus === f; });
+      row.style.display = match ? '' : 'none';
+    });
+
+    // Step 3: final columns = machCols ∩ (cols with matching status in visible rows)
+    var finalCols = f === 'all' ? machCols : machCols.filter(function (idx) {
+      return workingRows.some(function (row) {
+        if (row.style.display === 'none') return false;
+        var cell = row.querySelector('.cap-cell[data-col="' + idx + '"]');
+        return cell && cell.dataset.capStatus === f;
+      });
+    });
+    allCols.forEach(function (idx) { setColVisible(idx, finalCols.indexOf(idx) !== -1); });
+
+    // Step 4: update badge
+    if (badge) {
+      var visCount = workingRows.filter(function (r) { return r.style.display !== 'none'; }).length;
+      var hasFilter = f !== 'all' || mth || !allOn;
+      badge.textContent = hasFilter ? visCount + ' วัน' : '';
+      badge.style.display = hasFilter ? 'inline' : 'none';
+    }
+  }
+
+  btns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      btns.forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      applyFilters();
+    });
+  });
+  if (mthSel) mthSel.addEventListener('change', applyFilters);
+
+  document.querySelectorAll('.machine-cb').forEach(function (cb) {
+    cb.addEventListener('change', applyFilters);
+  });
+
+  if (mchAllBtn) {
+    mchAllBtn.addEventListener('click', function () {
+      var cbs = [].slice.call(document.querySelectorAll('.machine-cb'));
+      var allChecked = cbs.every(function (c) { return c.checked; });
+      cbs.forEach(function (c) { c.checked = !allChecked; });
+      mchAllBtn.textContent = allChecked ? 'เลือกทั้งหมด' : 'ยกเลิกทั้งหมด';
+      applyFilters();
+    });
+  }
+})();
+</script>
+{% endblock %}
+

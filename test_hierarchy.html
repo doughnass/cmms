@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Hierarchy Dropdown</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .checkbox-dropdown-option {
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+        }
+        .checkbox-dropdown-option[data-level="0"] { padding-left: 10px; background: #f9f9f9; }
+        .checkbox-dropdown-option[data-level="1"] { padding-left: 30px; background: #f0f0f0; }
+        .checkbox-dropdown-option[data-level="2"] { padding-left: 50px; background: #e8e8e8; }
+        .checkbox-dropdown-option.is-parent { font-weight: bold; }
+        .checkbox-dropdown-option input[type="checkbox"] { margin-right: 10px; }
+        .master-node-toggle {
+            background: none;
+            border: none;
+            padding: 0 5px;
+            cursor: pointer;
+            color: #007bff;
+            margin-right: 5px;
+        }
+        .toggle-icon { font-size: 0.85em; }
+        .hidden-item { display: none !important; opacity: 0.5; }
+    </style>
+</head>
+<body>
+    <h1>Test Hierarchy Toggle</h1>
+    <div class="checkbox-dropdown-options" id="options">
+        <!-- Will be populated by JavaScript -->
+    </div>
+
+    <script>
+        // Test data
+        var testData = [
+            { label: 'Parent A', ancestors: '' },
+            { label: 'Child A1', ancestors: 'Parent A' },
+            { label: 'Grandchild A1a', ancestors: 'Parent A > Child A1' },
+            { label: 'Grandchild A1b', ancestors: 'Parent A > Child A1' },
+            { label: 'Child A2', ancestors: 'Parent A' },
+            { label: 'Parent B', ancestors: '' },
+            { label: 'Child B1', ancestors: 'Parent B' },
+        ];
+
+        function renderOptions() {
+            var container = document.getElementById('options');
+            testData.forEach(function(item) {
+                var div = document.createElement('div');
+                div.className = 'checkbox-dropdown-option';
+                div.setAttribute('data-ancestors', item.ancestors);
+                
+                var ancestors = item.ancestors.trim();
+                var level = ancestors ? (ancestors.match(/>/g) || []).length : 0;
+                div.setAttribute('data-level', level);
+                
+                var checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = item.label;
+                
+                var label = document.createElement('label');
+                label.textContent = item.label;
+                label.style.cursor = 'pointer';
+                label.style.margin = '0';
+                
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+        }
+
+        function setupHierarchy() {
+            var options = document.querySelectorAll('.checkbox-dropdown-option');
+            var optionsArray = Array.from(options);
+            
+            // Step 1: Calculate levels
+            optionsArray.forEach(function(option) {
+                var ancestors = (option.getAttribute('data-ancestors') || '').trim();
+                var level = 0;
+                if(ancestors) {
+                    level = (ancestors.match(/>/g) || []).length;
+                }
+                option.setAttribute('data-level', level);
+            });
+            
+            // Step 2: Identify parents and attach toggle buttons
+            optionsArray.forEach(function(option) {
+                var level = parseInt(option.getAttribute('data-level') || 0);
+                var label = option.querySelector('label').textContent.trim();
+                
+                // Check if this has direct children (level + 1)
+                var hasChildren = optionsArray.some(function(other) {
+                    var otherLevel = parseInt(other.getAttribute('data-level') || 0);
+                    var otherAncestors = (other.getAttribute('data-ancestors') || '').trim();
+                    return otherLevel === level + 1 && otherAncestors.endsWith(label);
+                });
+                
+                if(hasChildren) {
+                    option.classList.add('is-parent');
+                    option.setAttribute('data-parent-label', label);
+                    
+                    // Create toggle button
+                    var toggleBtn = document.createElement('button');
+                    toggleBtn.className = 'master-node-toggle';
+                    toggleBtn.type = 'button';
+                    toggleBtn.innerHTML = '<i class="bi bi-caret-right-fill toggle-icon"></i>';
+                    toggleBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleNode(option);
+                    });
+                    
+                    // Insert before checkbox
+                    var checkbox = option.querySelector('input[type="checkbox"]');
+                    checkbox.parentNode.insertBefore(toggleBtn, checkbox);
+                }
+            });
+            
+            // Step 3: Collapse all by default
+            optionsArray.forEach(function(option) {
+                var level = parseInt(option.getAttribute('data-level') || 0);
+                if(level > 0) {
+                    option.style.display = 'none';
+                }
+                if(option.classList.contains('is-parent')) {
+                    option.classList.add('collapsed');
+                }
+            });
+        }
+
+        function toggleNode(option) {
+            var level = parseInt(option.getAttribute('data-level') || 0);
+            var label = option.getAttribute('data-parent-label');
+            
+            // Toggle collapsed state
+            option.classList.toggle('collapsed');
+            var nowCollapsed = option.classList.contains('collapsed');
+            
+            // Update icon
+            var icon = option.querySelector('.toggle-icon');
+            if(icon) {
+                if(nowCollapsed) {
+                    icon.className = 'bi bi-caret-right-fill toggle-icon';
+                } else {
+                    icon.className = 'bi bi-caret-down-fill toggle-icon';
+                }
+            }
+            
+            // Show/hide direct children
+            var allOptions = document.querySelectorAll('.checkbox-dropdown-option');
+            allOptions.forEach(function(child) {
+                var childLevel = parseInt(child.getAttribute('data-level') || 0);
+                var childAncestors = (child.getAttribute('data-ancestors') || '').trim();
+                
+                // Is this a direct child?
+                if(childLevel === level + 1 && childAncestors.endsWith(label)) {
+                    if(nowCollapsed) {
+                        child.style.display = 'none';
+                        // Also collapse child parents
+                        if(child.classList.contains('is-parent')) {
+                            child.classList.add('collapsed');
+                            var childIcon = child.querySelector('.toggle-icon');
+                            if(childIcon) {
+                                childIcon.className = 'bi bi-caret-right-fill toggle-icon';
+                            }
+                        }
+                    } else {
+                        child.style.display = '';
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            renderOptions();
+            setupHierarchy();
+        });
+    </script>
+</body>
+</html>

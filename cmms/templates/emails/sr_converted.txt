@@ -1,0 +1,10 @@
+Service Request {{ sr.display_id }} has been converted to WorkOrder #{{ wo.id }}
+
+SR Title: {{ sr.title }}
+WorkOrder: {{ wo.title }}
+
+View SR: {{ site_url }}{% url 'service_request_detail' sr.id %}
+View WO: {{ site_url }}{% url 'workorder_detail' wo.id %}
+
+Note:
+{{ note }}

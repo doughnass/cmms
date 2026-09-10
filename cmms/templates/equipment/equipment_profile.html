@@ -1,0 +1,467 @@
+{% extends "base.html" %}
+{% load static %}
+{% load thai_dates %}
+
+{% block title %}<title>CMMS MedCMU : โปรไฟล์เครื่องมือ</title>{% endblock %}
+
+{% block content %}
+<style>
+:root {
+  --card-bg: #ffffff;
+  --paper-bg: #f4f6f8;
+  --ink: #1f2937;
+  --sub: #6b7280;
+  --line: #d7dde3;
+  --teal: #0f766e;
+  --teal-soft: #ccfbf1;
+  --amber: #b45309;
+  --amber-soft: #fef3c7;
+  --rose: #b91c1c;
+  --rose-soft: #fee2e2;
+  --slate-soft: #e5e7eb;
+}
+.profile-wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+.profile-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0rem;
+  margin-bottom: 1rem;
+}
+.profile-head h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+.profile-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.profile-btn {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: #111827;
+  border-radius: 0.55rem;
+  padding: 0.42rem 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.profile-btn.primary {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+.card-paper {
+  background: linear-gradient(165deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+.card-hero {
+  background: linear-gradient(120deg, #0f766e 0%, #115e59 55%, #1f2937 100%);
+  color: #fff;
+  padding: 1.2rem 1.3rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+}
+.hero-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.18);
+  margin-bottom: 0.55rem;
+}
+.hero-name {
+  font-size: 1.12rem;
+  font-weight: 800;
+  margin: 0;
+}
+.hero-sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  opacity: 0.92;
+}
+.hero-qr {
+  width: 116px;
+  height: 116px;
+  background: #fff;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(255,255,255,0.45);
+  padding: 0.4rem;
+}
+.hero-qr-panel {
+  width: 116px;
+  display: grid;
+  gap: 0.45rem;
+}
+.hero-qr-link {
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: rgba(255,255,255,0.92);
+  word-break: break-all;
+}
+.hero-qr-link a {
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: rgba(255,255,255,0.45);
+}
+.hero-qr-link a:hover {
+  color: #bfdbfe;
+}
+.grid-main {
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 0.8rem;
+}
+.section {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  padding: 0.85rem;
+}
+.section h3 {
+  margin: 0 0 0.65rem;
+  font-size: 0.86rem;
+  color: #374151;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.kv {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 0.45rem 0.75rem;
+  font-size: 0.86rem;
+}
+.kv .k {
+  color: var(--sub);
+  font-weight: 700;
+}
+.kv .v {
+  color: var(--ink);
+  font-weight: 600;
+  word-break: break-word;
+}
+.states {
+  display: grid;
+  gap: 0.55rem;
+}
+.state-row {
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  display: grid;
+  gap: 0.2rem;
+}
+.state-row.ok { background: var(--teal-soft); border-color: #99f6e4; }
+.state-row.warn { background: var(--amber-soft); border-color: #fcd34d; }
+.state-row.danger { background: var(--rose-soft); border-color: #fca5a5; }
+.state-row.muted { background: #f8fafc; }
+.state-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.state-top strong {
+  font-size: 0.82rem;
+  color: #1f2937;
+}
+.state-date {
+  font-size: 0.74rem;
+  color: #4b5563;
+  font-weight: 700;
+}
+.state-text {
+  font-size: 0.81rem;
+  font-weight: 700;
+}
+.state-row.ok .state-text { color: var(--teal); }
+.state-row.warn .state-text { color: var(--amber); }
+.state-row.danger .state-text { color: var(--rose); }
+.state-row.muted .state-text { color: #6b7280; }
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+  margin-bottom: 0.7rem;
+}
+.stat {
+  background: #fff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 0.6rem;
+  padding: 0.55rem;
+}
+.stat .n {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #111827;
+}
+.stat .l {
+  font-size: 0.73rem;
+  color: #6b7280;
+  font-weight: 700;
+}
+.wo-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+.wo-item {
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  padding: 0.5rem;
+  background: #fff;
+}
+.wo-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0 0 0.2rem;
+}
+.wo-meta {
+  font-size: 0.72rem;
+  color: #6b7280;
+}
+.print-note {
+  margin-top: 0.8rem;
+  font-size: 0.74rem;
+  color: #6b7280;
+}
+@keyframes repair-glow {
+  0%, 100% { box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35); }
+  50% { box-shadow: 0 6px 24px rgba(245, 158, 11, 0.55); }
+}
+.btn-repair-cta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%);
+  color: white;
+  border: none;
+  border-radius: 0.875rem;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  animation: repair-glow 2.8s ease-in-out infinite;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  margin-top: 1.25rem;
+}
+.btn-repair-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 55%);
+  pointer-events: none;
+}
+.btn-repair-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.55) !important;
+  animation: none;
+  color: white;
+  text-decoration: none;
+}
+.btn-repair-cta:active {
+  transform: translateY(0);
+}
+.btn-repair-cta-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+.btn-repair-cta-body {
+  flex: 1;
+  min-width: 0;
+}
+.btn-repair-cta-title {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+}
+.btn-repair-cta-sub {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  opacity: 0.88;
+  margin-top: 0.15rem;
+}
+.btn-repair-cta-arrow {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  opacity: 0.75;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.btn-repair-cta:hover .btn-repair-cta-arrow {
+  transform: translateX(5px);
+  opacity: 1;
+}
+@media (max-width: 900px) {
+  .grid-main {
+    grid-template-columns: 1fr;
+  }
+  .kv {
+    grid-template-columns: 1fr;
+  }
+  .card-hero {
+    grid-template-columns: 1fr;
+  }
+}
+@media print {
+  .profile-head { display: none !important; }
+  .profile-wrap { max-width: 100%; padding: 0; }
+  .card-paper { box-shadow: none; border: 1px solid #94a3b8; }
+  .btn-repair-cta { display: none !important; }
+}
+</style>
+
+<div class="profile-wrap">
+  <div class="profile-head">
+    <h1><i class="bi bi-person-vcard"></i> โปรไฟล์เครื่องมือ</h1>
+    <div class="profile-actions">
+      <a href="{% url 'equipment_list' %}" class="profile-btn"><i class="bi bi-arrow-left"></i> กลับรายการ</a>
+      <a href="{% url 'edit_equipment' equipment.id %}" class="profile-btn"><i class="bi bi-pencil-square"></i> แก้ไข</a>
+      <button type="button" onclick="window.print()" class="profile-btn primary"><i class="bi bi-printer"></i> พิมพ์โปรไฟล์</button>
+    </div>
+  </div>
+
+  <article class="card-paper">
+    <div class="card-hero">
+      <div>
+        <div class="hero-id"><i class="bi bi-qr-code"></i> {{ equipment.equipment_id|default:"-" }}</div>
+        <h2 class="hero-name">{{ equipment.equipment_name_TH|default:"ไม่ระบุชื่อเครื่อง" }}</h2>
+        <p class="hero-sub">{{ equipment.equipment_name_EN|default:"-" }}</p>
+      </div>
+      <div class="hero-qr-panel">
+        <img class="hero-qr" src="{{ qr_image_url }}" alt="QR {{ equipment.equipment_id }}">
+        <!-- <div class="hero-qr-link">
+          ข้อความที่จะเข้ารหัส:
+          <a href="{{ qr_payload }}" target="_blank" rel="noopener noreferrer">{{ qr_payload }}</a>
+        </div> -->
+      </div>
+    </div>
+
+    <div class="grid-main">
+      <section class="section">
+        <h3>ข้อมูลประจำเครื่อง</h3>
+        <div class="kv">
+          <div class="k">รหัสเครื่อง</div><div class="v">{{ equipment.equipment_id|default:"-" }}</div>
+          <div class="k">ยี่ห้อ / รุ่น</div><div class="v">{{ equipment.equipment_brand|default:"-" }} / {{ equipment.equipment_model|default:"-" }}</div>
+          <div class="k">Serial Number</div><div class="v">{{ equipment.equipment_sn|default:"-" }}</div>
+          <div class="k">เลขครุภัณฑ์</div><div class="v">{{ equipment.equipment_gov|default:"-" }}</div>
+          <div class="k">ประเภทเครื่องมือ</div><div class="v">{{ equipment.equipment_type|default:"-" }}</div>
+          <div class="k">เจ้าของ</div><div class="v">{{ equipment.equipment_owner_customer|default:"-" }}</div>
+          <div class="k">ผู้ใช้งาน</div><div class="v">{{ equipment.equipment_user_customer|default:"-" }}</div>
+          <div class="k">ผู้ให้บริการ</div><div class="v">{{ equipment.equipment_service_provider|default:"-" }}</div>
+          <div class="k">หมายเหตุ</div><div class="v">{{ equipment.equipment_note|default:"-" }}</div>
+          <div class="k">ขึ้นทะเบียนโดย</div><div class="v">{{ equipment.created_by|default:equipment.equipment_register_adminname|default:"-" }} ({{ equipment.created_at|thai_datetime }})</div>
+          <div class="k">แก้ไขทะเบียนล่าสุด</div><div class="v">{{ equipment.updated_by|default:"-" }} ({{ equipment.updated_at|thai_datetime }})</div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>สถานะความพร้อม</h3>
+        <div class="states">
+          <div class="state-row {{ due_pm.tone }}">
+            <div class="state-top"><strong>PM</strong><span class="state-date">{{ equipment.equipment_pm_due|thai_date|default:"-" }}</span></div>
+            <div class="state-text">{{ due_pm.text }}</div>
+          </div>
+          <div class="state-row {{ due_cal.tone }}">
+            <div class="state-top"><strong>CAL</strong><span class="state-date">{{ equipment.equipment_cal_due|thai_date|default:"-" }}</span></div>
+            <div class="state-text">{{ due_cal.text }}</div>
+          </div>
+          <div class="state-row {{ due_warranty.tone }}">
+            <div class="state-top"><strong>Warranty</strong><span class="state-date">{{ equipment.equipment_waranty_due|thai_date|default:"-" }}</span></div>
+            <div class="state-text">{{ due_warranty.text }}</div>
+          </div>
+        </div>
+
+        <h3 style="margin-top:0.9rem;">งานซ่อม/บำรุง</h3>
+        <div class="stats">
+          <div class="stat"><div class="n">{{ total_workorders }}</div><div class="l">งานทั้งหมด</div></div>
+          <div class="stat"><div class="n">{{ active_workorders }}</div><div class="l">งานค้างดำเนินการ</div></div>
+        </div>
+
+        <ul class="wo-list">
+          {% for wo in latest_workorders %}
+            <li class="wo-item">
+              <div class="wo-title">{{ wo.workorder_id|default:"WO" }} - {{ wo.title|default:"ไม่มีหัวข้อ" }}</div>
+              <div class="wo-meta">สถานะ: {{ wo.get_status_display|default:wo.status }} | วันที่แจ้ง: {{ wo.reported_at|thai_datetime }}</div>
+            </li>
+          {% empty %}
+            <li class="wo-item"><div class="wo-meta">ยังไม่มีประวัติงานซ่อม/บำรุง</div></li>
+          {% endfor %}
+        </ul>
+      </section>
+    </div>
+  </article>
+
+  <button type="button" onclick="requestServiceForEquipment()" class="btn-repair-cta">
+    <div class="btn-repair-cta-icon">
+      <i class="bi bi-wrench-adjustable-circle-fill"></i>
+    </div>
+    <div class="btn-repair-cta-body">
+      <span class="btn-repair-cta-title">แจ้งซ่อม / บริการ</span>
+      <span class="btn-repair-cta-sub">สร้างใบแจ้งซ่อมสำหรับเครื่องมือนี้</span>
+    </div>
+    <div class="btn-repair-cta-arrow">
+      <i class="bi bi-arrow-right-circle-fill"></i>
+    </div>
+  </button>
+
+  <script>
+  function requestServiceForEquipment() {
+    const prefill = {
+      service_type: 'repair',
+      equipment_id: '{{ equipment.id }}',
+      equipment_code: '{{ equipment.equipment_id|escapejs }}',
+      equipment_name: '{{ equipment.equipment_name_TH|escapejs }}',
+      equipment_name_en: '{{ equipment.equipment_name_EN|escapejs }}',
+      equipment_brand: '{{ equipment.equipment_brand|escapejs }}',
+      equipment_model: '{{ equipment.equipment_model|escapejs }}',
+      equipment_sn: '{{ equipment.equipment_sn|escapejs }}',
+      equipment_gov: '{{ equipment.equipment_gov|escapejs }}',
+      equipment_user_customer: '{{ equipment.equipment_user_customer|escapejs }}',
+      equipment_owner_customer: '{{ equipment.equipment_owner_customer|escapejs }}',
+      source: 'equipment_profile',
+      source_url: window.location.href
+    };
+    try {
+      sessionStorage.setItem('prefill_service_request', JSON.stringify(prefill));
+    } catch(e) {
+      console.error('Failed to save prefill data:', e);
+    }
+    window.location.href = '{% url "service_request_create" %}';
+  }
+  </script>
+
+  <div class="print-note">
+    เอกสารนี้สำหรับการแสดงทะเบียนเครื่องมือแบบหน้างานและพิมพ์เก็บเอกสาร
+  </div>
+</div>
+{% endblock %}

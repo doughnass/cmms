@@ -1,0 +1,663 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}<title>CMMS MedCMU : รายงาน KPI แบบพิมพ์</title>{% endblock %}
+
+{% block extra_head %}
+<style>
+@media print {
+  body { padding-top: 0 !important; }
+  .navbar, .footer, .no-print { display: none !important; }
+  .print-container { max-width: 100% !important; padding: 0 !important; }
+  .page-break { page-break-after: always; }
+  .kpi-card, .section-card { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<style>
+.print-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: white;
+}
+
+/* Print Header */
+.print-header {
+  border-bottom: 3px solid #667eea;
+  padding-bottom: 1.5rem;
+  margin-top: 4rem;
+  margin-bottom: 2rem;
+}
+
+.print-logo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.print-logo img {
+  height: 60px;
+}
+
+.print-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.print-subtitle {
+  color: #6b7280;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.report-info {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-label {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.info-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Section Headers */
+.section-header {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 2rem 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Summary Grid */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.summary-card {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.summary-card.highlight {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8edff 100%);
+}
+
+.summary-card.success {
+  border-color: #10b981;
+  background: linear-gradient(135deg, #d1fae5 0%, #c6f6d5 100%);
+}
+
+.summary-card.warning {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.summary-card.danger {
+  border-color: #ef4444;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+}
+
+.summary-label {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.summary-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.summary-target {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* Data Table */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+}
+
+.data-table thead {
+  background: #f9fafb;
+}
+
+.data-table th {
+  padding: 0.875rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+  border: 1px solid #e5e7eb;
+}
+
+.data-table td {
+  padding: 0.875rem;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+  font-size: 0.9rem;
+}
+
+.data-table tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+.data-table tbody tr:hover {
+  background: #f3f4f6;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-excellent { background: #d1fae5; color: #065f46; }
+.status-good { background: #dbeafe; color: #1e40af; }
+.status-fair { background: #fef3c7; color: #92400e; }
+.status-poor { background: #fee2e2; color: #991b1b; }
+
+/* Trend Indicator */
+.trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.trend.up { color: #059669; }
+.trend.down { color: #dc2626; }
+.trend.stable { color: #6b7280; }
+
+/* Analysis Section */
+.analysis-box {
+  background: #f9fafb;
+  border-left: 4px solid #667eea;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+}
+
+.analysis-box h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.75rem 0;
+}
+
+.analysis-box p {
+  margin: 0 0 0.5rem 0;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.analysis-box ul {
+  margin: 0.5rem 0 0 1.5rem;
+  color: #4b5563;
+}
+
+.analysis-box.success { border-left-color: #10b981; background: #f0fdf4; }
+.analysis-box.warning { border-left-color: #f59e0b; background: #fffbeb; }
+.analysis-box.danger { border-left-color: #ef4444; background: #fef2f2; }
+
+/* Signature Section */
+.signature-section {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 2px solid #e5e7eb;
+}
+
+.signature-box {
+  text-align: center;
+}
+
+.signature-line {
+  border-top: 1px solid #374151;
+  margin: 3rem auto 0.5rem;
+  width: 200px;
+}
+
+.signature-label {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.signature-name {
+  font-weight: 600;
+  color: #111827;
+  margin-top: 0.25rem;
+}
+
+/* Footer */
+.report-footer {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+@media print {
+  @page { margin: 1.5cm; }
+}
+</style>
+
+<div class="print-container">
+  <!-- Print Header -->
+  <div class="print-header">
+    <div class="print-logo">
+      <img src="{% static 'cmms/medcmu.png' %}" alt="MedCMU Logo">
+      <div>
+        <h1 class="print-title">รายงานตัวชี้วัดความสำเร็จ (KPI Report)</h1>
+        <p class="print-subtitle">ระบบบริหารจัดการเครื่องมือแพทย์ คณะแพทยศาสตร์ มหาวิทยาลัยเชียงใหม่</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Info -->
+  <div class="report-info">
+    <div class="info-item">
+      <span class="info-label">ช่วงเวลารายงาน</span>
+      <span class="info-value">1 มิถุนายน 2026 - 30 มิถุนายน 2026</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">วันที่ออกรายงาน</span>
+      <span class="info-value">23 มิถุนายน 2026</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">ผู้จัดทำรายงาน</span>
+      <span class="info-value">ฝ่ายบำรุงรักษาเครื่องมือแพทย์</span>
+    </div>
+  </div>
+
+  <!-- Executive Summary -->
+  <h2 class="section-header">
+    <i class="bi bi-file-text"></i>
+    สรุปผลการดำเนินงาน
+  </h2>
+
+  <div class="summary-grid">
+    <div class="summary-card success">
+      <div class="summary-label">อัตราการดำเนินการเสร็จสิ้น</div>
+      <div class="summary-value">94.5%</div>
+      <div class="summary-target">เป้าหมาย: 90%</div>
+    </div>
+    <div class="summary-card success">
+      <div class="summary-label">เวลาการใช้งานเครื่องมือ</div>
+      <div class="summary-value">98.3%</div>
+      <div class="summary-target">เป้าหมาย: 95%</div>
+    </div>
+    <div class="summary-card highlight">
+      <div class="summary-label">เวลาเฉลี่ยในการซ่อม</div>
+      <div class="summary-value">3.2 ชม.</div>
+      <div class="summary-target">เป้าหมาย: 4 ชม.</div>
+    </div>
+    <div class="summary-card warning">
+      <div class="summary-label">การปฏิบัติตามแผน PM</div>
+      <div class="summary-value">87.2%</div>
+      <div class="summary-target">เป้าหมาย: 95%</div>
+    </div>
+  </div>
+
+  <!-- Key Findings -->
+  <h2 class="section-header">
+    <i class="bi bi-lightbulb"></i>
+    ประเด็นสำคัญ
+  </h2>
+
+  <div class="analysis-box success">
+    <h4>✓ จุดแข็ง</h4>
+    <ul>
+      <li>อัตราการดำเนินการเสร็จสิ้นสูงถึง 94.5% เกินเป้าหมาย 4.5%</li>
+      <li>เวลาการใช้งานเครื่องมือ (Uptime) อยู่ที่ระดับดีเยี่ยม 98.3%</li>
+      <li>เวลาเฉลี่ยในการซ่อม (MTTR) ลดลงเหลือ 3.2 ชั่วโมง ดีกว่าเป้าหมาย</li>
+      <li>อัตราซ่อมสำเร็จครั้งแรก (First Time Fix) สูงถึง 91.3%</li>
+    </ul>
+  </div>
+
+  <div class="analysis-box warning">
+    <h4>⚠ จุดที่ต้องปรับปรุง</h4>
+    <ul>
+      <li>การปฏิบัติตามแผน PM อยู่ที่ 87.2% ต่ำกว่าเป้าหมาย 7.8%</li>
+      <li>งานค้างทำ (Backlog) ยังมี 23 งาน เกินเป้าหมาย 8 งาน</li>
+      <li>ค่าใช้จ่ายการบำรุงรักษาใกล้ถึงงบประมาณที่กำหนดไว้</li>
+    </ul>
+  </div>
+
+  <!-- Detailed KPI Table -->
+  <h2 class="section-header">
+    <i class="bi bi-table"></i>
+    รายละเอียดตัวชี้วัดทั้งหมด
+  </h2>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>ตัวชี้วัด (KPI)</th>
+        <th>ผลลัพธ์</th>
+        <th>เป้าหมาย</th>
+        <th>ผลต่าง</th>
+        <th>แนวโน้ม</th>
+        <th>สถานะ</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>อัตราการดำเนินการเสร็จสิ้น (Work Order Completion Rate)</td>
+        <td><strong>94.5%</strong></td>
+        <td>90%</td>
+        <td>+4.5%</td>
+        <td><span class="trend up"><i class="bi bi-arrow-up"></i> +5.2%</span></td>
+        <td><span class="status-badge status-excellent">ดีเยี่ยม</span></td>
+      </tr>
+      <tr>
+        <td>เวลาเฉลี่ยในการซ่อม (Mean Time To Repair - MTTR)</td>
+        <td><strong>3.2 ชม.</strong></td>
+        <td>4.0 ชม.</td>
+        <td>-0.8 ชม.</td>
+        <td><span class="trend up"><i class="bi bi-arrow-up"></i> +12%</span></td>
+        <td><span class="status-badge status-excellent">ดีเยี่ยม</span></td>
+      </tr>
+      <tr>
+        <td>เวลาการใช้งานเครื่องมือ (Equipment Uptime)</td>
+        <td><strong>98.3%</strong></td>
+        <td>95%</td>
+        <td>+3.3%</td>
+        <td><span class="trend up"><i class="bi bi-arrow-up"></i> +2.1%</span></td>
+        <td><span class="status-badge status-excellent">ดีเยี่ยม</span></td>
+      </tr>
+      <tr>
+        <td>การปฏิบัติตามแผน PM (PM Compliance)</td>
+        <td><strong>87.2%</strong></td>
+        <td>95%</td>
+        <td>-7.8%</td>
+        <td><span class="trend down"><i class="bi bi-arrow-down"></i> -3.5%</span></td>
+        <td><span class="status-badge status-fair">พอใช้</span></td>
+      </tr>
+      <tr>
+        <td>เวลาตอบสนองเฉลี่ย (Average Response Time)</td>
+        <td><strong>1.8 ชม.</strong></td>
+        <td>2.0 ชม.</td>
+        <td>-0.2 ชม.</td>
+        <td><span class="trend up"><i class="bi bi-arrow-up"></i> +8%</span></td>
+        <td><span class="status-badge status-good">ดี</span></td>
+      </tr>
+      <tr>
+        <td>ค่าใช้จ่ายการบำรุงรักษา (Maintenance Cost)</td>
+        <td><strong>฿285,000</strong></td>
+        <td>฿300,000</td>
+        <td>฿15,000</td>
+        <td><span class="trend down"><i class="bi bi-arrow-down"></i> +15%</span></td>
+        <td><span class="status-badge status-fair">พอใช้</span></td>
+      </tr>
+      <tr>
+        <td>งานค้างทำ (Work Order Backlog)</td>
+        <td><strong>23 งาน</strong></td>
+        <td>≤15 งาน</td>
+        <td>+8 งาน</td>
+        <td><span class="trend down"><i class="bi bi-arrow-down"></i> -18%</span></td>
+        <td><span class="status-badge status-fair">พอใช้</span></td>
+      </tr>
+      <tr>
+        <td>อัตราซ่อมสำเร็จครั้งแรก (First Time Fix Rate)</td>
+        <td><strong>91.3%</strong></td>
+        <td>85%</td>
+        <td>+6.3%</td>
+        <td><span class="trend up"><i class="bi bi-arrow-up"></i> +4%</span></td>
+        <td><span class="status-badge status-excellent">ดีเยี่ยม</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Page Break -->
+  <div class="page-break"></div>
+
+  <!-- Work Order Statistics -->
+  <h2 class="section-header">
+    <i class="bi bi-clipboard-data"></i>
+    สถิติการดำเนินงาน
+  </h2>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>รายการ</th>
+        <th>จำนวน</th>
+        <th>ร้อยละ</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>งานทั้งหมด</td>
+        <td><strong>200 งาน</strong></td>
+        <td>100%</td>
+      </tr>
+      <tr>
+        <td>งานที่เสร็จสิ้น</td>
+        <td>189 งาน</td>
+        <td>94.5%</td>
+      </tr>
+      <tr>
+        <td>งานที่กำลังดำเนินการ</td>
+        <td>11 งาน</td>
+        <td>5.5%</td>
+      </tr>
+      <tr>
+        <td colspan="3"><strong>ประเภทการบำรุงรักษา</strong></td>
+      </tr>
+      <tr>
+        <td>การบำรุงรักษาตามแผน (Preventive Maintenance)</td>
+        <td>121 งาน</td>
+        <td>60.5%</td>
+      </tr>
+      <tr>
+        <td>การซ่อมแซมฉุกเฉิน (Emergency Repair)</td>
+        <td>28 งาน</td>
+        <td>14%</td>
+      </tr>
+      <tr>
+        <td>การซ่อมแซมทั่วไป (Corrective Maintenance)</td>
+        <td>35 งาน</td>
+        <td>17.5%</td>
+      </tr>
+      <tr>
+        <td>การปรับปรุง (Improvement)</td>
+        <td>16 งาน</td>
+        <td>8%</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Equipment Performance -->
+  <h2 class="section-header">
+    <i class="bi bi-trophy"></i>
+    ประสิทธิภาพเครื่องมือ Top 5
+  </h2>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>อันดับ</th>
+        <th>รหัสเครื่องมือ</th>
+        <th>ชื่อเครื่องมือ</th>
+        <th>แผนก</th>
+        <th>Uptime</th>
+        <th>MTTR</th>
+        <th>PM Compliance</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>EQ-2024-001</td>
+        <td>เครื่องตรวจวัดความดันโลหิต</td>
+        <td>OPD</td>
+        <td>99.8%</td>
+        <td>1.2 ชม.</td>
+        <td>100%</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>EQ-2024-015</td>
+        <td>เครื่องตรวจวัดน้ำตาลในเลือด</td>
+        <td>LAB</td>
+        <td>99.5%</td>
+        <td>1.5 ชม.</td>
+        <td>100%</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>EQ-2024-028</td>
+        <td>เครื่อง X-Ray แบบพกพา</td>
+        <td>Radiology</td>
+        <td>98.9%</td>
+        <td>2.1 ชม.</td>
+        <td>95%</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>EQ-2024-042</td>
+        <td>เครื่องช่วยหายใจ Ventilator</td>
+        <td>ICU</td>
+        <td>98.7%</td>
+        <td>1.8 ชม.</td>
+        <td>100%</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>EQ-2024-056</td>
+        <td>เครื่องตรวจคลื่นไฟฟ้าหัวใจ ECG</td>
+        <td>Cardiology</td>
+        <td>98.2%</td>
+        <td>2.3 ชม.</td>
+        <td>95%</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Recommendations -->
+  <h2 class="section-header">
+    <i class="bi bi-hand-thumbs-up"></i>
+    ข้อเสนอแนะและแผนปรับปรุง
+  </h2>
+
+  <div class="analysis-box">
+    <h4>1. การปรับปรุงการปฏิบัติตามแผน PM</h4>
+    <p>เนื่องจากการปฏิบัติตามแผน PM ยังต่ำกว่าเป้าหมาย ควรดำเนินการดังนี้:</p>
+    <ul>
+      <li>จัดทำระบบแจ้งเตือนอัตโนมัติก่อนถึงกำหนด PM 7 วัน</li>
+      <li>ทบทวนตารางแผนงาน PM ให้สอดคล้องกับภาระงานจริง</li>
+      <li>เพิ่มบุคลากรหรือจัดสรรเวลาเพิ่มในช่วงที่มีแผนงาน PM หนาแน่น</li>
+    </ul>
+  </div>
+
+  <div class="analysis-box">
+    <h4>2. การลดงานค้างทำ (Backlog)</h4>
+    <p>แนวทางการลดงานค้างทำให้ต่ำกว่า 15 งาน:</p>
+    <ul>
+      <li>จัดลำดับความสำคัญของงานค้างทำตามความเร่งด่วนและผลกระทบ</li>
+      <li>พิจารณาจัดทำ Overtime หรือจ้างบุคลากรเพิ่มเติมชั่วคราว</li>
+      <li>ปรับปรุงกระบวนการทำงานเพื่อเพิ่มประสิทธิภาพ</li>
+    </ul>
+  </div>
+
+  <div class="analysis-box">
+    <h4>3. การควบคุมค่าใช้จ่าย</h4>
+    <p>เนื่องจากค่าใช้จ่ายใกล้ถึงงบประมาณ ควรดำเนินการ:</p>
+    <ul>
+      <li>ทบทวนและควบคุมการใช้อะไหล่ให้เหมาะสม</li>
+      <li>เพิ่มการบำรุงรักษาเชิงป้องกันเพื่อลดการซ่อมฉุกเฉิน</li>
+      <li>พิจารณาเจรจาราคากับซัพพลายเออร์สำหรับอะไหล่ที่ใช้บ่อย</li>
+    </ul>
+  </div>
+
+  <!-- Signature Section -->
+  <div class="signature-section">
+    <div class="signature-box">
+      <div class="signature-line"></div>
+      <div class="signature-label">ผู้จัดทำรายงาน</div>
+      <div class="signature-name">(.........................................)</div>
+    </div>
+    <div class="signature-box">
+      <div class="signature-line"></div>
+      <div class="signature-label">ผู้ตรวจสอบ</div>
+      <div class="signature-name">(.........................................)</div>
+    </div>
+    <div class="signature-box">
+      <div class="signature-line"></div>
+      <div class="signature-label">ผู้อนุมัติ</div>
+      <div class="signature-name">(.........................................)</div>
+    </div>
+  </div>
+
+  <!-- Print Button -->
+  <div class="text-center mt-4 mb-4 no-print">
+    <button class="btn btn-primary btn-lg" onclick="window.print()">
+      <i class="bi bi-printer me-2"></i>
+      พิมพ์รายงาน
+    </button>
+    <a href="{% url 'index' %}" class="btn btn-outline-secondary btn-lg ms-2">
+      <i class="bi bi-arrow-left me-2"></i>
+      กลับหน้าหลัก
+    </a>
+  </div>
+
+  <!-- Footer -->
+  <div class="report-footer no-print">
+    <p>
+      รายงานนี้สร้างโดยระบบ CMMS MedCMU | คณะแพทยศาสตร์ มหาวิทยาลัยเชียงใหม่<br>
+      สอบถามข้อมูลเพิ่มเติม: ฝ่ายบำรุงรักษาเครื่องมือแพทย์ โทร. 053-935-000
+    </p>
+  </div>
+</div>
+
+{% endblock %}

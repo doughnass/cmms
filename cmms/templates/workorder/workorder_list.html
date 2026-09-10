@@ -1,0 +1,671 @@
+{% extends 'base.html' %}
+{% block title %}<title>รายการใบงาน | CMMS</title>{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ============================================
+       Work Order List — Modern Design
+       ============================================ */
+    .wo-list-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 2rem 2.5rem;
+        margin-bottom: 1.5rem;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+    }
+    .wo-list-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%; right: -10%;
+        width: 300px; height: 300px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 50%;
+    }
+    .wo-list-hero::after {
+        content: '';
+        position: absolute;
+        bottom: -40%; left: 5%;
+        width: 200px; height: 200px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 50%;
+    }
+    .wo-list-hero h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        position: relative;
+        z-index: 1;
+    }
+    .wo-list-hero .subtitle {
+        opacity: 0.9;
+        margin: 0.25rem 0 0;
+        font-size: 0.95rem;
+        position: relative;
+        z-index: 1;
+    }
+    .btn-new-sr {
+        background: rgba(255,255,255,0.2);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.3);
+        color: #fff;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        position: relative;
+        z-index: 1;
+    }
+    .btn-new-sr:hover {
+        background: rgba(255,255,255,0.35);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+
+    /* Stats Row */
+    .wo-stats {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .wo-stat-card {
+        flex: 1;
+        min-width: 120px;
+        background: #fff;
+        border-radius: 14px;
+        padding: 1.25rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        border: 1px solid rgba(0,0,0,0.04);
+        text-align: center;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        color: inherit;
+    }
+    .wo-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        color: inherit;
+    }
+    .wo-stat-card.active {
+        border-color: #667eea;
+        box-shadow: 0 4px 16px rgba(102,126,234,0.2);
+    }
+    .wo-stat-num {
+        font-size: 1.75rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.25rem;
+    }
+    .wo-stat-label {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    /* Toolbar */
+    .wo-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .wo-filter-tabs {
+        display: flex;
+        gap: 0.375rem;
+        flex-wrap: wrap;
+    }
+    .filter-tab {
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #64748b;
+        background: #f1f5f9;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .filter-tab:hover { background: #e2e8f0; color: #475569; }
+    .filter-tab.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+    }
+    .filter-tab.active .status-dot { background: rgba(255,255,255,0.8) !important; }
+
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .status-dot.s-open { background: #3b82f6; }
+    .status-dot.s-assigned { background: #8b5cf6; }
+    .status-dot.s-in_progress { background: #f59e0b; }
+    .status-dot.s-completed { background: #22c55e; }
+    .status-dot.s-verified { background: #06b6d4; }
+    .status-dot.s-closed { background: #9ca3af; }
+
+    /* Search */
+    .wo-search-form { position: relative; min-width: 260px; }
+    .wo-search-form i {
+        position: absolute; left: 1rem; top: 50%;
+        transform: translateY(-50%); color: #94a3b8; z-index: 1;
+    }
+    .wo-search-form input {
+        width: 100%;
+        padding: 0.625rem 1rem 0.625rem 2.75rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+        background: #fff;
+    }
+    .wo-search-form input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102,126,234,0.15);
+    }
+
+    /* Table Card */
+    .wo-table-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+        border: 1px solid rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+    .wo-table { width: 100%; border-collapse: collapse; }
+    .wo-table thead th {
+        background: #f8fafc;
+        padding: 0.875rem 1.25rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e2e8f0;
+        white-space: nowrap;
+    }
+    .wo-table tbody tr {
+        transition: all 0.15s ease;
+        cursor: pointer;
+    }
+    .wo-table tbody tr:hover { background: #f8fafc; }
+    .wo-table tbody td {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.875rem;
+        color: #334155;
+        vertical-align: middle;
+    }
+    .wo-table tbody tr:last-child td { border-bottom: none; }
+
+    .wo-id { font-weight: 700; color: #667eea; font-size: 0.85rem; }
+    .wo-title-text { font-weight: 600; color: #1e293b; }
+
+    /* Status Badge */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.3rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.725rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .status-badge::before {
+        content: ''; width: 6px; height: 6px;
+        border-radius: 50%; display: inline-block;
+    }
+    .status-badge.s-open { background: #dbeafe; color: #1d4ed8; }
+    .status-badge.s-open::before { background: #3b82f6; }
+    .status-badge.s-assigned { background: #ede9fe; color: #6d28d9; }
+    .status-badge.s-assigned::before { background: #8b5cf6; }
+    .status-badge.s-in_progress { background: #fef3c7; color: #92400e; }
+    .status-badge.s-in_progress::before { background: #f59e0b; }
+    .status-badge.s-completed { background: #dcfce7; color: #166534; }
+    .status-badge.s-completed::before { background: #22c55e; }
+    .status-badge.s-verified { background: #cffafe; color: #155e75; }
+    .status-badge.s-verified::before { background: #06b6d4; }
+    .status-badge.s-closed { background: #f1f5f9; color: #475569; }
+    .status-badge.s-closed::before { background: #9ca3af; }
+
+    /* Priority Badge */
+    .priority-badge {
+        display: inline-flex; align-items: center; gap: 0.25rem;
+        padding: 0.2rem 0.6rem; border-radius: 6px;
+        font-size: 0.7rem; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .priority-badge.p-low { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+    .priority-badge.p-medium { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+    .priority-badge.p-high { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+    /* Tags */
+    .wo-tag {
+        display: inline-flex; align-items: center; gap: 0.25rem;
+        padding: 0.125rem 0.5rem; border-radius: 4px;
+        font-size: 0.7rem; font-weight: 500;
+    }
+    .wo-tag.sr { background: #f1f5f9; color: #475569; }
+    .wo-tag.suggestion { background: #dbeafe; color: #1d4ed8; }
+
+    .wo-equipment { font-size: 0.8rem; color: #64748b; display: flex; align-items: center; gap: 0.25rem; }
+    .wo-meta { font-size: 0.8rem; color: #94a3b8; }
+
+    /* Open Button */
+    .btn-open-wo {
+        padding: 0.375rem 1rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #667eea;
+        border: 1.5px solid #c7d2fe;
+        background: transparent;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        transition: all 0.2s ease;
+    }
+    .btn-open-wo:hover {
+        background: #667eea; color: #fff; border-color: #667eea;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+    }
+
+    /* Empty State */
+    .wo-empty { text-align: center; padding: 4rem 2rem; }
+    .wo-empty-icon {
+        width: 80px; height: 80px; border-radius: 50%;
+        background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+        display: inline-flex; align-items: center; justify-content: center;
+        margin-bottom: 1.25rem;
+    }
+    .wo-empty-icon i { font-size: 2rem; color: #94a3b8; }
+    .wo-empty h3 { font-size: 1.1rem; font-weight: 600; color: #475569; margin-bottom: 0.5rem; }
+    .wo-empty p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 0; }
+
+    /* Responsive */
+    @media (max-width: 991.98px) {
+        .wo-list-hero { padding: 1.5rem; border-radius: 16px; }
+        .wo-list-hero h1 { font-size: 1.4rem; }
+        .wo-toolbar { flex-direction: column; align-items: stretch; }
+        .wo-search-form { min-width: 100%; }
+        .wo-stats { gap: 0.5rem; }
+        .wo-stat-card { padding: 1rem; min-width: 90px; }
+    }
+    @media (max-width: 767.98px) {
+        .wo-filter-tabs {
+            overflow-x: auto; flex-wrap: nowrap;
+            -webkit-overflow-scrolling: touch; padding-bottom: 4px;
+        }
+        .wo-table-card { border-radius: 12px; }
+        .wo-table thead { display: none; }
+        .wo-table, .wo-table tbody, .wo-table tr, .wo-table td { display: block; }
+        .wo-table tbody tr {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .wo-table tbody tr:last-child { border-bottom: none; }
+        .wo-table tbody td { padding: 0.25rem 0; border: none; }
+        .wo-table tbody td::before {
+            content: attr(data-label);
+            font-size: 0.65rem; font-weight: 700;
+            color: #94a3b8; text-transform: uppercase;
+            letter-spacing: 0.3px; display: block;
+            margin-bottom: 0.125rem;
+        }
+        .wo-stat-card { min-width: 80px; }
+        .wo-stat-num { font-size: 1.35rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Hero Section -->
+    <div class="wo-list-hero">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1>
+                    <i class="bi bi-clipboard2-data-fill"></i>
+                    รายการใบงาน
+                </h1>
+                <p class="subtitle">จัดการและติดตามใบสั่งงานทั้งหมด</p>
+            </div>
+            <a href="{% url 'service_request_create' %}" class="btn-new-sr">
+                <i class="bi bi-plus-circle-fill"></i>
+                สร้างคำขอรับบริการ
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="wo-stats" id="wo-stats-row"></div>
+
+    <!-- Toolbar: Filters + Search -->
+    <div class="wo-toolbar">
+        <div class="wo-filter-tabs">
+            <a href="?{% if q %}q={{ q|urlencode }}{% endif %}"
+               class="filter-tab {% if not request.GET.status %}active{% endif %}">
+                ทั้งหมด
+            </a>
+            <a href="?status=open{% if q %}&q={{ q|urlencode }}{% endif %}"
+               class="filter-tab {% if request.GET.status == 'open' %}active{% endif %}">
+                <span class="status-dot s-open"></span> Open
+            </a>
+            <a href="?status=assigned{% if q %}&q={{ q|urlencode }}{% endif %}"
+               class="filter-tab {% if request.GET.status == 'assigned' %}active{% endif %}">
+                <span class="status-dot s-assigned"></span> Assigned
+            </a>
+            <a href="?status=in_progress{% if q %}&q={{ q|urlencode }}{% endif %}"
+               class="filter-tab {% if request.GET.status == 'in_progress' %}active{% endif %}">
+                <span class="status-dot s-in_progress"></span> In Progress
+            </a>
+            <a href="?status=completed{% if q %}&q={{ q|urlencode }}{% endif %}"
+               class="filter-tab {% if request.GET.status == 'completed' %}active{% endif %}">
+                <span class="status-dot s-completed"></span> Completed
+            </a>
+            <a href="?status=verified{% if q %}&q={{ q|urlencode }}{% endif %}"
+               class="filter-tab {% if request.GET.status == 'verified' %}active{% endif %}">
+                <span class="status-dot s-verified"></span> Verified
+            </a>
+        </div>
+        <form class="wo-search-form" method="get">
+            {% if request.GET.status %}<input type="hidden" name="status" value="{{ request.GET.status }}">{% endif %}
+            <i class="bi bi-search"></i>
+            <input type="text" name="q" value="{{ q }}" placeholder="ค้นหาใบงาน..." autocomplete="off">
+        </form>
+    </div>
+
+    <!-- Work Order Table -->
+    <div class="wo-table-card">
+        <table class="wo-table">
+            <thead>
+                <tr>
+                    <th style="width:90px">Job No.</th>
+                    <th style="width:320px;">รายละเอียด</th>
+                    <th>อุปกรณ์</th>
+                    <th>สถานะ</th>
+                    <th>ดำเนินงาน</th>
+                    <th>วันที่แจ้ง</th>
+                    <th style="width:90px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for wo in workorders %}
+                <tr onclick="window.location='{% url 'workorder_detail' wo.id %}'">
+                    <td data-label="#">
+                        <span class="wo-id">{{ wo.id }}</span>
+                    </td>
+                    <td data-label="รายละเอียด">
+                        <div class="d-flex gap-1 flex-wrap mt-1">
+                            {% if wo.origin_request %}
+                                <span class="wo-tag sr"><i class="bi bi-link-45deg"></i>สร้างจากคำขอที่ {{ wo.origin_request.id }}</span>
+                            {% endif %}
+                            {% if wo.accepted_title_suggestion %}
+                                <span class="wo-tag suggestion"><i class="bi bi-lightbulb"></i> คำแนะนำ</span>
+                            {% endif %}
+                        </div>
+                        <div class="wo-title-text">{{ wo.title }}</div>
+                        <div class="wo-meta" style="font-size:0.75rem">{{ wo.description}}</div>
+                    </td>
+                    <td data-label="อุปกรณ์">
+                        {% if wo.equipment %}
+                            <span><i class="bi bi-cpu"></i> {{ wo.equipment.equipment_id }}</span>
+                        {% else %}
+                            <span>-</span>
+                        {% endif %}
+                        <div style="font-size:0.75rem">{{ wo.equipment.equipment_name_EN}}</div>
+                        <div class="wo-meta" style="font-size:0.75rem">{{ wo.equipment.equipment_name_TH}}</div>
+                    </td>
+                    <td data-label="สถานะ">
+                        <span class="status-badge s-{{ wo.status }}">{{ wo.get_status_display }}</span>
+                    </td>
+                    <td data-label="ดำเนินงาน">
+                        <span class="priority-badge p-{{ wo.priority }}">
+                            {% if wo.priority == 'high' %}<i class="bi bi-exclamation-triangle-fill"></i>{% endif %}
+                            {{ wo.get_priority_label }}
+                        </span><br>
+                        <span>{{ wo.assigned_to.get_full_name }}</span>
+                    </td>
+                    <td data-label="วันที่แจ้ง">
+                        <span class="wo-meta">{{ wo.reported_at|date:'d M Y' }}</span>
+                        <span class="wo-meta" style="font-size:0.75rem">เวลา {{ wo.reported_at|date:'H:i' }} น.</span><br>
+                        <span style="font-size:0.75rem">{{ wo.equipment.equipment_user_customer }}</span>
+                    </td>
+                    <td>
+                        <a href="{% url 'workorder_detail' wo.id %}" class="btn-open-wo" onclick="event.stopPropagation()">
+                            <i class="bi bi-arrow-right"></i> เปิด
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="wo-empty">
+                            <div class="wo-empty-icon"><i class="bi bi-clipboard2-x"></i></div>
+                            <h3>ไม่พบใบงาน</h3>
+                            <p>ยังไม่มีใบสั่งงานในระบบ หรือไม่พบผลลัพธ์ตามคำค้นหา</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination Controls -->
+<div class="d-flex justify-content-between align-items-center mt-4 flex-wrap gap-3" style="padding: 0 1rem;">
+  <!-- Left: Items per page selector -->
+  <div class="d-flex align-items-center gap-2">
+    <label class="text-muted small mb-0">แสดง:</label>
+    <select id="itemsPerPage" class="form-select form-select-sm" style="width: auto;">
+      <option value="10" selected>10</option>
+      <option value="25">25</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+      <option value="250">250</option>
+      <option value="all">ทั้งหมด</option>
+    </select>
+    <span class="text-muted small text-nowrap">รายการ/หน้า</span>
+  </div>
+
+  <!-- Center: Page info -->
+  <div class="text-muted small">
+    <i class="bi bi-info-circle me-1"></i>
+    แสดง <strong id="showingFrom">1</strong> - <strong id="showingTo">10</strong> จาก <strong id="totalItems">{{ workorders|length }}</strong> รายการ
+  </div>
+
+  <!-- Right: Page navigation with jump to page dropdown -->
+  <nav aria-label="Page navigation">
+    <div class="d-flex align-items-center gap-2">
+      <ul class="pagination pagination-sm mb-0" id="paginationNav">
+        <!-- Pagination buttons will be generated by JavaScript -->
+      </ul>
+      <!-- Jump to page dropdown -->
+      <div class="d-flex align-items-center gap-2" style="margin-left: 0.5rem;">
+        <label class="text-muted small mb-0" style="white-space: nowrap;">หน้าที่:</label>
+        <select
+          id="jumpToPage"
+          class="form-select form-select-sm"
+          style="width: auto; min-width: 70px;"
+          title="เลือกหน้าที่ต้องการไป">
+          <option value="1">1</option>
+        </select>
+      </div>
+    </div>
+  </nav>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // === Pagination System ===
+    var currentPage = 1;
+    var itemsPerPage = 10;
+    var allRows = [];
+    var filteredRows = [];
+
+    function initPagination() {
+        var tbody = document.querySelector('.wo-table tbody');
+        if (!tbody) return;
+        allRows = Array.from(tbody.querySelectorAll('tr')).filter(function(r) {
+            return !r.querySelector('.wo-empty');
+        });
+        filteredRows = allRows.slice();
+
+        var itemsPerPageSelect = document.getElementById('itemsPerPage');
+        if (itemsPerPageSelect) {
+            itemsPerPageSelect.addEventListener('change', function() {
+                var value = this.value;
+                itemsPerPage = value === 'all' ? filteredRows.length : parseInt(value);
+                currentPage = 1;
+                renderPage();
+            });
+        }
+
+        var jumpToPageSelect = document.getElementById('jumpToPage');
+        if (jumpToPageSelect) {
+            jumpToPageSelect.addEventListener('change', function() {
+                var pageNum = parseInt(this.value);
+                if (!isNaN(pageNum) && pageNum >= 1) { currentPage = pageNum; renderPage(); }
+            });
+        }
+
+        renderPage();
+    }
+
+    function renderPage() {
+        var start = (currentPage - 1) * itemsPerPage;
+        var end = itemsPerPage === filteredRows.length ? filteredRows.length : start + itemsPerPage;
+
+        allRows.forEach(function(row) { row.style.display = 'none'; });
+        for (var i = start; i < end && i < filteredRows.length; i++) {
+            filteredRows[i].style.display = '';
+        }
+
+        var showingFrom = document.getElementById('showingFrom');
+        var showingTo = document.getElementById('showingTo');
+        var totalItems = document.getElementById('totalItems');
+        if (showingFrom) showingFrom.textContent = filteredRows.length > 0 ? start + 1 : 0;
+        if (showingTo) showingTo.textContent = Math.min(end, filteredRows.length);
+        if (totalItems) totalItems.textContent = filteredRows.length;
+
+        renderPaginationButtons();
+        updateJumpToPageDropdown();
+    }
+
+    function renderPaginationButtons() {
+        var paginationNav = document.getElementById('paginationNav');
+        if (!paginationNav) return;
+
+        var totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        paginationNav.innerHTML = '';
+
+        var prevLi = document.createElement('li');
+        prevLi.className = 'page-item' + (currentPage === 1 ? ' disabled' : '');
+        prevLi.innerHTML = '<a class="page-link" href="#" style="border-radius:0.5rem 0 0 0.5rem;"><i class="bi bi-chevron-left"></i> ก่อนหน้า</a>';
+        if (currentPage > 1) {
+            prevLi.querySelector('a').addEventListener('click', function(e) {
+                e.preventDefault(); currentPage--; renderPage();
+            });
+        }
+        paginationNav.appendChild(prevLi);
+
+        var startPage = Math.max(1, currentPage - 2);
+        var endPage = Math.min(totalPages, startPage + 4);
+        startPage = Math.max(1, endPage - 4);
+        for (var i = startPage; i <= endPage; i++) {
+            var pageLi = document.createElement('li');
+            pageLi.className = 'page-item' + (i === currentPage ? ' active' : '');
+            var pageLink = document.createElement('a');
+            pageLink.className = 'page-link';
+            pageLink.href = '#';
+            pageLink.textContent = i;
+            if (i === currentPage) {
+                pageLink.style.background = 'var(--primary, #667eea)';
+                pageLink.style.borderColor = 'var(--primary, #667eea)';
+            }
+            (function(pageNum) {
+                pageLink.addEventListener('click', function(e) {
+                    e.preventDefault(); currentPage = pageNum; renderPage();
+                });
+            })(i);
+            pageLi.appendChild(pageLink);
+            paginationNav.appendChild(pageLi);
+        }
+
+        var nextLi = document.createElement('li');
+        nextLi.className = 'page-item' + (currentPage === totalPages ? ' disabled' : '');
+        nextLi.innerHTML = '<a class="page-link" href="#" style="border-radius:0 0.5rem 0.5rem 0;">ถัดไป <i class="bi bi-chevron-right"></i></a>';
+        if (currentPage < totalPages) {
+            nextLi.querySelector('a').addEventListener('click', function(e) {
+                e.preventDefault(); currentPage++; renderPage();
+            });
+        }
+        paginationNav.appendChild(nextLi);
+    }
+
+    function updateJumpToPageDropdown() {
+        var jumpToPageSelect = document.getElementById('jumpToPage');
+        if (!jumpToPageSelect) return;
+        var totalPages = Math.ceil(filteredRows.length / itemsPerPage) || 1;
+        jumpToPageSelect.innerHTML = '';
+        for (var i = 1; i <= totalPages; i++) {
+            var option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            if (i === currentPage) option.selected = true;
+            jumpToPageSelect.appendChild(option);
+        }
+    }
+
+    setTimeout(function() { initPagination(); }, 100);
+
+    // Build stats from visible table rows
+    var counts = {total:0, open:0, assigned:0, in_progress:0, completed:0, verified:0};
+    var colors = {open:'#3b82f6', assigned:'#8b5cf6', in_progress:'#f59e0b', completed:'#22c55e', verified:'#06b6d4'};
+    document.querySelectorAll('.status-badge').forEach(function(b) {
+        counts.total++;
+        var cls = Array.from(b.classList).find(c => c.startsWith('s-'));
+        if (cls) { var k = cls.substring(2); if (counts[k] !== undefined) counts[k]++; }
+    });
+    var row = document.getElementById('wo-stats-row');
+    if (!row || counts.total === 0) return;
+    var items = [
+        {label:'ทั้งหมด', val:counts.total, color:'#667eea', href:'?'},
+        {label:'Open', val:counts.open, color:colors.open, href:'?status=open'},
+        {label:'Assigned', val:counts.assigned, color:colors.assigned, href:'?status=assigned'},
+        {label:'In Progress', val:counts.in_progress, color:colors.in_progress, href:'?status=in_progress'},
+        {label:'Completed', val:counts.completed, color:colors.completed, href:'?status=completed'},
+        {label:'Verified', val:counts.verified, color:colors.verified, href:'?status=verified'}
+    ];
+    var currentStatus = new URLSearchParams(window.location.search).get('status') || '';
+    items.forEach(function(it) {
+        var a = document.createElement('a');
+        a.className = 'wo-stat-card' + (((!currentStatus && it.href==='?') || it.href.includes(currentStatus) && currentStatus) ? ' active' : '');
+        a.href = it.href;
+        a.innerHTML = '<div class="wo-stat-num" style="color:'+it.color+'">'+it.val+'</div><div class="wo-stat-label">'+it.label+'</div>';
+        row.appendChild(a);
+    });
+});
+</script>
+{% endblock extra_scripts %}

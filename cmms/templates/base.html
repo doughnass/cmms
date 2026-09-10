@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+	{% load static %}
+	<meta 
+		charset="utf-8">
+	<meta 
+		name="viewport" 
+		content="width=device-width, initial-scale=1">
+	<link 
+		rel="icon"	
+		type="image/svg+xml" 	
+		href="{% static 'cmms/medcmu.png' %}">
+	<link 
+		href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+		rel="stylesheet"
+		crossorigin="anonymous"> 
+	<link 
+		rel="stylesheet" 
+		href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+	<link 
+		href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" 
+		rel="stylesheet" />
+	<link 
+		href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css"
+		rel="stylesheet" />
+	<link 
+		href="{% static 'cmms/main.css' %}" 
+		rel="stylesheet">
+	<link 
+		rel="preconnect" 
+		href="https://fonts.googleapis.com">
+	<link 
+		rel="preconnect" 
+		href="https://fonts.gstatic.com" 
+		crossorigin>
+	<link 
+		href="https://fonts.googleapis.com/css2?family=Google+Sans:opsz@17..18&display=swap" 
+		rel="stylesheet">
+
+	{% block extra_head %}
+	{% endblock %}
+
+	{% block title %}
+	{% endblock %}
+
+	{% block extra_css %}
+	<link rel="stylesheet" href="{% static 'css/style.css' %}">
+	{% endblock %}
+
+	<style>
+		/* Modern CMMS Styling */
+		:root {
+			--navbar-height: 64px;
+			--primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			--hover-lift: translateY(-2px);
+		}
+		html { scroll-behavior: smooth; }
+		body {
+			padding-top: calc(var(--navbar-height) + 16px);
+			font-family: 'Google Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+			min-height: 100vh;
+			display: flex;
+			flex-direction: column;
+		}
+		/* Skip link for accessibility */
+		.skip-link {
+			position: fixed; left: 0; top: 0;
+			transform: translateY(-120%);
+			background: var(--bs-primary); color: #fff;
+			padding: 0.5rem 1rem; z-index: 1100;
+			border-bottom-right-radius: 8px;
+			transition: transform 0.2s ease;
+		}
+		.skip-link:focus { transform: translateY(0); color: #fff; }
+		/* Navbar enhancements */
+		.navbar {
+			min-height: var(--navbar-height);
+			background: var(--primary-gradient) !important;
+			backdrop-filter: blur(10px);
+		}
+		.navbar-brand img { height: 32px; filter: brightness(0) invert(1); }
+		.navbar .nav-link { transition: opacity 0.2s; }
+		.navbar .nav-link:hover { opacity: 0.85; }
+		.dropdown-menu {
+			border: none; border-radius: 12px;
+			box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+		}
+		.dropdown-item { border-radius: 8px; margin: 2px 6px; transition: background 0.15s; }
+		.dropdown-item:hover { background: #f0f4ff; }
+		/* Main content */
+		main { flex: 1; }
+		/* Footer */
+		.footer {
+			background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%) !important;
+		}
+		/* Cards and shadows */
+		.card {
+			border: none; border-radius: 12px;
+			box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+			transition: transform 0.2s, box-shadow 0.2s;
+		}
+		.card:hover {
+			transform: var(--hover-lift);
+			box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+		}
+		/* Buttons */
+		.btn { border-radius: 8px; transition: transform 0.15s, box-shadow 0.15s; }
+		.btn-primary { background: var(--primary-gradient); border: none; }
+		.btn-primary:hover { transform: var(--hover-lift); box-shadow: 0 4px 15px rgba(102,126,234,0.4); }
+		/* Tables */
+		.table { border-radius: 12px; overflow: hidden; }
+		.table thead { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
+		.table thead th { border: none; font-weight: 500; }
+		/* Alerts */
+		.alert { border-radius: 12px; border: none; }
+		/* Forms */
+		.form-control, .form-select { border-radius: 8px; }
+		.form-control:focus, .form-select:focus {
+			border-color: #667eea;
+			box-shadow: 0 0 0 0.2rem rgba(102,126,234,0.25);
+		}
+		@media (min-width: 992px) { :root { --navbar-height: 70px; } }
+
+		/* ===== Account Management Styles ===== */
+		.account-dropdown { min-width: 320px; padding: 0; overflow: hidden; }
+		.account-dropdown .dropdown-header {
+			background: var(--primary-gradient);
+			color: #fff; padding: 1rem; margin: 0;
+			font-size: 0.85rem; font-weight: 600;
+		}
+		.account-avatar {
+			width: 42px; height: 42px;
+			border-radius: 50%;
+			display: flex; align-items: center; justify-content: center;
+			color: #fff; font-weight: 600; font-size: 1.1rem;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+			text-transform: uppercase;
+		}
+		.account-card {
+			border-radius: 12px !important;
+			border: 2px solid transparent;
+			transition: all 0.2s ease;
+			background: #fff;
+		}
+		.account-card:hover {
+			border-color: #667eea;
+			background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+			transform: translateY(-2px);
+		}
+		.account-card.current {
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			color: #fff;
+			border-color: transparent;
+		}
+		.account-card.current .account-username { color: #fff; }
+		.account-card.current .text-muted { color: rgba(255,255,255,0.8) !important; }
+		.account-username { font-weight: 600; font-size: 0.95rem; }
+		.account-actions { opacity: 0; transition: opacity 0.2s; }
+		.account-card:hover .account-actions,
+		.account-card:focus .account-actions { opacity: 1; }
+		.account-entry {
+			opacity: 0; transform: translateY(10px);
+			transition: opacity 0.3s ease, transform 0.3s ease;
+		}
+		.account-entry.entered { opacity: 1; transform: translateY(0); }
+		#accounts-list { max-height: 350px; overflow-y: auto; }
+		/* Switch card specific styles */
+		.switch-card {
+			border: 2px solid #e9ecef;
+			background: #fff;
+		}
+		.switch-card:hover {
+			border-color: #667eea;
+			background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+		}
+		.switch-card:focus {
+			outline: none;
+			border-color: #667eea;
+			box-shadow: 0 0 0 3px rgba(102,126,234,0.25);
+		}
+		/* Switch and remove buttons */
+		.btn-switch {
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			color: #fff; border: none;
+			padding: 0.4rem 0.75rem;
+			font-weight: 500;
+			border-radius: 8px;
+			transition: all 0.2s;
+		}
+		.btn-switch:hover {
+			transform: scale(1.05);
+			box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+			color: #fff;
+		}
+		.btn-remove {
+			background: #fff;
+			color: #dc3545;
+			border: 2px solid #f8d7da;
+			padding: 0.4rem 0.6rem;
+			border-radius: 8px;
+			transition: all 0.2s;
+		}
+		.btn-remove:hover {
+			background: #dc3545;
+			color: #fff;
+			border-color: #dc3545;
+		}
+		/* Add account button */
+		.btn-add-account {
+			background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
+			border: 2px dashed #667eea;
+			color: #667eea; font-weight: 600;
+			border-radius: 12px;
+			transition: all 0.2s;
+		}
+		.btn-add-account:hover {
+			background: var(--primary-gradient);
+			color: #fff; border-style: solid;
+			transform: translateY(-2px);
+		}
+		/* Switch arrow animation */
+		.switch-arrow {
+			animation: pulse-arrow 1.5s ease-in-out infinite;
+		}
+		@keyframes pulse-arrow {
+			0%, 100% { transform: translateX(0); opacity: 1; }
+			50% { transform: translateX(5px); opacity: 0.7; }
+		}
+		/* Toast enhancements */
+		.toast { border-radius: 12px; }
+		.toast-icon { width: 18px; height: 18px; margin-right: 8px; }
+		/* Modal enhancements */
+		.modal-content { border: none; border-radius: 16px; overflow: hidden; }
+		.modal-header {
+			background: var(--primary-gradient);
+			color: #fff; border: none;
+		}
+		.modal-header .btn-close { filter: brightness(0) invert(1); }
+		.modal-header .modal-title { font-weight: 600; }
+		.modal-body { padding: 1.5rem; }
+		.modal-footer { border: none; padding: 1rem 1.5rem; background: #f8f9fa; }
+		/* User badge in navbar */
+		.user-badge {
+			background: rgba(255,255,255,0.2);
+			border-radius: 20px;
+			padding: 0.35rem 0.75rem 0.35rem 0.5rem;
+			display: flex; align-items: center; gap: 0.5rem;
+		}
+		.user-badge .user-avatar-sm {
+			width: 28px; height: 28px;
+			border-radius: 50%;
+			background: rgba(255,255,255,0.3);
+			display: flex; align-items: center; justify-content: center;
+			font-size: 0.75rem; font-weight: 600;
+		}
+	</style>
+</head>
+
+<body class="bg-light">
+	<a href="#main-content" class="skip-link">ข้ามไปยังเนื้อหา</a>
+	<nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm">
+		<div class="container-fluid">
+			<a class="navbar-brand d-flex align-items-center" href="{% url 'index' %}">
+				<img src="{% static 'cmms/medcmu.png' %}" alt="logo" class="me-2">
+				<span>CMMS - ระบบบริหารจัดการเครื่องมือแพทย์</span>
+			</a>
+			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+				aria-label="เปิด/ปิดเมนู" aria-expanded="false" aria-controls="mainNav">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+
+			<div class="collapse navbar-collapse" id="mainNav">
+				<ul class="navbar-nav me-auto mb-2 mb-lg-0">
+					<li class="nav-item"><a class="nav-link" href="{% url 'index' %}">หน้าหลัก</a></li>
+					<li class="nav-item"><a class="nav-link" href="{% url 'equipment_list' %}">ทะเบียนเครื่องมือ</a>
+					</li>
+
+					<li class="nav-item dropdown">
+						<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">บริการ</a>
+						<ul class="dropdown-menu">
+							<li>
+								<a class="dropdown-item" href="{% url 'service_request_create' %}">
+								<i class="bi bi-file-earmark-text me-2" aria-hidden="true"></i>
+								แจ้งขอรับบริการ</a>
+							</li>
+							{% if user.is_authenticated and perms.cmms.view_servicerequest %}
+							<li>
+								<a class="dropdown-item" 
+								href="{% url 'my_service_requests' %}">
+								<i class="bi bi-clock-history me-2" aria-hidden="true"></i>
+									สถานะคำขอ</a>
+							</li>
+							{% endif %}
+							<li>
+								<a class="dropdown-item" href="{% url 'equipment_maintenance_schedule' %}">
+								<i class="bi bi-calendar-check me-2" aria-hidden="true"></i>
+								แผนบำรุงรักษา</a>
+							</li>
+						</ul>
+					</li>
+
+					<li class="nav-item dropdown">
+						<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">รายงาน</a>
+						<ul class="dropdown-menu">
+							<li>
+								<a class="dropdown-item" href="{% url 'kpi_dashboard' %}">
+								<i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>
+								แดชบอร์ด KPI</a>
+							</li>
+							{% if user.is_authenticated and perms.cmms.view_servicerequest %}
+							<li>
+								<a class="dropdown-item" 
+								href="{% url 'kpi_report_print' %}">
+								<i class="bi bi-printer me-2" aria-hidden="true"></i>
+									พิมพ์รายงาน KPI</a>
+							</li>
+							{% endif %}
+							<li>
+								<a class="dropdown-item" href="{% url 'kpi_comparison' %}">
+								<i class="bi bi-graph-up me-2" aria-hidden="true"></i>
+								เปรียบเทียบ KPI</a>
+							</li>
+						</ul>
+					</li>
+
+					<li class="nav-item dropdown">
+						<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">สำหรับเจ้าหน้าที่</a>
+						<ul class="dropdown-menu">
+							<li><a class="dropdown-item" href="{% url 'service_request_list' %}"><i class="bi bi-journal-text me-2"
+										aria-hidden="true"></i>คำขอรับบริการ</a></li>
+							<li><a class="dropdown-item" href="{% url 'spare_part_list' %}"><i class="bi bi-file-earmark-text me-2"
+										aria-hidden="true"></i>อะไหล่คงคลัง</a></li>
+							<li><a class="dropdown-item" href="{% url 'workorder_list' %}"><i class="bi bi-clipboard-check me-2"
+										aria-hidden="true"></i>ใบงาน</a></li>
+								<hr class="dropdown-divider">
+							</li>
+							<li>
+								<h6 class="dropdown-header">การบำรุงรักษา</h6>
+							</li>
+							<li><a class="dropdown-item" href="{% url 'maintenance_appointments_list' %}"><i
+										class="bi bi-calendar2-event me-2" aria-hidden="true"></i>นัดหมายบำรุงรักษา</a>
+							</li>
+							<li><a class="dropdown-item" href="{% url 'technicians_list' %}"><i class="bi bi-calendar3 me-2"
+										aria-hidden="true"></i>รายชื่อช่างเทคนิค</a>
+							</li>
+							<li><a class="dropdown-item" href="{% url 'technician_availability_manage' %}"><i
+										class="bi bi-people me-2" aria-hidden="true"></i>จัดการสถานะช่าง</a></li>
+							<li>
+							<li><a class="dropdown-item" href="{% url 'technician_availability_report' %}"><i
+										class="bi bi-people me-2" aria-hidden="true"></i>รายงานสถานะช่างประจำเดือน</a></li>
+							<li>
+							<li><a class="dropdown-item" href="{% url 'daily_capacity_management' %}"><i
+										class="bi bi-people me-2" aria-hidden="true"></i>อัตรากำลังรายวัน</a></li>
+							<li>
+							<li><a class="dropdown-item" href="{% url 'capacity_summary' %}"><i
+										class="bi bi-people me-2" aria-hidden="true"></i>อัตรากำลังรายเครื่อง</a></li>
+							<li>							<hr class="dropdown-divider">
+							</li>
+							<li><a class="dropdown-item" href="{% url 'master_list' %}"><i class="bi bi-folder2-open me-2"
+										aria-hidden="true"></i>ข้อมูลหลัก (Master
+									Data)</a></li>
+							<li><a class="dropdown-item" href="{% url 'checklist_templates' %}"><i class="bi bi-list-check me-2"
+										aria-hidden="true"></i>แบบฟอร์ม Checklist</a></li>
+							{% if user.is_staff or user.is_superuser %}
+							<li>
+								<a class="dropdown-item d-flex align-items-center justify-content-between"
+									href="{% url 'account_approvals' %}">
+									<span><i class="bi bi-person-check me-2" aria-hidden="true"></i>ตรวจสอบการสมัครบัญชี</span>
+									{% if pending_accounts_count %}
+									<span class="badge bg-danger rounded-pill">{{ pending_accounts_count }}</span>
+									{% endif %}
+								</a>
+							</li>
+							<li><a class="dropdown-item" href="{% url 'user_management' %}"><i class="bi bi-shield-lock me-2"
+										aria-hidden="true"></i>จัดการสิทธิ์ผู้ใช้งาน</a></li>
+							{% endif %}
+							{% if user.is_staff %}<li>
+								<hr class="dropdown-divider">
+							</li>
+							<li><a class="dropdown-item" href="{% url 'templates_index' %}"><i class="bi bi-card-list me-2"
+										aria-hidden="true"></i>เครื่องมือ:
+									ดูรายการเทมเพลต</a></li>
+							<li><a class="dropdown-item" href="{% url 'template_source' %}"><i class="bi bi-file-code me-2"
+										aria-hidden="true"></i>เครื่องมือ:
+									ดูซอร์สเทมเพลต</a></li>
+							<li><a class="dropdown-item" href="{% url 'template_render' %}"><i class="bi bi-gear me-2"
+										aria-hidden="true"></i>เครื่องมือ: เรนเดอร์เทมเพลต</a></li>{% endif %}
+						</ul>
+					</li>
+				</ul>
+
+				<form class="d-flex me-3" method="get" action="{% url 'equipment_list' %}">
+					<input autocomplete="off" class="form-control form-control-sm me-2" type="search" name="q"
+						placeholder="ค้นหาด่วน" aria-label="Search">
+					<button class="btn btn-sm btn-outline-light" type="submit">ค้นหา</button>
+				</form>
+
+				<ul class="navbar-nav">
+					{% if user.is_authenticated %}
+					<li class="nav-item dropdown">
+						<a class="nav-link dropdown-toggle user-badge" href="#" role="button" data-bs-toggle="dropdown">
+							<span class="user-avatar-sm">{{ user.username|slice:":1"|upper }}</span>
+							<span>{% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}</span>
+						</a>
+						<ul class="dropdown-menu dropdown-menu-end account-dropdown">
+							<!-- Header with gradient -->
+							<li>
+								<div class="dropdown-header">
+									<i class="bi bi-person-circle me-2"></i>จัดการบัญชี
+								</div>
+							</li>
+							<!-- Quick links -->
+							<li class="px-2 pt-2">
+								<a class="dropdown-item" href="{% url 'profile' %}">
+									<i class="bi bi-person-gear me-2 text-primary"></i>โปรไฟล์ของฉัน
+								</a>
+							</li>
+							<li class="px-2">
+								<form method="post" action="{% url 'logout' %}">
+									{% csrf_token %}
+									<button type="submit" class="dropdown-item text-danger d-flex align-items-center">
+										<i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ
+									</button>
+								</form>
+							</li>
+							<li><hr class="dropdown-divider my-2"></li>
+							<!-- Accounts section -->
+							<li class="px-3 py-1">
+								<small class="text-muted fw-semibold">
+									<i class="bi bi-people me-1"></i>สลับบัญชี
+								</small>
+							</li>
+							<li>
+								<div id="accounts-list" class="px-2 py-1">
+									<div id="accounts-grid" class="d-flex flex-column gap-2"></div>
+								</div>
+							</li>
+							<li><hr class="dropdown-divider my-2"></li>
+							<li class="px-3 pb-2">
+								<button id="addAccountBtn" class="btn btn-add-account w-100 py-2" data-bs-toggle="modal"
+									data-bs-target="#addAccountModal" aria-label="เพิ่มบัญชีใหม่">
+									<span id="addSpinner" class="spinner-border spinner-border-sm d-none me-2" role="status"
+										aria-hidden="true"></span>
+									<i class="bi bi-plus-circle me-2" id="addIcon"></i>
+									<span id="addBtnText">เพิ่มบัญชีใหม่</span>
+								</button>
+							</li>
+						</ul>
+					</li>
+					{% else %}
+					<li class="nav-item"><a class="nav-link" href="{% url 'login' %}">เข้าสู่ระบบ</a></li>
+					{% endif %}
+				</ul>
+			</div>
+		</div>
+	</nav>
+
+	<main id="main-content" class="container py-4">
+		{% block page_header %}{% endblock %}
+		{% if messages %}
+		<div class="mt-2">
+			{% for message in messages %}
+			<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+				{{ message }}
+				<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+			</div>
+			{% endfor %}
+		</div>
+		{% endif %}
+
+		{% block content %}{% endblock %}
+	</main>
+
+	<footer class="footer border-top py-4 mt-auto">
+		<div class="container">
+			<div class="row align-items-center">
+				<div class="col-md-6 text-center text-md-start mb-2 mb-md-0">
+					<span class="text-muted small">
+						<i class="bi bi-hospital me-1"></i>
+						หน่วยวิศวกรรมชีวการแพทย์ งานซ่อมบำรุง
+					</span>
+				</div>
+				<div class="col-md-6 text-center text-md-end">
+					<span class="text-muted small">
+						คณะแพทยศาสตร์ มหาวิทยาลัยเชียงใหม่
+					</span>
+				</div>
+			</div>
+		</div>
+	</footer>
+
+	<!-- Toast container for site-wide transient messages -->
+	<div id="toast-container" class="position-fixed bottom-0 end-0 p-3"></div>
+
+	{# Allow child templates to inject modal HTML that should live near the end of the body #}
+	{% block extra_modals %}{% endblock %}
+
+	<!-- Add Account Modal -->
+	<div class="modal fade" id="addAccountModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<form id="addAccountForm">
+					{% csrf_token %}
+					<div class="modal-header">
+						<h5 class="modal-title">
+							<i class="bi bi-person-plus me-2"></i>เพิ่มบัญชีสำหรับสลับ
+						</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
+					</div>
+					<div class="modal-body">
+						<p class="text-muted small mb-3">
+							<i class="bi bi-info-circle me-1"></i>
+							เพิ่มบัญชีผู้ใช้อื่นเพื่อสลับได้อย่างรวดเร็ว
+						</p>
+						<div class="mb-3">
+							<label for="acc-username" class="form-label fw-semibold">
+								<i class="bi bi-person me-1 text-primary"></i>ชื่อผู้ใช้
+							</label>
+							<input autocomplete="username" class="form-control form-control-lg" 
+								name="username" id="acc-username" placeholder="กรอกชื่อผู้ใช้">
+						</div>
+						<div class="mb-3">
+							<label for="acc-password" class="form-label fw-semibold">
+								<i class="bi bi-key me-1 text-primary"></i>รหัสผ่าน
+							</label>
+							<input autocomplete="current-password" type="password" 
+								class="form-control form-control-lg" name="password" 
+								id="acc-password" placeholder="กรอกรหัสผ่าน">
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">
+							<i class="bi bi-x-lg me-1"></i>ยกเลิก
+						</button>
+						<button type="submit" class="btn btn-primary px-4">
+							<i class="bi bi-check-lg me-1"></i>บันทึก
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<!-- serialize alt_accounts safely into the page for client JS -->
+	{{ request.session.alt_accounts|default:"[]"|json_script:"alt_accounts_json" }}
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+	<script>
+		// Local fallback for jQuery and Select2 using Django static (avoids nested-quote issues)
+		(function () {
+			try {
+				if (typeof jQuery === 'undefined') {
+					var s = document.createElement('script');
+					s.src = "{% static 'cmms/js/jquery-3.6.0.min.js' %}";
+					document.head.appendChild(s);
+				}
+			} catch (e) { }
+			// ensure Select2 fallback if CDN blocked or loaded before jQuery fallback
+			try {
+				var ensureSelect2 = function () {
+					if (typeof jQuery !== 'undefined' && (!jQuery.fn || !jQuery.fn.select2)) {
+						var s2 = document.createElement('script');
+						s2.src = "{% static 'cmms/js/select2.min.js' %}";
+						document.head.appendChild(s2);
+					}
+				};
+				// run on next tick to allow jQuery fallback to load
+				setTimeout(ensureSelect2, 50);
+			} catch (e) { }
+		})();
+	</script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+		crossorigin="anonymous"></script>
+	<script src="{% static 'cmms/main.js' %}"></script>
+	<script>
+		// Populate accounts dropdown from session (rendered server-side)
+		(function () {
+			var accounts = [];
+			try { accounts = JSON.parse(document.getElementById('alt_accounts_json').textContent || '[]') || []; } catch (e) { accounts = []; }
+			// Normalize accounts to an array. Sometimes session data can be an object/map
+			// (for example when serialized by some backends) — ensure we always have an
+			// array to call forEach on.
+			if (!Array.isArray(accounts)) {
+				if (accounts && typeof accounts === 'object') {
+					var tmp = [];
+					try {
+						// If it's a plain object like { "0": {...}, "1": {...} }
+						// collect its values. If values are primitives, ignore.
+						Object.keys(accounts).forEach(function (k) {
+							var v = accounts[k];
+							if (v && (typeof v === 'object')) tmp.push(v);
+						});
+					} catch (_) { tmp = []; }
+					accounts = tmp;
+				} else {
+					accounts = [];
+				}
+			}
+			var list = document.getElementById('accounts-list');
+			function renderAccounts() {
+				if (!list) return;
+				// Clear previous entries entirely
+				list.innerHTML = '';
+
+				// show current user as a prominent card (non-switchable)
+				var currentUsername = ('{{ user.username|default:"" }}' || '').trim();
+				if (currentUsername) {
+					var curCard = document.createElement('div');
+					curCard.className = 'account-card current p-3 account-entry d-flex align-items-center justify-content-between mb-2';
+					curCard.style.width = '100%';
+					var leftCur = document.createElement('div'); leftCur.className = 'd-flex align-items-center';
+					leftCur.innerHTML = '<span class="account-avatar" style="background:' + avatarColor(currentUsername) + ';width:48px;height:48px;font-size:1.25rem">' + (currentUsername[0] || 'U').toUpperCase() + '</span><div class="ms-3"><div class="account-username" style="font-size:1.05rem">' + currentUsername + '</div><div class="small" style="opacity:0.9">บัญชีที่ใช้งานอยู่</div></div>';
+					var rightCur = document.createElement('div'); rightCur.className = 'd-flex align-items-center';
+					rightCur.innerHTML = '<span class="badge" style="background:rgba(255,255,255,0.25);color:#fff;padding:0.5rem 0.75rem;border-radius:20px"><i class="bi bi-check-circle-fill me-1"></i>ปัจจุบัน</span>';
+					curCard.appendChild(leftCur); curCard.appendChild(rightCur);
+					list.appendChild(curCard);
+					requestAnimationFrame(function () { curCard.classList.add('entered'); });
+				}
+
+				// ensure grid exists inside the list (we cleared list earlier)
+				var grid = document.getElementById('accounts-grid');
+				if (!grid) {
+					grid = document.createElement('div');
+					grid.id = 'accounts-grid';
+					grid.className = 'd-flex flex-column gap-2 mt-2';
+					list.appendChild(grid);
+				} else {
+					// clear existing grid contents
+					grid.innerHTML = '';
+				}
+
+				if (!accounts || accounts.length === 0) {
+					grid.innerHTML = '<div class="text-center py-3"><i class="bi bi-people text-muted" style="font-size:2rem"></i><div class="text-muted small mt-2">ยังไม่มีบัญชีอื่น</div></div>';
+					return;
+				}
+
+				// Render each alternate account. Avoid duplicates by username
+				var seen = new Set();
+				var delay = 0;
+				accounts.forEach(function (a) {
+					if (!a || !a.username) return;
+					if (seen.has(a.username)) return;
+					if (a.username === currentUsername) return; // skip current
+					seen.add(a.username);
+
+					var card = document.createElement('div'); 
+					card.className = 'account-card switch-card p-3 account-entry d-flex align-items-center justify-content-between';
+					card.setAttribute('tabindex', '0');
+					card.setAttribute('role', 'button');
+					card.setAttribute('aria-label', 'สลับไปยังบัญชี ' + a.username);
+					card.style.cursor = 'pointer';
+					
+					var left = document.createElement('div'); left.className = 'd-flex align-items-center flex-grow-1';
+					left.innerHTML = '<span class="account-avatar" style="background:' + avatarColor(a.username) + '">' + (a.username[0] || 'U').toUpperCase() + '</span><div class="ms-3"><div class="account-username">' + a.username + '</div><div class="small text-muted">คลิกเพื่อสลับ</div></div>';
+					
+					var right = document.createElement('div'); right.className = 'd-flex align-items-center gap-2 account-actions';
+					var btnSwitch = document.createElement('button'); 
+					btnSwitch.className = 'btn btn-sm btn-switch';
+					btnSwitch.innerHTML = '<i class="bi bi-arrow-left-right me-1"></i>สลับ';
+					btnSwitch.onclick = function (e) { e.stopPropagation(); immediateSwitchAccount(a.username); };
+					
+					var btnRemove = document.createElement('button'); 
+					btnRemove.className = 'btn btn-sm btn-remove';
+					btnRemove.innerHTML = '<i class="bi bi-trash3"></i>';
+					btnRemove.setAttribute('aria-label', 'ลบบัญชี ' + a.username);
+					btnRemove.onclick = function (e) { e.stopPropagation(); requestDeleteAccount(a.username); };
+					
+					right.appendChild(btnSwitch); right.appendChild(btnRemove);
+					card.appendChild(left); card.appendChild(right);
+					grid.appendChild(card);
+					
+					// stagger animation
+					setTimeout(function () { card.classList.add('entered'); }, delay);
+					delay += 50;
+					
+					card.addEventListener('keydown', function (ev) { 
+						if (ev.key === 'Enter') { ev.preventDefault(); immediateSwitchAccount(a.username); } 
+						if (ev.key === 'Delete') { ev.preventDefault(); requestDeleteAccount(a.username); } 
+					});
+					card.addEventListener('click', function (ev) { ev.preventDefault(); ev.stopPropagation(); immediateSwitchAccount(a.username); });
+				});
+			}
+
+			// immediate switch with undo support
+			function immediateSwitchAccount(username) {
+				var prev = ('{{ user.username|default:"" }}' || '').trim();
+				// perform switch immediately (no undo)
+				doSwitch(username, { undoable: false, previous: prev });
+			}
+
+			function doSwitch(username, opts) {
+				opts = opts || {};
+				var token = getCsrfToken();
+				var fd = new FormData(); fd.append('username', username);
+				return fetch('{% url "switch_account" %}', {
+					method: 'POST',
+					body: fd,
+					credentials: 'same-origin',
+					headers: {
+						'X-CSRFToken': token,
+						'X-Requested-With': 'XMLHttpRequest',
+						'Accept': 'application/json'
+					}
+				}).then(function (r) { console.debug('POST /accounts/switch/ raw response', r.status, r.headers.get('Content-Type')); return r.json ? r.json() : Promise.resolve({}); })
+					.then(function (j) {
+						if (j && j.ok) {
+							if (opts.undoable) {
+								showUndoToast(opts.previous || ('{{ user.username|default:"" }}' || '').trim(), username, 5000);
+							} else {
+								location.reload();
+							}
+						} else {
+							console.error('switch_account returned', j);
+							showToast(j && (j.error || j.message) ? (j.error || j.message) : 'เกิดข้อผิดพลาดขณะสลับบัญชี', 'danger');
+						}
+					}).catch(function (err) { console.error('fetch /accounts/switch/ failed', err); showToast('เกิดข้อผิดพลาดขณะสลับบัญชี', 'danger'); });
+			}
+
+			function showUndoToast(prev, to, delay) {
+				delay = typeof delay === 'number' ? delay : 5000;
+				var container = document.getElementById('toast-container'); if (!container) return;
+				var toastEl = document.createElement('div');
+				toastEl.className = 'toast align-items-center text-bg-primary border-0';
+				toastEl.setAttribute('role', 'alert'); toastEl.setAttribute('aria-live', 'assertive'); toastEl.setAttribute('aria-atomic', 'true');
+				toastEl.innerHTML = '<div class="d-flex w-100 align-items-center"><div class="toast-body">สลับไปยัง <strong>' + to + '</strong></div><div class="d-flex align-items-center ms-2 me-2"><button class="btn btn-sm btn-outline-light me-2" id="undoSwitchBtn">ยกเลิก</button><button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button></div></div>';
+				container.appendChild(toastEl);
+				var bs = new bootstrap.Toast(toastEl, { autohide: false }); bs.show();
+				var timer = setTimeout(function () { bs.hide(); location.reload(); }, delay);
+				var undoBtn = toastEl.querySelector('#undoSwitchBtn');
+				undoBtn.onclick = function () {
+					clearTimeout(timer); bs.hide(); // revert server-side by switching back
+					doSwitch(prev, { undoable: false });
+				};
+				toastEl.addEventListener('hidden.bs.toast', function () { toastEl.remove(); });
+			}
+
+			function addAccountFormHandler(ev) {
+				ev.preventDefault();
+				var username = document.getElementById('acc-username').value;
+				var password = document.getElementById('acc-password').value;
+				// Basic client-side validation to avoid empty submits
+				if (!username || !username.trim() || !password || !password.trim()) {
+					showToast('กรุณากรอกชื่อผู้ใช้ และรหัสผ่าน', 'danger');
+					if (!username || !username.trim()) {
+						document.getElementById('acc-username').focus();
+					} else {
+						document.getElementById('acc-password').focus();
+					}
+					return;
+				}
+				var token = getCsrfToken();
+				var fd = new FormData(); fd.append('username', username); fd.append('password', password);
+				// show spinner on add button
+				var addBtn = document.getElementById('addAccountBtn');
+				var spinner = document.getElementById('addSpinner');
+				var addText = document.getElementById('addBtnText');
+				if (addBtn) { addBtn.setAttribute('disabled', 'disabled'); }
+				if (spinner) { spinner.classList.remove('d-none'); }
+
+				fetch('{% url "add_account" %}', {
+					method: 'POST',
+					body: fd,
+					credentials: 'same-origin',
+					headers: {
+						'X-CSRFToken': token,
+						'X-Requested-With': 'XMLHttpRequest',
+						'Accept': 'application/json'
+					}
+				}).then(function (r) {
+					console.debug('POST /accounts/add/ raw response', r.status, r.headers.get('Content-Type'));
+					return r.json ? r.json() : Promise.resolve({});
+				}).then(function (j) {
+					if (j && j.ok) {
+						accounts.push({ username: j.username, user_id: j.user_id });
+						renderAccounts();
+						var m = bootstrap.Modal.getInstance(document.getElementById('addAccountModal')); if (m) m.hide();
+						showToast('เพิ่มบัญชีสำเร็จ', 'success');
+					} else {
+						console.error('add_account returned error JSON', j);
+						showToast(j && (j.error || j.message) ? (j.error || j.message) : 'เกิดข้อผิดพลาด', 'danger');
+					}
+				}).catch(function (err) { console.error('fetch /accounts/add/ failed', err); showToast('เกิดข้อผิดพลาด', 'danger'); }).finally(function () {
+					if (addBtn) { addBtn.removeAttribute('disabled'); }
+					if (spinner) { spinner.classList.add('d-none'); }
+				});
+			}
+
+			// fixed palette for avatar backgrounds to ensure good contrast
+			var AVATAR_PALETTE = ['#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#fd7e14', '#198754', '#0dcaf0', '#0f5132', '#6c757d', '#0b5ed7'];
+			function avatarColor(name) {
+				if (!name) return '#6c757d';
+				var s = 0;
+				for (var i = 0; i < name.length; i++) { s = s * 31 + name.charCodeAt(i); s = s & s; }
+				var idx = Math.abs(s) % AVATAR_PALETTE.length;
+				return AVATAR_PALETTE[idx];
+			}
+
+			// Helper: read CSRF token either from injected form input or from cookie
+			function getCsrfToken() {
+				var el = document.querySelector('input[name=csrfmiddlewaretoken]');
+				if (el && el.value) return el.value;
+				var match = document.cookie.match('(^|;)\\s*' + 'csrftoken' + '\\s*=\\s*([^;]+)');
+				return match ? match.pop() : '';
+			}
+
+			function switchAccount(username) {
+				var token = getCsrfToken();
+				var fd = new FormData(); fd.append('username', username);
+				fetch('{% url "switch_account" %}', {
+					method: 'POST',
+					body: fd,
+					credentials: 'same-origin',
+					headers: {
+						'X-CSRFToken': token,
+						'X-Requested-With': 'XMLHttpRequest',
+						'Accept': 'application/json'
+					}
+				}).then(function (r) {
+					console.debug('POST /accounts/switch/ raw response', r.status, r.headers.get('Content-Type'));
+					return r.json ? r.json() : Promise.resolve({});
+				})
+					.then(function (j) { if (j && j.ok) { location.reload(); } else { console.error('switch_account returned', j); showToast(j && (j.error || j.message) ? (j.error || j.message) : 'เกิดข้อผิดพลาดขณะสลับบัญชี', 'danger'); } })
+					.catch(function (err) { console.error('fetch /accounts/switch/ failed', err); showToast('เกิดข้อผิดพลาดขณะสลับบัญชี', 'danger'); });
+			}
+
+			// show delete modal and remember username
+			function requestDeleteAccount(username) {
+				var delName = document.getElementById('del-username');
+				if (delName) delName.textContent = username;
+				var delModalEl = document.getElementById('confirmDeleteModal');
+				var delModal = new bootstrap.Modal(delModalEl);
+				// set handler for confirm button
+				var btn = document.getElementById('confirmDeleteBtn');
+				btn.onclick = function () {
+					doRemoveAccount(username);
+					delModal.hide();
+				};
+				delModal.show();
+			}
+
+			function doRemoveAccount(username) {
+				var token = getCsrfToken();
+				var fd = new FormData(); fd.append('username', username);
+				fetch('{% url "remove_account" %}', {
+					method: 'POST',
+					body: fd,
+					credentials: 'same-origin',
+					headers: {
+						'X-CSRFToken': token,
+						'X-Requested-With': 'XMLHttpRequest',
+						'Accept': 'application/json'
+					}
+				}).then(function (r) {
+					console.debug('POST /accounts/remove/ raw response', r.status, r.headers.get('Content-Type'));
+					return r.json ? r.json() : Promise.resolve({});
+				})
+					.then(function (j) {
+						if (j && j.ok) {
+							accounts = accounts.filter(function (a) { return a.username !== username; });
+							renderAccounts();
+							showToast('ลบบัญชีเรียบร้อย', 'success');
+						} else {
+							console.error('remove_account returned', j);
+							showToast(j && (j.error || j.message) ? (j.error || j.message) : 'เกิดข้อผิดพลาด', 'danger');
+						}
+					}).catch(function (err) { console.error('fetch /accounts/remove/ failed', err); showToast('เกิดข้อผิดพลาด', 'danger'); });
+			}
+
+			// consolidated showToast that uses toast-container and shows an icon
+			function showToast(message, level) {
+				level = level || 'info';
+				var container = document.getElementById('toast-container'); if (!container) return;
+				var toastEl = document.createElement('div');
+				toastEl.className = 'toast align-items-center text-bg-' + (level === 'success' ? 'success' : (level === 'danger' ? 'danger' : 'primary')) + ' border-0';
+				toastEl.setAttribute('role', 'alert'); toastEl.setAttribute('aria-live', 'assertive'); toastEl.setAttribute('aria-atomic', 'true');
+				var icons = {
+					success: '<svg class="toast-icon" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M6 10.8L3.2 8l-.9.9L6 12.6l8-8-.9-.9L6 10.8z"/></svg>',
+					danger: '<svg class="toast-icon" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm1 10H7V9h2v2zm0-3H7V4h2v4z"/></svg>',
+					info: '<svg class="toast-icon" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm1 11H7V7h2v5zm0-6H7V4h2v2z"/></svg>'
+				};
+				toastEl.innerHTML = '<div class="d-flex"><div class="toast-body">' + (icons[level] || icons.info) + '<span>' + message + '</span></div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
+				container.appendChild(toastEl);
+				var t = new bootstrap.Toast(toastEl, { delay: 3500 }); t.show();
+				toastEl.addEventListener('hidden.bs.toast', function () { toastEl.remove(); });
+			}
+
+			// wire form
+			var f = document.getElementById('addAccountForm'); if (f) f.addEventListener('submit', addAccountFormHandler);
+			renderAccounts();
+		})();
+	</script>
+	<!-- Delete confirmation modal -->
+	<!-- Confirm switch modal -->
+	<div class="modal fade" id="confirmSwitchModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">
+						<i class="bi bi-arrow-left-right me-2"></i>ยืนยันสลับบัญชี
+					</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
+				</div>
+				<div class="modal-body">
+					<div class="d-flex align-items-center justify-content-center gap-4 py-3">
+						<!-- Current account -->
+						<div class="text-center">
+							<div class="account-avatar mx-auto mb-2" id="confirm-cur-avatar" style="width:56px;height:56px;font-size:1.5rem"></div>
+							<div class="fw-semibold" id="confirm-cur"></div>
+							<div class="small text-muted">ปัจจุบัน</div>
+						</div>
+						<!-- Arrow -->
+						<div class="switch-arrow">
+							<i class="bi bi-arrow-right" style="font-size:2rem;color:#667eea"></i>
+						</div>
+						<!-- Target account -->
+						<div class="text-center">
+							<div class="account-avatar mx-auto mb-2" id="confirm-tgt-avatar" style="width:56px;height:56px;font-size:1.5rem"></div>
+							<div class="fw-bold text-primary" id="confirm-tgt"></div>
+							<div class="small text-muted">จะสลับไป</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">
+						<i class="bi bi-x-lg me-1"></i>ยกเลิก
+					</button>
+					<button id="confirmSwitchBtn" type="button" class="btn btn-primary px-4">
+						<i class="bi bi-check-lg me-1"></i>สลับบัญชี
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header bg-danger text-white">
+					<h5 class="modal-title">
+						<i class="bi bi-exclamation-triangle me-2"></i>ยืนยันการลบ
+					</h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="ปิด"></button>
+				</div>
+				<div class="modal-body text-center py-4">
+					<div class="mb-3">
+						<i class="bi bi-person-x" style="font-size:3rem;color:#dc3545"></i>
+					</div>
+					<p class="mb-2">ต้องการลบบัญชี</p>
+					<p class="fw-bold fs-5 text-danger" id="del-username"></p>
+					<p class="text-muted small">จากรายการสลับบัญชีใช่หรือไม่?</p>
+				</div>
+				<div class="modal-footer justify-content-center">
+					<button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">
+						<i class="bi bi-x-lg me-1"></i>ยกเลิก
+					</button>
+					<button id="confirmDeleteBtn" type="button" class="btn btn-danger px-4">
+						<i class="bi bi-trash3 me-1"></i>ลบบัญชี
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	{% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

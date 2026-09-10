@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load cmms_filters %}
+{% block title %}<title>{% if create %}เพิ่ม Master{% else %}แก้ไข Master{% endif %}</title>{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">{% if create %}เพิ่ม Master{% else %}แก้ไข Master{% endif %}</div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <!-- คำอธิบาย: ส่วนนี้เป็นฟอร์มสร้าง/แก้ไข MasterItem
+           - ตัวแปร context ที่ใช้: form (Django form), create (boolean), parent_label (ข้อความของ parent ถ้ามี), parent_id
+           - เราเรนเดอร์ฟิลด์ทีละตัวเพื่อให้สามารถแทรก UI สำหรับสังกัด (parent) ได้สะดวก
+           - field_defs: รายการ MasterFieldDefinition สำหรับหมวดนี้ (ถ้ามี)
+           - meta_errors: dict ของ errors สำหรับแต่ละ meta field
+           - meta_values: dict ของค่าที่ผู้ใช้กรอก (เมื่อมี error หรือในโหมดแก้ไข) -->
+      {# Render fields individually so we can show parent label when provided #}
+      {% if parent_label or parent_id %}
+        <!-- ส่วนแสดงสังกัด (Parent)
+             - ช่องอ่านอย่างเดียวแสดงชื่อ/รหัสของ parent ที่จะถูกตั้งให้กับรายการนี้ (ถ้ามี)
+             - ปุ่ม "เลือกสังกัด" จะเปิด parent-picker modal (JS อยู่ใน _master_shared_js.html)
+             - ปุ่ม "ลบสังกัด" จะเคลียร์ค่าสังกัดที่เลือก
+             - ค่า parent ที่แท้จริงจะถูกส่งผ่าน hidden input ชื่อ parent_id (ดูด้านล่าง) -->
+        <div class="mb-2">
+          <label for="mi-parent-display" class="form-label">สังกัด (Parent)</label>
+          <div class="input-group">
+            {# hidden input rendered below by form.parent_id if available; fallback kept later #}
+            <input type="text" class="form-control form-control-sm" id="mi-parent-display" value="{{ parent_label|default:parent_id }}" readonly>
+            <button type="button" class="btn btn-outline-secondary" id="mi-change-parent-btn" title="เลือกสังกัด"><i class="bi bi-chevron-down"></i></button>
+            <button type="button" class="btn btn-outline-light" id="mi-clear-parent-btn" title="ลบสังกัด"><i class="bi bi-x-lg text-danger"></i></button>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- ฟิลด์ Category: หมวดหมู่ของ MasterItem -->
+      <div class="mb-2">
+        {{ form.category.label_tag }}
+        {{ form.category }}
+        {% if form.category.errors %}<div class="invalid-feedback d-block">{{ form.category.errors }}</div>{% endif %}
+      </div>
+      <!-- ฟิลด์ Code: รหัสภายใน (ไม่บังคับแต่ใช้เพื่อตรวจสอบความเป็นเอกลักษณ์ภายในหมวด) -->
+      <div class="mb-2">
+        {{ form.code.label_tag }}
+        {{ form.code }}
+        {% if form.code.errors %}<div class="invalid-feedback d-block">{{ form.code.errors }}</div>{% endif %}
+      </div>
+      <!-- ฟิลด์ Label: ชื่อรายการ (จำเป็น) -->
+      <div class="mb-2">
+        {{ form.label.label_tag }}
+        {{ form.label }}
+        {% if form.label.errors %}<div class="invalid-feedback d-block">{{ form.label.errors }}</div>{% endif %}
+      </div>
+      <!-- ฟิลด์ Description: คำอธิบายเพิ่มเติม -->
+      <div class="mb-2">
+        {{ form.description.label_tag }}
+        {{ form.description }}
+        {% if form.description.errors %}<div class="invalid-feedback d-block">{{ form.description.errors }}</div>{% endif %}
+      </div>
+      <!-- ฟิลด์ Order: ลำดับการแสดง (ตัวเลข) -->
+      <div class="mb-2">
+        {{ form.order.label_tag }}
+        {{ form.order }}
+        {% if form.order.errors %}<div class="invalid-feedback d-block">{{ form.order.errors }}</div>{% endif %}
+      </div>
+      <!-- ฟิลด์ Active: สถานะใช้งาน/ไม่ใช้งาน -->
+      <div class="form-check mb-2">
+        {{ form.active }} {{ form.active.label_tag }}
+      </div>
+
+      <!-- Dynamic Fields Section -->
+      {% if field_defs %}
+        <hr class="my-3">
+        <h6 class="text-secondary mb-3">
+          <i class="bi bi-gear-fill me-2"></i>ฟิลด์เพิ่มเติมสำหรับหมวดนี้
+        </h6>
+        {% for fdef in field_defs %}
+          <div class="mb-3">
+            <label for="meta_{{ fdef.name }}" class="form-label">
+              {{ fdef.label }}
+              {% if fdef.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+
+            {% if fdef.field_type == 'string' %}
+              <input type="text" 
+                     class="form-control {% if fdef.name in meta_errors %}is-invalid{% endif %}" 
+                     id="meta_{{ fdef.name }}" 
+                     name="meta.{{ fdef.name }}" 
+                     value="{{ meta_values|get_item:fdef.name|default:'' }}"
+                     {% if fdef.required %}required{% endif %}>
+
+            {% elif fdef.field_type == 'text' %}
+              <textarea class="form-control {% if fdef.name in meta_errors %}is-invalid{% endif %}" 
+                        id="meta_{{ fdef.name }}" 
+                        name="meta.{{ fdef.name }}" 
+                        rows="3"
+                        {% if fdef.required %}required{% endif %}>{{ meta_values|get_item:fdef.name|default:'' }}</textarea>
+
+            {% elif fdef.field_type == 'integer' %}
+              <input type="number" 
+                     class="form-control {% if fdef.name in meta_errors %}is-invalid{% endif %}" 
+                     id="meta_{{ fdef.name }}" 
+                     name="meta.{{ fdef.name }}" 
+                     value="{{ meta_values|get_item:fdef.name|default:'' }}"
+                     {% if fdef.required %}required{% endif %}>
+
+            {% elif fdef.field_type == 'decimal' %}
+              <input type="number" 
+                     step="0.01"
+                     class="form-control {% if fdef.name in meta_errors %}is-invalid{% endif %}" 
+                     id="meta_{{ fdef.name }}" 
+                     name="meta.{{ fdef.name }}" 
+                     value="{{ meta_values|get_item:fdef.name|default:'' }}"
+                     {% if fdef.required %}required{% endif %}>
+
+            {% elif fdef.field_type == 'boolean' %}
+              <div class="form-check">
+                <input type="checkbox" 
+                       class="form-check-input {% if fdef.name in meta_errors %}is-invalid{% endif %}" 
+                       id="meta_{{ fdef.name }}" 
+                       name="meta.{{ fdef.name }}" 
+                       value="1"
+                       {% if meta_values|get_item:fdef.name %}checked{% endif %}>
+                <label class="form-check-label" for="meta_{{ fdef.name }}">
+                  เปิดใช้งาน
+                </label>
+              </div>
+
+            {% elif fdef.field_type == 'date' %}
+              <input type="date" 
+                     class="form-control {% if fdef.name in meta_errors %}is-invalid{% endif %}" 
+                     id="meta_{{ fdef.name }}" 
+                     name="meta.{{ fdef.name }}" 
+                     value="{{ meta_values|get_item:fdef.name|default:'' }}"
+                     {% if fdef.required %}required{% endif %}>
+
+            {% elif fdef.field_type == 'select' %}
+              <select class="form-select {% if fdef.name in meta_errors %}is-invalid{% endif %}" 
+                      id="meta_{{ fdef.name }}" 
+                      name="meta.{{ fdef.name }}"
+                      {% if fdef.required %}required{% endif %}>
+                <option value="">---------</option>
+                {% if fdef.choices %}
+                  {% for choice in fdef.choices %}
+                    {% if choice.value %}
+                      {# choice is dict with value and label #}
+                      <option value="{{ choice.value }}" 
+                              {% if meta_values|get_item:fdef.name == choice.value %}selected{% endif %}>
+                        {{ choice.label }}
+                      </option>
+                    {% else %}
+                      {# choice is simple string #}
+                      <option value="{{ choice }}" 
+                              {% if meta_values|get_item:fdef.name == choice %}selected{% endif %}>
+                        {{ choice }}
+                      </option>
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+              </select>
+
+            {% else %}
+              {# Fallback for unknown type #}
+              <input type="text" 
+                     class="form-control {% if fdef.name in meta_errors %}is-invalid{% endif %}" 
+                     id="meta_{{ fdef.name }}" 
+                     name="meta.{{ fdef.name }}" 
+                     value="{{ meta_values|get_item:fdef.name|default:'' }}"
+                     {% if fdef.required %}required{% endif %}>
+            {% endif %}
+
+            {% if fdef.help_text %}
+              <div class="form-text">{{ fdef.help_text }}</div>
+            {% endif %}
+            {% if fdef.name in meta_errors %}
+              <div class="invalid-feedback d-block">
+                {{ meta_errors|get_item:fdef.name }}
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <!-- Hidden parent_id: ค่าจริงของสังกัดที่จะถูกส่งใน POST
+           - ถ้า form.parent_id มีอยู่ จะเรนเดอร์ widget ของฟอร์ม (มี id=mi-parent)
+           - มิฉะนั้น fallback จะใส่ input ซ่อนชื่อ mi-parent-fallback เพื่อให้ข้อมูลยังถูกส่ง -->
+      {% if form.parent_id %}
+        {{ form.parent_id }}
+      {% else %}
+        <input type="hidden" name="parent_id" id="mi-parent-fallback" value="{{ parent_id }}">
+      {% endif %}
+      <!-- ปุ่มส่งฟอร์มและปุ่มยกเลิก -->
+      <hr class="my-3">
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-circle me-1"></i>บันทึก
+      </button>
+      <a href="{% url 'master_list' %}" class="btn btn-secondary ms-2">
+        <i class="bi bi-x-circle me-1"></i>ยกเลิก
+      </a>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_modals %}
+  {% include 'master/_master_modals.html' %}
+{% endblock %}
+
+{% block extra_scripts %}
+  {% include 'master/_master_shared_js.html' %}
+{% endblock %}

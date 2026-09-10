@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}<title>ลบคำขอ {{ sr.display_id }} - ระบุสาเหตุ</title>{% endblock %}
+{% block content %}
+<div class="container" style="max-width:700px;margin:2rem auto;">
+  <h2>ลบคำขอ {{ sr.display_id }}</h2>
+  <p>โปรดระบุสาเหตุการลบคำขอนี้ (ข้อมูลนี้จะถูกบันทึกในประวัติ)</p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="reason" class="form-label">สาเหตุ</label>
+      <textarea id="reason" name="reason" class="form-control" rows="5" required placeholder="อธิบายเหตุผล... เช่น ข้อมูลซ้ำ, แจ้งผิด"></textarea>
+    </div>
+    <div style="display:flex;gap:0.5rem;">
+      <button type="submit" class="btn btn-danger">ยืนยันการลบ</button>
+      <a href="{% url 'service_request_detail' sr.id %}" class="btn btn-secondary">ยกเลิก</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

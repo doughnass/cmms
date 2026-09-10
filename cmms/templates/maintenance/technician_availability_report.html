@@ -1,0 +1,1886 @@
+{% extends 'base.html' %}
+{% block title %}<title>รายงานตารางช่าง</title>{% endblock %}
+{% block content %}
+
+<style>
+/* === Modern Design System === */
+:root {
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --primary-light: #dbeafe;
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --info: #06b6d4;
+  --info-light: #cffafe;
+  --purple: #8b5cf6;
+  --purple-light: #ede9fe;
+  --bg-light: #f1f5f9;
+  --bg-card: #ffffff;
+  --border: #e2e8f0;
+  --border-light: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --radius: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+}
+
+
+/* === Card Components === */
+.card-modern {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  margin-bottom: 2rem;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  transition: all 0.3s ease;
+}
+
+.card-modern:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.card-header-modern {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 2rem 2.5rem;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-header-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+}
+
+.card-header-modern h3 {
+  position: relative;
+  z-index: 1;
+  font-weight: 700;
+  font-size: 1.5rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-header-modern p {
+  position: relative;
+  z-index: 1;
+}
+
+.card-body-modern {
+  padding: 2.5rem;
+}
+
+/* === Stats Cards === */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  border-left: 5px solid var(--primary);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+.stat-card.success { 
+  border-left-color: var(--success);
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+}
+.stat-card.warning { 
+  border-left-color: var(--warning);
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+}
+.stat-card.danger { 
+  border-left-color: var(--danger);
+  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+}
+.stat-card.info { 
+  border-left-color: var(--info);
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
+}
+.stat-card.purple { 
+  border-left-color: var(--purple);
+  background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
+}
+
+.stat-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  z-index: 1;
+}
+
+.stat-icon.success { background: var(--success-light); color: var(--success); }
+.stat-icon.warning { background: var(--warning-light); color: var(--warning); }
+.stat-icon.danger { background: var(--danger-light); color: var(--danger); }
+.stat-icon.primary { background: var(--primary-light); color: var(--primary); }
+.stat-icon.info { background: var(--info-light); color: var(--info); }
+.stat-icon.purple { background: var(--purple-light); color: var(--purple); }
+
+.stat-value {
+  font-size: 2.75rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+  position: relative;
+  z-index: 1;
+}
+
+.stat-label {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+}
+
+.stat-sublabel {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  position: relative;
+  z-index: 1;
+}
+
+/* compact styling for small/detail text inside stat cards */
+.stat-detail-small {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.stat-value-compact {
+  font-size: 1.15rem;
+  margin: 0;
+  font-weight: 700;
+}
+.stat-label-compact {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* === Calendar Table === */
+.calendar-wrapper {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-light);
+}
+
+.calendar-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.9rem;
+}
+
+.calendar-table thead th {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 1rem 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.calendar-table thead th:first-child {
+  min-width: 180px;
+  text-align: left;
+  padding-left: 2rem;
+  font-size: 0.9rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.calendar-table tbody td {
+  padding: 0.75rem;
+  border: 1px solid var(--border-light);
+  text-align: center;
+  transition: all 0.2s ease;
+  vertical-align: middle;
+}
+
+.calendar-table tbody td:first-child {
+  font-weight: 600;
+  color: var(--text-primary);
+  background: linear-gradient(90deg, #fafbfc 0%, #ffffff 100%);
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  padding-left: 2rem;
+  text-align: left;
+  border-right: 2px solid var(--border);
+  font-size: 0.95rem;
+}
+
+.calendar-table tbody tr:hover td {
+  background: #f8fafc;
+}
+
+.calendar-table tbody tr:hover td:first-child {
+  background: linear-gradient(90deg, #f1f5f9 0%, #f8fafc 100%);
+}
+
+/* === Status Display === */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  min-width: 70px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.status-badge:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow);
+}
+
+.status-work {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  border: 1px solid #86efac;
+}
+
+.status-ot {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.status-leave {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.status-empty {
+  background: var(--bg-light);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  font-weight: 500;
+}
+
+.status-shift {
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  color: #5b21b6;
+  border: 1px solid #c4b5fd;
+}
+
+/* === Weekend & Holiday === */
+.is-weekend {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+  border-left: 3px solid var(--warning) !important;
+}
+
+.is-holiday {
+  background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%) !important;
+  position: relative;
+  border-left: 3px solid var(--danger) !important;
+}
+
+.is-holiday::before {
+  content: '🏛️';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.is-today {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%) !important;
+  font-weight: 700;
+  border: 2px solid var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* === Technician Stats Table === */
+.tech-stats-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.tech-stats-table thead th {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 1.25rem 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border);
+  text-align: center;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tech-stats-table thead th:first-child {
+  text-align: left;
+  text-transform: none;
+  font-size: 0.95rem;
+  letter-spacing: normal;
+}
+
+.tech-stats-table tbody td {
+  padding: 1.5rem 1rem;
+  border-bottom: 1px solid var(--border-light);
+  transition: all 0.2s ease;
+}
+
+.tech-stats-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.tech-stats-table tbody tr:hover {
+  background: linear-gradient(90deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.tech-stats-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* === Progress Bar === */
+.progress-bar-custom {
+  height: 6px;
+  background: var(--border-light);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 0.75rem;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.progress-fill {
+  height: 100%;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 99px;
+  background: linear-gradient(90deg, currentColor 0%, currentColor 100%);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.progress-fill.success { 
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+.progress-fill.warning { 
+  background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+}
+.progress-fill.danger { 
+  background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+}
+.progress-fill.info { 
+  background: linear-gradient(90deg, #06b6d4 0%, #0891b2 100%);
+}
+.progress-fill.purple { 
+  background: linear-gradient(90deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+/* === Buttons === */
+.btn-modern {
+  border-radius: var(--radius);
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.2s ease;
+  border: none;
+  box-shadow: var(--shadow-sm);
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-modern-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+}
+
+.btn-modern-primary:hover {
+  background: linear-gradient(135deg, var(--primary-dark) 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  color: white;
+}
+
+.btn-light {
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-light:hover {
+  background: var(--bg-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+/* === Month Selector === */
+.month-selector {
+  display: flex;
+  gap: 1.25rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.form-group-modern label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-select-modern {
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  background: white;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.form-select-modern:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.month-selector-width {
+  min-width: 180px;
+}
+
+.year-selector-width {
+  min-width: 140px;
+}
+
+/* === Print Styles === */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .card-modern {
+    box-shadow: none;
+    border: 1px solid var(--border);
+    page-break-inside: avoid;
+  }
+  
+  body {
+    background: white;
+  }
+
+  .stat-card {
+    box-shadow: none;
+    border: 1px solid var(--border);
+  }
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .calendar-table {
+    font-size: 0.75rem;
+  }
+  
+  .card-body-modern {
+    padding: 1.5rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-value {
+    font-size: 2.25rem;
+  }
+
+  .stat-icon {
+    width: 52px;
+    height: 52px;
+    font-size: 1.5rem;
+  }
+
+  .card-header-modern {
+    padding: 1.5rem 1.75rem;
+  }
+
+  .card-header-modern h3 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Responsive transformation for Technician Summary Table
+   - On narrow screens convert rows into card-like blocks
+   - Hide verbose sublabels/progress by default and reveal when row is expanded
+*/
+@media (max-width: 900px) {
+  .tech-stats-table {
+    width: 100%;
+  }
+  .tech-stats-table thead { display: none; }
+  .tech-stats-table tbody { display: block; }
+  .tech-stats-table tbody tr {
+    display: block;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.85rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .tech-stats-table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.25rem 0;
+    border: none;
+  }
+  .tech-stats-table tbody td:first-child {
+    padding-bottom: 0.5rem;
+  }
+  /* hide verbose parts by default to make compact view */
+  .tech-stats-table .progress-bar-custom,
+  .tech-stats-table td small.text-muted.d-block.mt-1,
+  .tech-stats-table .stat-sublabel,
+  .tech-stats-table .stat-detail-small {
+    display: none !important;
+  }
+  /* show important numbers as badges / labels */
+  .tech-stats-table td .badge { font-size: 0.95rem; }
+
+  /* toggle button */
+  .tech-stats-table .row-toggle {
+    background: transparent;
+    border: none;
+    color: var(--primary);
+    font-size: 1.05rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.25rem;
+  }
+
+  /* when a row is expanded, reveal the hidden details */
+  .tech-stats-table tbody tr.expanded .progress-bar-custom,
+  .tech-stats-table tbody tr.expanded td small.text-muted.d-block.mt-1,
+  .tech-stats-table tbody tr.expanded .stat-sublabel,
+  .tech-stats-table tbody tr.expanded .stat-detail-small {
+    display: block !important;
+  }
+}
+
+/* === Additional Enhancements === */
+.report-container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.header-subtitle {
+  font-size: 1rem;
+}
+
+.badge {
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.badge.bg-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+}
+
+.text-success { color: var(--success) !important; }
+.text-warning { color: var(--warning) !important; }
+.text-danger { color: var(--danger) !important; }
+.text-primary { color: var(--primary) !important; }
+.text-muted { color: var(--text-muted) !important; }
+
+.fw-semibold { font-weight: 600; }
+
+small.text-muted {
+  font-size: 0.8rem;
+  display: block;
+  margin-top: 0.25rem;
+}
+
+h5 {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+}
+
+h6 {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+</style>
+
+<div class="container-fluid py-4 report-container">
+  
+  <!-- Header -->
+  <div class="card-modern no-print">
+    <div class="card-header-modern">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+          <h3 class="mb-2">
+            <i class="bi bi-graph-up-arrow me-2"></i>รายงานตารางช่างเทคนิค
+          </h3>
+          <p class="mb-0 opacity-90 header-subtitle">
+            <i class="bi bi-calendar-check me-2"></i>สรุปผลการทำงาน ล่วงเวลา การลา และตารางเวรประจำเดือน
+          </p>
+        </div>
+        <div class="d-flex gap-2">
+          <button onclick="window.print()" class="btn btn-light">
+            <i class="bi bi-printer-fill me-2"></i>พิมพ์รายงาน
+          </button>
+          <a href="{% url 'technician_availability_manage' %}?month={{ date.month }}&year={{ date.year }}" class="btn btn-modern btn-modern-primary">
+            <i class="bi bi-pencil-square me-2"></i>จัดการตาราง
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Month Selector -->
+  <div class="card-modern no-print">
+    <div class="card-body-modern">
+      <form method="get" id="month-form">
+        <div class="month-selector">
+          <div class="form-group-modern">
+            <label for="month-select"><i class="bi bi-calendar me-1"></i>เดือน</label>
+            <select class="form-select-modern month-selector-width" name="month" id="month-select" aria-label="เลือกเดือน">
+              <option value="">ทั้งหมด (ทุกเดือน)</option>
+              <option value="1">มกราคม</option>
+              <option value="2">กุมภาพันธ์</option>
+              <option value="3">มีนาคม</option>
+              <option value="4">เมษายน</option>
+              <option value="5">พฤษภาคม</option>
+              <option value="6">มิถุนายน</option>
+              <option value="7">กรกฎาคม</option>
+              <option value="8">สิงหาคม</option>
+              <option value="9">กันยายน</option>
+              <option value="10">ตุลาคม</option>
+              <option value="11">พฤศจิกายน</option>
+              <option value="12">ธันวาคม</option>
+            </select>
+          </div>
+
+          <div class="form-group-modern">
+            <label for="year-select"><i class="bi bi-calendar-range me-1"></i>ปี (พ.ศ.)</label>
+            <select class="form-select-modern year-selector-width" name="year" id="year-select" aria-label="เลือกปี">
+              {% now "Y" as current_year %}
+              {% for i in "012345" %}
+                <option value="{{ current_year|add:i|add:"-2" }}">{{ current_year|add:i|add:"-2"|add:"543" }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group-modern">
+            <label for="technician-select"><i class="bi bi-person-badge me-1"></i>ช่าง</label>
+            <select class="form-select-modern month-selector-width" name="technician" id="technician-select" aria-label="เลือกช่าง">
+              <option value="">ทั้งหมด (ทุกช่าง)</option>
+              {% for tech in technicians %}
+                <option value="{{ tech.id }}" {% if request.GET.technician == tech.id|stringformat:"s" %}selected{% endif %}>{{ tech.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div>
+            <button type="submit" class="btn btn-modern btn-modern-primary">
+              <i class="bi bi-search me-1"></i>แสดง
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Report Header (for print) -->
+  <div class="card-modern d-none d-print-block">
+    <div class="card-body-modern text-center">
+      <h2 class="mb-2">รายงานตารางช่างเทคนิค</h2>
+      <p class="text-muted mb-0" id="print-period">เดือน <span id="print-month-text"></span> <span id="print-year-text"></span></p>
+    </div>
+  </div>
+
+  <!-- Overall Statistics -->
+  <div class="stats-grid" id="overall-stats">
+    <!-- Generated by JavaScript -->
+  </div>
+
+  <!-- Technician Summary Table -->
+  <div class="card-modern">
+    <div class="card-body-modern">
+      <h5 class="mb-4">
+        <i class="bi bi-people-fill me-2"></i>สรุปรายบุคคล
+        <span class="badge bg-secondary ms-2" id="total-tech-count"></span>
+      </h5>
+      <div class="table-responsive">
+        <table class="tech-stats-table" id="tech-stats">
+          <thead>
+            <tr>
+              <th><i class="bi bi-person-badge me-2"></i>ชื่อช่าง</th>
+              <th class="text-center"><i class="bi bi-briefcase-fill me-1"></i>ทำงาน</th>
+              <th class="text-center"><i class="bi bi-lightning-charge-fill me-1"></i>ล่วงเวลา</th>
+              <th class="text-center"><i class="bi bi-calendar-event-fill me-1"></i>วันหยุด</th>
+              <th class="text-center"><i class="bi bi-person-x-fill me-1"></i>ลา</th>
+              <th class="text-center"><i class="bi bi-clock-history me-1"></i>ขึ้นเวร</th>
+              <th class="text-center"><i class="bi bi-clipboard-check-fill me-1"></i>รวม</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Generated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar View -->
+  <div class="card-modern">
+    <div class="card-body-modern">
+      <h5 class="mb-4">
+        <i class="bi bi-calendar3 me-2"></i>ตารางรายละเอียดประจำเดือน
+      </h5>
+      <div class="calendar-wrapper">
+        <div class="table-responsive" id="calendar-scroll">
+          <table class="calendar-table" id="calendar">
+            <thead>
+              <tr id="calendar-header">
+                <th><i class="bi bi-person-lines-fill me-2"></i>ช่างเทคนิค</th>
+                <!-- Generated by JavaScript -->
+              </tr>
+            </thead>
+            <tbody id="calendar-body">
+              <!-- Generated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="card-modern">
+    <div class="card-body-modern">
+      <h6 class="mb-4">
+        <i class="bi bi-info-circle-fill me-2"></i>คำอธิบายสัญลักษณ์และสี
+      </h6>
+      <div class="row g-4">
+        <div class="col-md-3 col-sm-6">
+          <div class="d-flex align-items-center gap-3">
+            <span class="status-badge status-work">ทำงาน</span>
+            <small class="text-muted">เข้างานปกติ (7 ชม./วัน)</small>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+          <div class="d-flex align-items-center gap-3">
+            <span class="status-badge status-ot">ล่วงเวลา</span>
+            <small class="text-muted">OT (4-7 ชม.)</small>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+          <div class="d-flex align-items-center gap-3">
+            <span class="status-badge status-leave">ลา</span>
+            <small class="text-muted">ลาป่วย/ลากิจ</small>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+          <div class="d-flex align-items-center gap-3">
+            <span class="status-badge status-shift">เวร</span>
+            <small class="text-muted">เวรเช้า (8ชม.) / บ่าย (16ชม.)</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Technician Detail Modal -->
+<div class="modal fade" id="techDetailModal" tabindex="-1" aria-labelledby="techDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius: 1rem; border: none; box-shadow: var(--shadow-xl);">
+      
+      <!-- Modal Header -->
+      <div class="modal-header" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; border: none; padding: 1.5rem 2rem;">
+        <h5 class="modal-title" id="techDetailModalLabel" style="font-weight: 700; font-size: 1.5rem;">
+          <i class="bi bi-person-badge-fill me-2"></i>
+          <span id="modal-tech-name">ชื่อช่าง</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="modal-body" style="padding: 0;">
+        
+        <!-- Summary Stats -->
+        <div style="padding: 1.5rem 2rem; background: #f8f9fa; border-bottom: 2px solid var(--border);">
+          <div class="row g-3" id="modal-summary-stats">
+            <!-- Generated by JavaScript -->
+          </div>
+        </div>
+        
+        <!-- Timeline List -->
+        <div style="padding: 2rem;">
+          <h6 class="mb-3" style="font-weight: 700; color: var(--text-primary);">
+            <i class="bi bi-calendar-range me-2"></i>รายละเอียดตามวันที่
+          </h6>
+          <div id="modal-timeline-list" style="max-height: 500px; overflow-y: auto;">
+            <!-- Generated by JavaScript -->
+          </div>
+          
+          <!-- No Data Message -->
+          <div id="modal-no-data" style="display: none; padding: 3rem; text-align: center;">
+            <i class="bi bi-inbox" style="font-size: 3rem; color: var(--text-muted);"></i>
+            <p style="margin-top: 1rem; color: var(--text-muted);">ไม่มีข้อมูลในช่วงเวลานี้</p>
+          </div>
+        </div>
+        
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="modal-footer" style="background: #f8f9fa; border-top: 2px solid var(--border); padding: 1rem 2rem;">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle me-1"></i>ปิด
+        </button>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<!-- Data from Django -->
+{{ technicians|json_script:"technicians-data" }}
+{{ availabilities|json_script:"availabilities-data" }}
+{{ shift_schedules|json_script:"shift-schedules-data" }}
+
+<script>
+(function() {
+  'use strict';
+
+  // =====================================================
+  // 1. โหลดข้อมูลจาก Django
+  // =====================================================
+  const technicians = JSON.parse(document.getElementById('technicians-data')?.textContent || '[]');
+  const availabilities = JSON.parse(document.getElementById('availabilities-data')?.textContent || '[]');
+  const shiftSchedules = JSON.parse(document.getElementById('shift-schedules-data')?.textContent || '{}');
+  
+  // ถ้าไม่มี date จาก Django ให้ใช้วันที่ปัจจุบัน
+  // อ่าน selected_month ที่ server ส่งมา ('' => all months)
+  const serverSelectedMonth = '{{ selected_month|default_if_none:"" }}';
+  let dateStr = '{{ date|date:"Y-m-d" }}';
+  if (!dateStr || dateStr === '') {
+    dateStr = new Date().toISOString().slice(0, 10);
+  }
+  const [year, monthFromDate] = dateStr.split('-').map(Number);
+
+  // ถ้า serverSelectedMonth === '' ให้ถือเป็น all-months (รวมทั้งปี)
+  const allMonths = (serverSelectedMonth === '');
+  const displayMonth = allMonths ? monthFromDate : Number(serverSelectedMonth || monthFromDate);
+
+  // ตั้งค่า select
+  const monthSelect = document.getElementById('month-select');
+  const yearSelect = document.getElementById('year-select');
+  monthSelect.value = allMonths ? '' : String(displayMonth);
+  yearSelect.value = year;
+  
+  // อัพเดทข้อความสำหรับพิมพ์
+  const monthNames = [
+    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+  ];
+  const printMonthText = document.getElementById('print-month-text');
+  const printYearText = document.getElementById('print-year-text');
+  if (printMonthText) printMonthText.textContent = allMonths ? 'ทั้งหมด (ทั้งปี)' : monthNames[displayMonth - 1];
+  if (printYearText) printYearText.textContent = `พ.ศ. ${year + 543}`;
+
+  // =====================================================
+  // 2. โหลดวันหยุดจาก localStorage
+  // =====================================================
+  let holidays = [];
+  try {
+    const stored = localStorage.getItem('cmms_holidays');
+    holidays = stored ? JSON.parse(stored) : [];
+  } catch(e) {
+    holidays = [];
+  }
+  const holidaySet = new Set(holidays.map(h => h.date));
+
+  // Robust helpers (moved out of loop so they're not redefined per-row)
+  function classifyStatusFull(avail) {
+    const status = (avail.status || '').toString().toLowerCase();
+    const note = (avail.note || '').toString().toLowerCase();
+    const text = `${status} ${note}`;
+
+  if (/\boff_|holiday|วันหยุด|หยุดราชการ|หยุด/i.test(text)) return 'holiday';
+  if (/\bleave|ลา\b|ลากิจ|ป่วย|sick|personal|vacation|annual|พักร้อน/i.test(text)) return 'leave';
+    return 'work';
+  }
+
+  function getOTHoursRobust(avail) {
+    const rawNote = (avail.note || '').toString();
+    const rawStatus = (avail.status || '').toString();
+    const note = rawNote.toLowerCase();
+    const status = rawStatus.toLowerCase();
+
+    // 1) explicit 'ot:4' or 'ot_4' etc
+    let m = note.match(/\bot[:_\s-]*?(\d{1,2})\b/) || status.match(/\bot[:_\s-]*?(\d{1,2})\b/);
+    if (m) return parseInt(m[1], 10);
+
+    // 2) 'overtime:4'
+    m = note.match(/\bovertime[:_\s-]*?(\d{1,2})\b/) || status.match(/\bovertime[:_\s-]*?(\d{1,2})\b/);
+    if (m) return parseInt(m[1], 10);
+
+    // 3) '4h', '4 hr', '4 ชม.', '4 ชั่วโมง'
+    m = note.match(/(\d{1,2})\s*(h|hr|hrs|hour|hours|ชม|ชั่วโมง)\b/i) || status.match(/(\d{1,2})\s*(h|hr|hrs|hour|hours|ชม|ชั่วโมง)\b/i);
+    if (m) return parseInt(m[1], 10);
+
+    // 4) parentheses like '(4)'
+    m = note.match(/\((\d{1,2})\)/) || status.match(/\((\d{1,2})\)/);
+    if (m) return parseInt(m[1], 10);
+
+    // 5) 'ot 4' near token
+    m = note.match(/ot\D{0,3}(\d{1,2})/) || status.match(/ot\D{0,3}(\d{1,2})/);
+    if (m) return parseInt(m[1], 10);
+
+    // 6) contains 'ot' or 'overtime' but no number -> default to 4
+    if (/\bot\b|overtime|ล่วงเวลา|ล่วง/i.test(note) || /\bot\b|overtime|ล่วงเวลา|ล่วง/i.test(status)) {
+      return 4;
+    }
+
+    // 7) conservative fallback: single number only when supported by unit keywords
+    m = note.match(/(?:\b|^)([1-9]|1[0-2])(?:\b|$)/);
+    if (m && (note.includes('ot') || note.includes('ชม') || note.includes('ชั่วโมง') || note.includes('h'))) {
+      return parseInt(m[1], 10);
+    }
+
+    return 0;
+  }
+
+  // =====================================================
+  // 3. คำนวณสถิติ
+  // =====================================================
+  const stats = {
+    totalWork: 0,
+    totalOT: 0,
+    // split OT into weekday vs holiday
+    totalOTWeekday: 0,
+    totalOTHoliday: 0,
+    totalOTWeekdayHours: 0,
+    totalOTHolidayHours: 0,
+    totalOTHours: 0,
+    totalWorkHours: 0,
+    totalShiftHours: 0,
+    totalLeave: 0,
+    totalLeaveSick: 0,
+    totalLeavePersonal: 0,
+    totalLeaveAnnual: 0,
+    totalLeaveOther: 0,
+    totalLeaveOfficial: 0,
+    totalHoliday: 0,
+    totalShift: 0,
+    totalShiftMorning: 0,
+    totalShiftAfternoon: 0,
+    totalShiftOther: 0,
+    totalShiftMorningHours: 0,
+    totalShiftAfternoonHours: 0,
+    totalShiftOtherHours: 0,
+    totalRecords: 0
+  };
+
+  const techStats = {};
+  
+  technicians.forEach(tech => {
+    techStats[tech.id] = {
+      name: tech.name,
+      work: 0,
+      // separate OT counts/hours
+      otWeekday: 0,
+      otHoliday: 0,
+      otWeekdayHours: 0,
+      otHolidayHours: 0,
+      workHours: 0,
+      shiftMorning: 0,
+      shiftAfternoon: 0,
+      shiftHours: 0,
+      leave: 0,
+      leaveSick: 0,
+      leavePersonal: 0,
+      leaveAnnual: 0,
+      leaveOther: 0,
+      holiday: 0,
+      shift: 0
+    };
+  });
+
+  // =====================================================
+  // Enable hand/drag scrolling on the calendar container
+  // =====================================================
+  (function enableCalendarDrag() {
+    const calendarScroll = document.getElementById('calendar-scroll');
+    if (!calendarScroll) return;
+
+    // Visual cue
+    calendarScroll.style.cursor = 'grab';
+
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+    let activePointerId = null;
+
+    calendarScroll.addEventListener('pointerdown', (e) => {
+      isDown = true;
+      activePointerId = e.pointerId;
+      calendarScroll.setPointerCapture(activePointerId);
+      calendarScroll.style.cursor = 'grabbing';
+      startX = e.clientX;
+      scrollLeft = calendarScroll.scrollLeft;
+      // prevent text selection while dragging
+      e.preventDefault();
+    });
+
+    calendarScroll.addEventListener('pointermove', (e) => {
+      if (!isDown) return;
+      const x = e.clientX;
+      const walk = startX - x; // positive -> scroll right
+      calendarScroll.scrollLeft = scrollLeft + walk;
+    });
+
+    function endDrag(e) {
+      if (!isDown) return;
+      isDown = false;
+      try { if (activePointerId != null) calendarScroll.releasePointerCapture(activePointerId); } catch (err) {}
+      activePointerId = null;
+      calendarScroll.style.cursor = 'grab';
+    }
+
+    calendarScroll.addEventListener('pointerup', endDrag);
+    calendarScroll.addEventListener('pointercancel', endDrag);
+    // also stop dragging if the pointer leaves the element
+    calendarScroll.addEventListener('pointerleave', endDrag);
+
+    // Improve UX: allow horizontal scroll with wheel when shift key pressed
+    calendarScroll.addEventListener('wheel', (e) => {
+      if (e.shiftKey) {
+        // scroll horizontally by deltaY
+        calendarScroll.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }
+    }, { passive: false });
+  })();
+  availabilities.forEach(avail => {
+    if (!avail.work_date || !avail.technician) return;
+    
+    const [y, m] = avail.work_date.split('-').map(Number);
+    if (y !== year) return;
+    if (!allMonths && m !== displayMonth) return;
+    
+    const techId = avail.technician.id;
+    // Determine main category (work/leave/holiday) using robust helper
+    const statusCat = classifyStatusFull(avail);
+    // Detect OT hours from note/status using robust parser
+    const otHours = getOTHoursRobust(avail) || 0;
+
+    // Helper: determine leave type from note/status (returns 'sick'|'personal'|'annual'|'other')
+    function getLeaveType(a) {
+      try {
+        const note = (a.note || '').toString().toLowerCase();
+        const status = (a.status || '').toString().toLowerCase();
+        const text = `${note} ${status}`;
+        if (text.includes('ป่วย') || text.includes('sick') || text.includes('ill')) return 'sick';
+        if (text.includes('ลากิจ') || text.includes('personal')) return 'personal';
+        if (text.includes('พักร้อน') || text.includes('annual') || text.includes('vacation')) return 'annual';
+        // fallback: if contains keywords like 'leave' but not matched above, consider 'other'
+        if (text.includes('leave') || text.includes('ลา')) return 'other';
+      } catch (e) {
+        // ignore
+      }
+      return 'other';
+    }
+
+    if (techStats[techId]) {
+      techStats[techId][statusCat] = (techStats[techId][statusCat] || 0) + 1;
+      stats.totalRecords++;
+
+      // If it's a leave, count leave and skip OT counting for this row
+      if (statusCat === 'leave') {
+        stats.totalLeave++;
+        const ltype = getLeaveType(avail);
+        if (ltype === 'sick') {
+          stats.totalLeaveSick++;
+          techStats[techId].leaveSick = (techStats[techId].leaveSick || 0) + 1;
+        } else if (ltype === 'personal') {
+          stats.totalLeavePersonal++;
+          techStats[techId].leavePersonal = (techStats[techId].leavePersonal || 0) + 1;
+        } else if (ltype === 'annual') {
+          stats.totalLeaveAnnual++;
+          techStats[techId].leaveAnnual = (techStats[techId].leaveAnnual || 0) + 1;
+        } else {
+          stats.totalLeaveOther++;
+          techStats[techId].leaveOther = (techStats[techId].leaveOther || 0) + 1;
+        }
+      } else {
+        // If OT hours are present (note/status), count as OT regardless of the main status
+        if (otHours > 0) {
+          stats.totalOT++;
+          stats.totalOTHours += otHours;
+
+          const note = (avail.note || '').toString().toLowerCase();
+          const status = (avail.status || '').toString().toLowerCase();
+          let otCode = '';
+          if (note.startsWith('ot:')) otCode = note.split(':')[1].trim();
+          else if (status && status.includes('ot_')) otCode = status;
+
+          let otType = null;
+          if (otCode.includes('ot_holiday') || otCode.includes('holiday')) otType = 'holiday';
+          else if (otCode.includes('ot_weekday') || otCode.includes('weekday')) otType = 'weekday';
+          else if (holidaySet.has(avail.work_date)) otType = 'holiday';
+          else otType = 'weekday';
+
+          if (otType === 'weekday') {
+            stats.totalOTWeekday++;
+            stats.totalOTWeekdayHours += otHours;
+            techStats[techId].otWeekday = (techStats[techId].otWeekday || 0) + 1;
+            techStats[techId].otWeekdayHours = (techStats[techId].otWeekdayHours || 0) + otHours;
+          } else {
+            stats.totalOTHoliday++;
+            stats.totalOTHolidayHours += otHours;
+            techStats[techId].otHoliday = (techStats[techId].otHoliday || 0) + 1;
+            techStats[techId].otHolidayHours = (techStats[techId].otHolidayHours || 0) + otHours;
+          }
+        } else {
+          // No OT recorded: treat as work or holiday
+          if (statusCat === 'work') {
+            stats.totalWork++;
+            stats.totalWorkHours += 7;
+            techStats[techId].workHours = (techStats[techId].workHours || 0) + 7;
+          } else if (statusCat === 'holiday') {
+            stats.totalHoliday++;
+          }
+        }
+      }
+    }
+  });
+
+  // Count shifts from shift_schedules
+  Object.keys(shiftSchedules).forEach(dateStr => {
+    const [y, m] = dateStr.split('-').map(Number);
+    if (y !== year) return;
+    if (!allMonths && m !== displayMonth) return;
+    
+    const shifts = shiftSchedules[dateStr];
+    if (Array.isArray(shifts)) {
+        shifts.forEach(shift => {
+          const techId = shift.technician_id || shift.technician?.id;
+          if (techId && techStats[techId]) {
+            // track morning vs afternoon
+            if (shift.shift === 'morning') {
+              techStats[techId].shiftMorning = (techStats[techId].shiftMorning || 0) + 1;
+              techStats[techId].shiftHours = (techStats[techId].shiftHours || 0) + 8;
+              stats.totalShiftHours += 8;
+              stats.totalShiftMorning += 1;
+              stats.totalShiftMorningHours += 8;
+            } else if (shift.shift === 'afternoon') {
+              techStats[techId].shiftAfternoon = (techStats[techId].shiftAfternoon || 0) + 1;
+              techStats[techId].shiftHours = (techStats[techId].shiftHours || 0) + 16;
+              stats.totalShiftHours += 16;
+              stats.totalShiftAfternoon += 1;
+              stats.totalShiftAfternoonHours += 16;
+            } else {
+              // unknown shift type -> count as 1 shift with default 8 hours
+              techStats[techId].shift = (techStats[techId].shift || 0) + 1;
+              techStats[techId].shiftHours = (techStats[techId].shiftHours || 0) + 8;
+              stats.totalShiftHours += 8;
+              stats.totalShiftOther += 1;
+              stats.totalShiftOtherHours += 8;
+            }
+            techStats[techId].shift = (techStats[techId].shift || 0) + 1;
+            stats.totalShift++;
+          }
+        });
+      }
+  });
+
+  // =====================================================
+  // 4. แสดงสถิติรวม
+  // =====================================================
+  const overallStats = document.getElementById('overall-stats');
+  if (overallStats) {
+    overallStats.innerHTML = `
+      <div class="stat-card success">
+        <div class="stat-icon success">
+          <i class="bi bi-briefcase-fill"></i>
+        </div>
+        <div class="stat-value">${stats.totalWork}</div>
+        <div class="stat-label">วันทำงานปกติทั้งหมด</div>
+        <div class="stat-sublabel"><i class="bi bi-clock-fill me-1"></i>${stats.totalWorkHours.toLocaleString()} ชั่วโมง</div>
+      </div>
+      
+      <div class="stat-card warning">
+        <div class="stat-icon warning">
+          <i class="bi bi-lightning-charge-fill"></i>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.25rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div>
+              <div class="stat-value">${stats.totalOT}</div>
+              <div class="stat-label">วันล่วงเวลาทั้งหมด</div>
+            </div>
+            <div style="text-align:right">
+              <div class="stat-sublabel"><i class="bi bi-hourglass-split me-1"></i>${stats.totalOTHours.toLocaleString()} ชม.</div>
+            </div>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:0.5rem 0;opacity:0.6">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div class="stat-label-compact">วันปกติ</div>
+            <div class="stat-detail-small">${stats.totalOTWeekday} วัน / ${stats.totalOTWeekdayHours.toLocaleString()} ชม.</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div class="stat-label-compact">วันหยุดราชการ</div>
+            <div class="stat-detail-small">${stats.totalOTHoliday} วัน / ${stats.totalOTHolidayHours.toLocaleString()} ชม.</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="stat-card primary">
+        <div class="stat-icon primary">
+          <i class="bi bi-calendar-event-fill"></i>
+        </div>
+        <div class="stat-value">${stats.totalHoliday}</div>
+        <div class="stat-label">วันหยุดราชการทั้งหมด</div>
+        <div class="stat-sublabel"><i class="bi bi-calendar-x me-1"></i>วันหยุดราชการ</div>
+      </div>
+
+      <div class="stat-card danger">
+        <div class="stat-icon danger">
+          <i class="bi bi-person-x-fill"></i>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.25rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div>
+              <div class="stat-value">${stats.totalLeave}</div>
+              <div class="stat-label">วันลาทั้งหมด</div>
+            </div>
+            <div style="text-align:right">
+              <div class="stat-sublabel"><i class="bi bi-file-earmark-medical me-1"></i>ลาป่วย/ลากิจ</div>
+            </div>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:0.5rem 0;opacity:0.6">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div class="stat-label-compact">ลาพักร้อน</div>
+            <div class="stat-detail-small">${stats.totalLeaveAnnual} วัน</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div class="stat-label-compact">ลาป่วย</div>
+            <div class="stat-detail-small">${stats.totalLeaveSick} วัน</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div class="stat-label-compact">ลาไปราชการ</div>
+            <div class="stat-detail-small">${stats.totalLeaveOfficial} วัน</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div class="stat-label-compact">ลากิจ</div>
+            <div class="stat-detail-small">${stats.totalLeavePersonal} วัน</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div class="stat-label-compact">ลาอื่นๆ</div>
+            <div class="stat-detail-small">${stats.totalLeaveOther} วัน</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card purple">
+        <div class="stat-icon purple">
+          <i class="bi bi-clock-history"></i>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.25rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div>
+              <div class="stat-value">${stats.totalShift}</div>
+              <div class="stat-label">วันขึ้นเวรทั้งหมด</div>
+            </div>
+            <div style="text-align:right">
+              <div class="stat-sublabel"><i class="bi bi-alarm me-1"></i>${stats.totalShiftHours.toLocaleString()} ชั่วโมง</div>
+            </div>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:0.5rem 0;opacity:0.6">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div class="stat-label-compact">เวรเช้า</div>
+            <div class="stat-detail-small">${stats.totalShiftMorning} วัน / ${stats.totalShiftMorningHours.toLocaleString()} ชม.</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+            <div class="stat-label-compact">เวรบ่าย</div>
+            <div class="stat-detail-small">${stats.totalShiftAfternoon} วัน / ${stats.totalShiftAfternoonHours.toLocaleString()} ชม.</div>
+          </div>
+
+        </div>
+      </div>
+      
+      <div class="stat-card info">
+        <div class="stat-icon info">
+          <i class="bi bi-clipboard-data-fill"></i>
+        </div>
+        <div class="stat-value">${stats.totalRecords}</div>
+        <div class="stat-label">รวมทั้งหมด</div>
+        <div class="stat-sublabel"><i class="bi bi-hourglass-bottom me-1"></i>รวมชั่วโมงทำงาน ${(stats.totalWorkHours + stats.totalOTHours + stats.totalShiftHours).toLocaleString()} ชม.</div>
+      </div>
+    `;
+  }
+
+  // =====================================================
+  // 5. แสดงตารางสรุปรายบุคคล
+  // =====================================================
+  const techStatsTable = document.querySelector('#tech-stats tbody');
+  if (techStatsTable) {
+  const daysInMonth = new Date(year, displayMonth, 0).getDate();
+    
+    // Update total tech count
+    const totalTechCount = document.getElementById('total-tech-count');
+    if (totalTechCount) {
+      totalTechCount.textContent = `${Object.keys(techStats).length} คน`;
+    }
+    
+    Object.entries(techStats).forEach(([id, tech]) => {
+    const total = tech.work + (tech.otWeekday||0) + (tech.otHoliday||0) + tech.leave + tech.holiday + tech.shift;
+  const workPercent = daysInMonth > 0 ? (tech.work / daysInMonth * 100).toFixed(0) : 0;
+  const otPercent = daysInMonth > 0 ? (((tech.otWeekday||0) + (tech.otHoliday||0)) / daysInMonth * 100).toFixed(0) : 0;
+  const holidayPercent = daysInMonth > 0 ? (tech.holiday / daysInMonth * 100).toFixed(0) : 0;
+  const leavePercent = daysInMonth > 0 ? (tech.leave / daysInMonth * 100).toFixed(0) : 0;
+  const shiftPercent = daysInMonth > 0 ? (tech.shift / daysInMonth * 100).toFixed(0) : 0;
+  const workHours = tech.workHours || 0;
+  const shiftHours = tech.shiftHours || 0;
+    const otHours = (tech.otWeekdayHours||0) + (tech.otHolidayHours||0);
+  const totalHours = workHours + shiftHours + otHours;
+      
+      const tr = document.createElement('tr');
+      tr.style.cursor = 'pointer';
+      tr.dataset.techId = id;
+      tr.dataset.techName = tech.name;
+      
+      tr.innerHTML = `
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            <div class="stat-icon success" style="width: 40px; height: 40px; font-size: 1.25rem; margin-bottom: 0;">
+              <i class="bi bi-person-fill"></i>
+            </div>
+            <div>
+              <div class="fw-semibold" style="font-size: 1rem;">${tech.name}</div>
+              <small class="text-muted">ช่างเทคนิค <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.75rem;"></i></small>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div class="text-center">
+            <div class="fw-semibold text-success" style="font-size: 1.125rem;">${tech.work} <small>วัน</small></div>
+            <small class="text-muted d-block mt-1">${workHours.toLocaleString()} ชม.</small>
+            <div class="progress-bar-custom">
+              <div class="progress-fill success" style="width: ${workPercent}%"></div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div class="text-center">
+            <div class="fw-semibold text-warning" style="font-size: 1.125rem;">${((tech.otWeekday||0) + (tech.otHoliday||0))} <small>วัน</small></div>
+            <small class="text-muted d-block mt-1">${(((tech.otWeekdayHours||0) + (tech.otHolidayHours||0))).toLocaleString()} ชม.
+              <span class="d-block mt-1" style="font-size: 0.75rem;">
+                (วันปกติ: ${tech.otWeekday||0}, วันหยุด: ${tech.otHoliday||0})
+              </span>
+            </small>
+            <div class="progress-bar-custom mt-2">
+              <div class="progress-fill warning" style="width: ${otPercent}%"></div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div class="text-center">
+            <div class="fw-semibold text-primary" style="font-size: 1.125rem;">${tech.holiday} <small>วัน</small></div>
+            <small class="text-muted d-block mt-1"></small>
+            <div class="progress-bar-custom">
+              <div class="progress-fill" style="background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); width: ${holidayPercent}%"></div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div class="text-center">
+            <div class="fw-semibold text-danger" style="font-size: 1.125rem;">${tech.leave} <small>วัน</small></div>
+            <small class="text-muted d-block mt-1"></small>
+            <div class="progress-bar-custom">
+              <div class="progress-fill danger" style="width: ${leavePercent}%"></div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div class="text-center">
+            <div class="fw-semibold" style="color: #8b5cf6; font-size: 1.125rem;">${tech.shift} <small>วัน</small></div>
+            <small class="text-muted d-block mt-1">${shiftHours.toLocaleString()} ชม.
+              <span class="d-block mt-1" style="font-size: 0.75rem;">
+                (เช้า: ${tech.shiftMorning||0}, บ่าย: ${tech.shiftAfternoon||0})
+              </span>
+            </small>
+            <div class="progress-bar-custom">
+              <div class="progress-fill purple" style="width: ${shiftPercent}%"></div>
+            </div>
+          </div>
+        </td>
+        <td class="text-center">
+          <div class="badge bg-primary" style="font-size: 1rem; padding: 0.75rem 1rem;">
+            ${total} วัน
+          </div>
+      `;
+      
+      // Add click handler to show detail modal
+      tr.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('tech row clicked', id, tech.name);
+        showTechnicianDetail(Number(id), tech.name);
+      });
+      
+      techStatsTable.appendChild(tr);
+    });
+  }
+  
+  // =====================================================
+  // 5.5. Show Technician Detail Modal
+  // =====================================================
+  function showTechnicianDetail(techId, techName) {
+    // ensure techId is numeric for strict comparisons
+    techId = Number(techId);
+    const modal = new bootstrap.Modal(document.getElementById('techDetailModal'));
+    
+    // Set technician name in modal header
+    document.getElementById('modal-tech-name').textContent = techName;
+    
+    // Get technician's data
+    const techData = techStats[techId];
+    if (!techData) return;
+    
+    // Filter availabilities and shifts for this technician
+    const techAvails = availabilities.filter(a => {
+      if (!a.work_date || !a.technician) return false;
+      const [y, m] = a.work_date.split('-').map(Number);
+      if (y !== year) return false;
+      if (!allMonths && m !== displayMonth) return false;
+      return a.technician.id === techId;
+    });
+    
+    const techShifts = {};
+    Object.keys(shiftSchedules).forEach(dateStr => {
+      const [y, m] = dateStr.split('-').map(Number);
+      if (y !== year) return;
+      if (!allMonths && m !== displayMonth) return;
+      
+      const shifts = shiftSchedules[dateStr];
+      if (Array.isArray(shifts)) {
+        const techShift = shifts.find(s => {
+          const id = s.technician_id || s.technician?.id;
+          return id === techId;
+        });
+        if (techShift) {
+          techShifts[dateStr] = techShift;
+        }
+      }
+    });
+    
+    // Render summary stats
+    const summaryStats = document.getElementById('modal-summary-stats');
+    const otTotal = (techData.otWeekday || 0) + (techData.otHoliday || 0);
+    const otHoursTotal = (techData.otWeekdayHours || 0) + (techData.otHolidayHours || 0);
+    
+    summaryStats.innerHTML = `
+      <div class="col-md-2 col-sm-4 col-6">
+        <div class="text-center">
+          <div style="font-size: 2rem; font-weight: 800; color: var(--success);">${techData.work}</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">ทำงาน</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">${techData.workHours || 0} ชม.</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-sm-4 col-6">
+        <div class="text-center">
+          <div style="font-size: 2rem; font-weight: 800; color: var(--warning);">${otTotal}</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">ล่วงเวลา</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">${otHoursTotal} ชม.</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-sm-4 col-6">
+        <div class="text-center">
+          <div style="font-size: 2rem; font-weight: 800; color: var(--primary);">${techData.holiday}</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">วันหยุด</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">ราชการ</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-sm-4 col-6">
+        <div class="text-center">
+          <div style="font-size: 2rem; font-weight: 800; color: var(--danger);">${techData.leave}</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">ลา</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">ป่วย/กิจ</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-sm-4 col-6">
+        <div class="text-center">
+          <div style="font-size: 2rem; font-weight: 800; color: var(--purple);">${techData.shift}</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">ขึ้นเวร</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">${techData.shiftHours || 0} ชม.</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-sm-4 col-6">
+        <div class="text-center">
+          <div style="font-size: 2rem; font-weight: 800; color: var(--info);">${(techData.workHours || 0) + (techData.shiftHours || 0) + otHoursTotal}</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">รวม</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">ชั่วโมง</div>
+        </div>
+      </div>
+    `;
+    
+    // Render timeline list
+    const timelineList = document.getElementById('modal-timeline-list');
+    const noData = document.getElementById('modal-no-data');
+    
+    // Combine availabilities and shifts into a single timeline
+    const timeline = [];
+    
+    techAvails.forEach(avail => {
+      const statusCat = classifyStatusFull(avail);
+      const otHours = getOTHoursRobust(avail) || 0;
+      const date = new Date(avail.work_date);
+      const dayName = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][date.getDay()];
+
+      // Base hours for a normal work day
+      const baseHours = (statusCat === 'work' || statusCat === 'ot') ? 7 : 0;
+
+      let displayStatus = statusCat;
+      let displayText = statusCat === 'work' ? 'ทำงาน' : statusCat === 'holiday' ? 'วันหยุด' : 'ลา';
+      let displayHours = baseHours;
+      let iconClass = statusCat === 'work' ? 'bi-briefcase-fill' : statusCat === 'holiday' ? 'bi-calendar-event-fill' : 'bi-person-x-fill';
+
+      // If OT exists and it's not a leave day, keep the base hours and also record OT
+      let otPart = 0;
+      if (otHours > 0 && statusCat !== 'leave') {
+        otPart = otHours;
+        // show combined hours but mark status as work when baseHours exist
+        if (baseHours > 0) {
+          displayStatus = 'work';
+          displayText = 'ทำงาน (พร้อมล่วงเวลา)';
+          displayHours = baseHours + otHours;
+          // keep work icon but add OT indicator via badge when rendering
+          iconClass = 'bi-briefcase-fill';
+        } else {
+          // no base hours (e.g., holiday counted as OT) — treat as OT-only
+          displayStatus = 'ot';
+          displayText = 'ล่วงเวลา';
+          displayHours = otHours;
+          iconClass = 'bi-lightning-charge-fill';
+        }
+      }
+
+      timeline.push({
+        date: avail.work_date,
+        dayName: dayName,
+        type: 'availability',
+        status: displayStatus,
+        text: displayText,
+        baseHours: baseHours,
+        hours: displayHours,
+        otHours: otPart,
+        iconClass: iconClass,
+        note: avail.note || '',
+        rawStatus: avail.status || ''
+      });
+    });
+    
+    Object.keys(techShifts).forEach(dateStr => {
+      const shift = techShifts[dateStr];
+      const date = new Date(dateStr);
+      const dayName = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][date.getDay()];
+      const shiftText = shift.shift === 'morning' ? 'เวรเช้า' : shift.shift === 'afternoon' ? 'เวรบ่าย' : 'เวร';
+      const shiftHours = shift.shift === 'morning' ? 8 : shift.shift === 'afternoon' ? 16 : 8;
+
+      // Include shiftHours explicitly so renderer can show "เวร: X ชม." separately
+      timeline.push({
+        date: dateStr,
+        dayName: dayName,
+        type: 'shift',
+        status: 'shift',
+        text: shiftText,
+        hours: shiftHours,
+        shiftHours: shiftHours,
+        baseHours: 0,
+        otHours: 0,
+        iconClass: 'bi-clock-history',
+        note: shift.note || '',
+        rawStatus: shift.shift || ''
+      });
+    });
+    
+    // Sort by date
+    timeline.sort((a, b) => a.date.localeCompare(b.date));
+    
+    if (timeline.length === 0) {
+      timelineList.style.display = 'none';
+      noData.style.display = 'block';
+    } else {
+      timelineList.style.display = 'block';
+      noData.style.display = 'none';
+      
+      timelineList.innerHTML = timeline.map(item => {
+        const [y, m, d] = item.date.split('-').map(Number);
+        const dateFormatted = `${d}/${m}/${y + 543}`;
+        const isHoliday = holidaySet.has(item.date);
+        const holidayBadge = isHoliday ? '<span class="badge bg-danger ms-2" style="font-size: 0.7rem;">วันหยุดราชการ</span>' : '';
+        
+        return `
+          <div class="timeline-item" style="display: flex; gap: 1rem; padding: 1rem; border-left: 3px solid var(--${(item.otHours && item.otHours>0) ? 'warning' : item.status === 'work' ? 'success' : item.status === 'ot' ? 'warning' : item.status === 'holiday' ? 'primary' : item.status === 'leave' ? 'danger' : 'purple'}); background: linear-gradient(90deg, ${(item.otHours && item.otHours>0) ? 'rgba(245, 158, 11, 0.05)' : item.status === 'work' ? 'rgba(16, 185, 129, 0.05)' : item.status === 'ot' ? 'rgba(245, 158, 11, 0.05)' : item.status === 'holiday' ? 'rgba(59, 130, 246, 0.05)' : item.status === 'leave' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(139, 92, 246, 0.05)'} 0%, transparent 100%); border-radius: 0.5rem; margin-bottom: 0.75rem;">
+            <div style="flex-shrink: 0;">
+              <div class="stat-icon ${(item.otHours && item.otHours>0) ? 'warning' : item.status === 'work' ? 'success' : item.status === 'ot' ? 'warning' : item.status === 'holiday' ? 'primary' : item.status === 'leave' ? 'danger' : 'purple'}" style="width: 48px; height: 48px; font-size: 1.5rem; margin-bottom: 0;">
+                <i class="bi ${item.iconClass}"></i>
+              </div>
+            </div>
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                <div>
+                  <div style="font-weight: 700; font-size: 1rem; color: var(--text-primary);">
+                    ${dateFormatted} (${item.dayName})
+                    ${holidayBadge}
+                  </div>
+                  <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                    ${item.text}
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem;">
+                  ${item.baseHours && item.baseHours > 0 ? `<div style="font-size:0.95rem;color:var(--text-secondary);">ในเวลา: ${item.baseHours} ชม.</div>` : ''}
+                  ${item.shiftHours && item.shiftHours > 0 ? `<div style="font-size:0.95rem;color:var(--text-secondary);">เวร: ${item.shiftHours} ชม.</div>` : ''}
+                  ${item.otHours && item.otHours > 0 ? `<div style="font-size:0.95rem;color:var(--text-secondary);">ล่วงเวลา: ${item.otHours} ชม.</div>` : ''}
+                  <div class="badge" style="background: var(--${(item.otHours && item.otHours>0) ? 'warning' : item.status === 'work' ? 'success' : item.status === 'ot' ? 'warning' : item.status === 'holiday' ? 'primary' : item.status === 'leave' ? 'danger' : 'purple'}); font-size: 0.9rem; padding: 0.45rem 0.7rem;">
+                    รวม ${item.hours} ชม.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    modal.show();
+  }
+  
+  // =====================================================
+  // 6. สร้าง Calendar Header
+  // =====================================================
+  const daysInMonthCalendar = new Date(year, displayMonth, 0).getDate();
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  
+  const header = document.getElementById('calendar-header');
+  for (let day = 1; day <= daysInMonthCalendar; day++) {
+    const th = document.createElement('th');
+    const date = new Date(year, displayMonth - 1, day);
+    const dayOfWeek = date.getDay();
+    
+    th.textContent = day;
+    th.className = 'text-center';
+    
+    const dateStr = `${year}-${String(displayMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    
+    if (holidaySet.has(dateStr)) {
+      th.classList.add('is-holiday');
+      const holiday = holidays.find(h => h.date === dateStr);
+      if (holiday) {
+        th.title = holiday.name;
+      }
+    }
+    else if (dayOfWeek === 0 || dayOfWeek === 6) {
+      th.classList.add('is-weekend');
+    }
+    
+    if (dateStr === todayStr) {
+      th.classList.add('is-today');
+    }
+    
+    header.appendChild(th);
+  }
+
+  // =====================================================
+  // 7. สร้างแถวสำหรับแต่ละช่าง (Read-only)
+  // =====================================================
+  const tbody = document.getElementById('calendar-body');
+  
+  technicians.forEach(tech => {
+    const tr = document.createElement('tr');
+    
+    // คอลัมน์ชื่อช่าง
+    const tdName = document.createElement('td');
+    tdName.innerHTML = `
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-person-badge-fill" style="font-size: 1.25rem; color: var(--primary);"></i>
+        <span style="font-weight: 600;">${tech.name}</span>
+      </div>
+    `;
+    tr.appendChild(tdName);
+    
+    // คอลัมน์สำหรับแต่ละวัน
+    for (let day = 1; day <= daysInMonthCalendar; day++) {
+      const td = document.createElement('td');
+      
+      const dateStr = `${year}-${String(displayMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const date = new Date(year, displayMonth - 1, day);
+      const dayOfWeek = date.getDay();
+      
+      // ไฮไลท์วันหยุดราชการ
+      if (holidaySet.has(dateStr)) {
+        td.classList.add('is-holiday');
+      }
+      // ไฮไลท์วันเสาร์-อาทิตย์
+      else if (dayOfWeek === 0 || dayOfWeek === 6) {
+        td.classList.add('is-weekend');
+      }
+      
+      // ไฮไลท์วันนี้
+      if (dateStr === todayStr) {
+        td.classList.add('is-today');
+      }
+      
+      // หาสถานะจากข้อมูล
+      const avail = availabilities.find(a => {
+        if (!a.work_date || !a.technician) return false;
+        const [y, m, d] = a.work_date.split('-').map(Number);
+        return y === year && m === displayMonth && d === day && a.technician.id === tech.id;
+      });
+
+      // หาข้อมูลเวรจาก shift_schedules
+      const shifts = shiftSchedules[dateStr];
+      const techShift = shifts && Array.isArray(shifts) ? shifts.find(s => {
+        const techId = s.technician_id || s.technician?.id;
+        return techId === tech.id;
+      }) : null;
+      
+      if (avail) {
+        // classify the saved status into report categories and also detect OT in note
+        const statusCatBase = classifyStatusFull(avail);
+        const otHoursCell = getOTHoursRobust(avail) || 0;
+        // Show primary status badge (work/holiday/leave)
+        let statusCat = statusCatBase;
+        const primaryText = statusCat === 'work' ? 'ทำงาน' : statusCat === 'holiday' ? 'วันหยุด' : 'ลา';
+        const primaryBadge = document.createElement('span');
+        primaryBadge.className = `status-badge status-${statusCatBase}`;
+        primaryBadge.textContent = primaryText;
+        td.appendChild(primaryBadge);
+
+        // If OT hours are present and it's not a leave day, show a separate OT badge
+        if (otHoursCell > 0 && statusCatBase !== 'leave') {
+          const otBadge = document.createElement('span');
+          otBadge.className = 'status-badge status-ot';
+          // Show hours when available, otherwise just label
+          otBadge.textContent = otHoursCell ? `ล่วงเวลา ${otHoursCell} ชม.` : 'ล่วงเวลา';
+          otBadge.style.display = 'block';
+          otBadge.style.marginTop = '4px';
+          td.appendChild(otBadge);
+          // mark statusCat for other logic if needed
+          statusCat = 'ot';
+        }
+        
+        // แสดงข้อมูลเวรถ้ามี
+        if (techShift) {
+          const shiftText = techShift.shift === 'morning' ? 'เช้า' : techShift.shift === 'afternoon' ? 'บ่าย' : techShift.shift;
+          const shiftBadge = document.createElement('div');
+          shiftBadge.className = 'status-badge status-shift mt-1';
+          shiftBadge.textContent = `เวร${shiftText}`;
+          shiftBadge.style.fontSize = '0.7rem';
+          td.appendChild(shiftBadge);
+        }
+      } else if (techShift) {
+        // ถ้าไม่มีสถานะแต่มีเวร แสดงเฉพาะเวร
+        const shiftText = techShift.shift === 'morning' ? 'เช้า' : techShift.shift === 'afternoon' ? 'บ่าย' : techShift.shift;
+        const shiftBadge = document.createElement('span');
+        shiftBadge.className = 'status-badge status-shift';
+        shiftBadge.textContent = `เวร${shiftText}`;
+        td.appendChild(shiftBadge);
+      } else {
+        const badge = document.createElement('span');
+        badge.className = 'status-badge status-empty';
+        badge.textContent = '-';
+        td.appendChild(badge);
+      }
+      
+      tr.appendChild(td);
+    }
+    
+    tbody.appendChild(tr);
+  });
+
+})();
+</script>
+
+{% endblock %}

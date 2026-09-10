@@ -1,0 +1,672 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    <title>CMMS MedCMU : ระบบบริหารจัดการเครื่องมือแพทย์</title>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        border-radius: 20px;
+        padding: 3rem 2rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 60%;
+        height: 200%;
+        background: rgba(255,255,255,0.08);
+        transform: rotate(15deg);
+        border-radius: 50%;
+    }
+    .hero-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+    .hero-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.95;
+        margin-bottom: 1.5rem;
+    }
+    .hero-actions .btn {
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        border-radius: 12px;
+    }
+    .btn-hero-primary {
+        background: #fff;
+        color: #667eea;
+        border: none;
+    }
+    .btn-hero-primary:hover {
+        background: #f0f4ff;
+        color: #764ba2;
+        transform: translateY(-2px);
+    }
+    .btn-hero-secondary {
+        background: rgba(255,255,255,0.2);
+        color: #fff;
+        border: 2px solid rgba(255,255,255,0.4);
+    }
+    .btn-hero-secondary:hover {
+        background: rgba(255,255,255,0.3);
+        color: #fff;
+    }
+
+    /* Stats Cards */
+    .stats-row { margin-bottom: 2rem; }
+    .stat-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-align: center;
+        border: none;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        transition: all 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    }
+    .stat-icon {
+        width: 56px; height: 56px;
+        border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+    }
+    .stat-icon.blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
+    .stat-icon.green { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: #fff; }
+    .stat-icon.orange { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: #fff; }
+    .stat-icon.teal { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: #fff; }
+    .stat-value { font-size: 2rem; font-weight: 700; color: #1a1a2e; line-height: 1; }
+    .stat-label { font-size: 0.9rem; color: #6c757d; margin-top: 0.5rem; }
+
+    /* Section Titles */
+    .section-title {
+        font-size: 1.25rem; font-weight: 700; color: #1a1a2e;
+        margin-bottom: 1rem;
+        display: flex; align-items: center; gap: 0.5rem;
+    }
+    .section-title i { color: #667eea; }
+
+    /* Dashboard Cards */
+    .dashboard-card {
+        background: #fff;
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        height: 100%;
+        overflow: hidden;
+    }
+    .dashboard-card .card-header {
+        background: transparent;
+        border-bottom: 1px solid #f0f0f0;
+        padding: 1.25rem 1.5rem;
+        font-weight: 600;
+        display: flex; align-items: center; gap: 0.5rem;
+    }
+    .dashboard-card .card-header i { color: #667eea; }
+    .dashboard-card .card-body { padding: 1.25rem 1.5rem; }
+
+    /* List Items */
+    .activity-item {
+        padding: 0.875rem 0;
+        border-bottom: 1px solid #f5f5f5;
+        transition: background 0.2s;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-item:hover {
+        background: #f8f9ff;
+        margin: 0 -1.5rem;
+        padding: 0.875rem 1.5rem;
+    }
+    .activity-item a { color: #1a1a2e; text-decoration: none; font-weight: 500; }
+    .activity-item a:hover { color: #667eea; }
+    .activity-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+
+    /* Feature Cards */
+    .feature-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-align: center;
+        border: 2px solid transparent;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        transition: all 0.3s ease;
+        height: 100%;
+        position: relative;
+    }
+    .feature-card:hover {
+        border-color: #667eea;
+        transform: translateY(-5px);
+        box-shadow: 0 12px 35px rgba(102,126,234,0.15);
+    }
+    .feature-icon {
+        width: 64px; height: 64px;
+        border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.75rem;
+        background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
+        color: #667eea;
+    }
+    .feature-card:hover .feature-icon {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+    }
+    .feature-title { font-weight: 600; font-size: 1rem; margin-bottom: 0.5rem; color: #1a1a2e; }
+    .feature-desc { font-size: 0.875rem; color: #6c757d; margin-bottom: 0; }
+    .feature-card .stretched-link::after {
+        position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 1; content: "";
+    }
+
+    /* Chart Container */
+    .chart-wrapper { position: relative; height: 200px; }
+
+    /* Status Chart Section - Modern Redesign */
+    .status-chart-container {
+        display: flex;
+        align-items: center;
+        gap: 2.5rem;
+        padding: 1rem;
+    }
+    .status-chart-wrapper {
+        flex: 0 0 200px;
+        height: 200px;
+        position: relative;
+    }
+    .status-chart-ring {
+        position: absolute;
+        inset: -8px;
+        border-radius: 50%;
+        background: conic-gradient(from 0deg, #667eea, #764ba2, #f093fb, #4fd1c5, #667eea);
+        opacity: 0.15;
+        animation: pulse-ring 3s ease-in-out infinite;
+    }
+    @keyframes pulse-ring {
+        0%, 100% { transform: scale(1); opacity: 0.15; }
+        50% { transform: scale(1.02); opacity: 0.25; }
+    }
+    .status-chart-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: #fff;
+        border-radius: 50%;
+        padding: 8px;
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.15);
+    }
+    .status-chart-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        z-index: 10;
+    }
+    .status-chart-total {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1;
+    }
+    .status-chart-label {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 0.35rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .status-legend {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    .status-legend-item {
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+        border: 1px solid rgba(102, 126, 234, 0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+    }
+    .status-legend-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        border-radius: 4px 0 0 4px;
+        transition: width 0.3s ease;
+    }
+    .status-legend-item.pending::before { background: linear-gradient(180deg, #667eea, #764ba2); }
+    .status-legend-item.in-progress::before { background: linear-gradient(180deg, #f093fb, #f5576c); }
+    .status-legend-item.completed::before { background: linear-gradient(180deg, #11998e, #38ef7d); }
+    .status-legend-item.cancelled::before { background: linear-gradient(180deg, #fc8181, #f56565); }
+    .status-legend-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+        border-color: rgba(102, 126, 234, 0.3);
+    }
+    .status-legend-item:hover::before {
+        width: 6px;
+    }
+    .status-legend-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .status-legend-text {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #4a5568;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .status-legend-stats {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+    }
+    .status-legend-count {
+        font-weight: 800;
+        font-size: 1.5rem;
+        color: #1a1a2e;
+        line-height: 1;
+    }
+    .status-legend-percent {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #fff;
+        padding: 0.2rem 0.5rem;
+        border-radius: 20px;
+        min-width: 40px;
+        text-align: center;
+    }
+    .status-legend-item.pending .status-legend-percent { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .status-legend-item.in-progress .status-legend-percent { background: linear-gradient(135deg, #f093fb, #f5576c); }
+    .status-legend-item.completed .status-legend-percent { background: linear-gradient(135deg, #11998e, #38ef7d); }
+    .status-legend-item.cancelled .status-legend-percent { background: linear-gradient(135deg, #fc8181, #f56565); }
+    @media (max-width: 768px) {
+        .status-chart-container {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1.5rem;
+        }
+        .status-chart-wrapper {
+            margin: 0 auto;
+            flex: 0 0 180px;
+            height: 180px;
+        }
+        .status-legend {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    @media (max-width: 480px) {
+        .status-legend {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Empty State */
+    .empty-state { text-align: center; padding: 2rem 1rem; color: #6c757d; }
+    .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" data-dashboard-endpoint="{% url 'api_dashboard_stats' %}">
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="hero-title">
+                    <i class="bi bi-hospital me-2"></i>ระบบบริหารจัดการเครื่องมือแพทย์
+                </h1>
+                <p class="hero-subtitle">
+                    CMMS - Computerized Maintenance Management System<br>
+                    หน่วยวิศวกรรมชีวการแพทย์ คณะแพทยศาสตร์ มหาวิทยาลัยเชียงใหม่
+                </p>
+                <div class="hero-actions d-flex flex-wrap gap-2">
+                    <a href="{% url 'service_request_create' %}" class="btn btn-hero-primary">
+                        <i class="bi bi-plus-circle me-2"></i>แจ้งขอรับบริการ
+                    </a>
+                    <a href="{% url 'equipment_list' %}" class="btn btn-hero-secondary">
+                        <i class="bi bi-search me-2"></i>ค้นหาเครื่องมือ
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 d-none d-lg-block text-end">
+                <img src="{% static 'cmms/medcmu.png' %}" alt="CMMS" style="height:140px;opacity:0.9;filter:brightness(0) invert(1)">
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-3 stats-row">
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="bi bi-tools"></i></div>
+                <div class="stat-value" id="stat-equipment">-</div>
+                <div class="stat-label">เครื่องมือทั้งหมด</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="bi bi-clipboard-check"></i></div>
+                <div class="stat-value" id="stat-workorders">-</div>
+                <div class="stat-label">ใบงานเดือนนี้</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="bi bi-exclamation-triangle"></i></div>
+                <div class="stat-value" id="stat-pending">-</div>
+                <div class="stat-label">รอดำเนินการ</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon teal"><i class="bi bi-calendar-check"></i></div>
+                <div class="stat-value" id="stat-pm-due">-</div>
+                <div class="stat-label">PM ครบกำหนด 30 วัน</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="row g-4 mb-4">
+        <!-- Chart Column -->
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <i class="bi bi-pie-chart-fill"></i>
+                    <span>สถานะใบงาน</span>
+                    <a href="{% url 'workorder_list' %}" class="ms-auto text-primary small">ดูทั้งหมด →</a>
+                </div>
+                <div class="card-body">
+                    <div class="status-chart-container">
+                        <!-- Doughnut Chart -->
+                        <div class="status-chart-wrapper">
+                            <div class="status-chart-ring"></div>
+                            <div class="status-chart-inner">
+                                <canvas id="woStatusChart" aria-label="Workorder status chart"></canvas>
+                                <div class="status-chart-center">
+                                    <div class="status-chart-total" id="chart-total">-</div>
+                                    <div class="status-chart-label">ใบงานทั้งหมด</div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Legend -->
+                        <div class="status-legend" id="status-legend">
+                            <div class="status-legend-item pending" data-status="pending">
+                                <div class="status-legend-header">
+                                    <span class="status-dot" style="background: linear-gradient(135deg, #667eea, #764ba2)"></span>
+                                    <span class="status-legend-text">รอดำเนินการ</span>
+                                </div>
+                                <div class="status-legend-stats">
+                                    <span class="status-legend-count">-</span>
+                                    <span class="status-legend-percent">-</span>
+                                </div>
+                            </div>
+                            <div class="status-legend-item in-progress" data-status="in-progress">
+                                <div class="status-legend-header">
+                                    <span class="status-dot" style="background: linear-gradient(135deg, #f093fb, #f5576c)"></span>
+                                    <span class="status-legend-text">กำลังดำเนินการ</span>
+                                </div>
+                                <div class="status-legend-stats">
+                                    <span class="status-legend-count">-</span>
+                                    <span class="status-legend-percent">-</span>
+                                </div>
+                            </div>
+                            <div class="status-legend-item completed" data-status="completed">
+                                <div class="status-legend-header">
+                                    <span class="status-dot" style="background: linear-gradient(135deg, #11998e, #38ef7d)"></span>
+                                    <span class="status-legend-text">เสร็จสิ้น</span>
+                                </div>
+                                <div class="status-legend-stats">
+                                    <span class="status-legend-count">-</span>
+                                    <span class="status-legend-percent">-</span>
+                                </div>
+                            </div>
+                            <div class="status-legend-item cancelled" data-status="cancelled">
+                                <div class="status-legend-header">
+                                    <span class="status-dot" style="background: linear-gradient(135deg, #fc8181, #f56565)"></span>
+                                    <span class="status-legend-text">ยกเลิก</span>
+                                </div>
+                                <div class="status-legend-stats">
+                                    <span class="status-legend-count">-</span>
+                                    <span class="status-legend-percent">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent & PM Column -->
+        <div class="col-lg-6">
+            <div class="row g-4">
+                <!-- Recent Workorders -->
+                <div class="col-12">
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <i class="bi bi-clock-history"></i>
+                            <span>ใบงานล่าสุด</span>
+                            <a href="{% url 'workorder_list' %}" class="ms-auto text-primary small">ดูทั้งหมด →</a>
+                        </div>
+                        <div class="card-body p-0">
+                            {% if recent_workorders %}
+                                {% for wo in recent_workorders %}
+                                <div class="activity-item px-4">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <a href="{% url 'workorder_detail' wo.id %}">
+                                                <strong>WO#{{ wo.id }}</strong> — {{ wo.title|truncatechars:40 }}
+                                            </a>
+                                            <div class="small text-muted mt-1">
+                                                <i class="bi bi-calendar3 me-1"></i>{{ wo.reported_at|date:"d M Y" }}
+                                            </div>
+                                        </div>
+                                        <span class="activity-badge bg-primary-subtle text-primary">{{ wo.status }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="empty-state">
+                                    <i class="bi bi-inbox"></i>
+                                    <div>ยังไม่มีใบงาน</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PM Due -->
+                <div class="col-12">
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <i class="bi bi-exclamation-circle text-warning"></i>
+                            <span>PM กำลังจะครบกำหนด</span>
+                            <a href="{% url 'equipment_maintenance_schedule' %}" class="ms-auto text-primary small">ดูทั้งหมด →</a>
+                        </div>
+                        <div class="card-body p-0">
+                            {% if due_pm_list %}
+                                {% for e in due_pm_list %}
+                                <div class="activity-item px-4">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong>{{ e.equipment_id }}</strong>
+                                            <div class="small text-muted">{{ e.equipment_name_TH|truncatechars:35 }}</div>
+                                        </div>
+                                        <span class="activity-badge bg-warning-subtle text-warning">
+                                            <i class="bi bi-calendar-event me-1"></i>{{ e.equipment_pm_due|date:"d M" }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="empty-state">
+                                    <i class="bi bi-check-circle"></i>
+                                    <div>ไม่มี PM ครบกำหนดใน 30 วัน</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Cards Section -->
+    <h2 class="section-title">
+        <i class="bi bi-grid-3x3-gap-fill"></i>
+        เมนูลัด
+    </h2>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-tools"></i></div>
+                <div class="feature-title">ทะเบียนเครื่องมือ</div>
+                <p class="feature-desc">ค้นหาและดูรายละเอียดเครื่องมือ</p>
+                <a href="{% url 'equipment_list' %}" class="stretched-link" aria-label="ทะเบียนเครื่องมือ"></a>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-file-earmark-plus"></i></div>
+                <div class="feature-title">แจ้งซ่อม / นัดหมาย</div>
+                <p class="feature-desc">สร้างคำร้องหรือนัดหมายบริการ</p>
+                <a href="{% url 'service_request_create' %}" class="stretched-link" aria-label="แจ้งซ่อม"></a>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-journal-text"></i></div>
+                <div class="feature-title">รายการใบงาน</div>
+                <p class="feature-desc">ดูและติดตามใบงานทั้งหมด</p>
+                <a href="{% url 'workorder_list' %}" class="stretched-link" aria-label="รายการใบงาน"></a>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-calendar-check"></i></div>
+                <div class="feature-title">ครบกำหนด PM</div>
+                <p class="feature-desc">เครื่องมือที่ต้องบำรุงรักษา</p>
+                <a href="{% url 'equipment_maintenance_schedule' %}" class="stretched-link" aria-label="ครบกำหนด PM"></a>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-people"></i></div>
+                <div class="feature-title">รายชื่อลูกค้า</div>
+                <p class="feature-desc">จัดการข้อมูลลูกค้า</p>
+                <a href="{% url 'customer_list' %}" class="stretched-link" aria-label="รายชื่อลูกค้า"></a>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-folder2-open"></i></div>
+                <div class="feature-title">ข้อมูลหลัก</div>
+                <p class="feature-desc">Master Data ของระบบ</p>
+                <a href="{% url 'master_data' %}" class="stretched-link" aria-label="ข้อมูลหลัก"></a>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="bi bi-upload"></i></div>
+                <div class="feature-title">อัพโหลด Excel</div>
+                <p class="feature-desc">นำเข้าทะเบียนเครื่องมือ</p>
+                <a href="{% url 'import_equipment_list' %}" class="stretched-link" aria-label="อัพโหลด Excel"></a>
+            </div>
+        </div>
+        {% if request.user.is_staff %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="feature-card" style="border:2px dashed #667eea;">
+                <div class="feature-icon" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;">
+                    <i class="bi bi-gear"></i>
+                </div>
+                <div class="feature-title">เครื่องมือผู้ดูแล</div>
+                <p class="feature-desc">Templates & Debug</p>
+                <a href="{% url 'templates_index' %}" class="stretched-link" aria-label="เครื่องมือผู้ดูแล"></a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Chart.js for status visualization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{ status_counts|json_script:"status_counts_json" }}
+<script src="{% static 'cmms/dashboard.js' %}"></script>
+<script>
+// Animate stat counters
+document.addEventListener('DOMContentLoaded', function() {
+    var endpoint = document.querySelector('[data-dashboard-endpoint]');
+    if (endpoint) {
+        var url = endpoint.dataset.dashboardEndpoint;
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                if (data.equipment_count !== undefined) animateValue('stat-equipment', 0, data.equipment_count, 800);
+                if (data.workorder_count !== undefined) animateValue('stat-workorders', 0, data.workorder_count, 800);
+                if (data.pending_count !== undefined) animateValue('stat-pending', 0, data.pending_count, 800);
+                if (data.pm_due_count !== undefined) animateValue('stat-pm-due', 0, data.pm_due_count, 800);
+            })
+            .catch(err => console.debug('Dashboard stats API not available'));
+    }
+    function animateValue(id, start, end, duration) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var range = end - start;
+        var startTime = null;
+        function step(timestamp) {
+            if (!startTime) startTime = timestamp;
+            var progress = Math.min((timestamp - startTime) / duration, 1);
+            el.textContent = Math.floor(progress * range + start);
+            if (progress < 1) window.requestAnimationFrame(step);
+        }
+        window.requestAnimationFrame(step);
+    }
+});
+</script>
+{% endblock %}

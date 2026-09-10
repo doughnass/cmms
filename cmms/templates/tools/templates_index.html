@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}<title>Template files</title>{% endblock %}
+{% block content %}
+<h3>ลิงก์ด่วน (ระบบบำรุงรักษา)</h3>
+<p class="text-muted">หน้านี้รวบรวมลิงก์ด่วนสำหรับการทดสอบและจัดการระบบบำรุงรักษา — ใช้ดูแบบฟอร์มการนัดหมาย กำหนดความสามารถของวันสำหรับการบำรุงรักษา และจัดการข้อมูลช่าง</p>
+<div class="mb-3">
+  <div class="row mb-2">
+    <div class="col-md-4">
+      <h5>ส่วนติดต่อ (UI)</h5>
+      <ul>
+        <li><a href="/maintenance/schedule/">หน้าแผนการบำรุงรักษา</a> — เลือกวันที่นัดหมายสำหรับอุปกรณ์ที่ใกล้ครบกำหนด</li>
+        <li><a href="/maintenance/capacities/">กำหนดความสามารถต่อวัน</a> — กำหนดจำนวนงานบำรุงรักษาต่อประเภทในแต่ละวัน</li>
+        <li><a href="/maintenance/appointments/">รายการนัดหมาย</a> — ดู/ลบ/จัดการนัดหมายที่บันทึกไว้</li>
+      </ul>
+    </div>
+    <div class="col-md-4">
+      <h5>ข้อมูลช่าง</h5>
+      <ul>
+        <li><a href="/maintenance/technicians/">รายการช่าง</a> — แก้ไข/เพิ่มข้อมูลช่าง</li>
+        <li><a href="/maintenance/technicians/availability/">ตารางการมาทำงานของช่าง</a> — บันทึกการมาทำงานหรือการลา</li>
+      </ul>
+    </div>
+    <div class="col-md-4">
+      <h5>ผู้ดูแลระบบ / API</h5>
+      <ul>
+        <li><a href="/admin/cmms/technician/">Admin: ข้อมูลช่าง</a></li>
+        <li><a href="/admin/cmms/technicianavailability/">Admin: ตารางช่าง</a></li>
+        <li><a href="/admin/cmms/maintenancecapacity/">Admin: ความสามารถต่อวัน</a></li>
+        <li><a href="/admin/cmms/maintenanceappointment/">Admin: นัดหมาย</a></li>
+        <li><a href="/api/maintenance/check_capacity/?date=2025-10-20&equipment_type=TypeA">ตัวอย่าง API: ตรวจสอบความจุ</a></li>
+        <li><a href="/api/maintenance/technicians/?date=2025-10-20">ตัวอย่าง API: ดึงช่างตามวันที่</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="mb-3">
+  <a class="btn btn-outline-primary" href="{% url 'templates_index_csv' %}">ดาวน์โหลดรายการเทมเพลต (CSV)</a>
+</div>
+<div class="mb-2">
+  <button id="expand-all" class="btn btn-sm btn-secondary">ขยายทั้งหมด</button>
+  <button id="collapse-all" class="btn btn-sm btn-secondary ms-2">ย่อทั้งหมด</button>
+</div>
+
+<h3>รายการเทมเพลต (จัดหมวดหมู่)</h3>
+<p class="text-muted">แสดงไฟล์เทมเพลตในโปรเจกต์ แบ่งกลุ่มตามโฟลเดอร์ระดับบนเพื่อให้ง่ายต่อการค้นหา</p>
+
+<div class="mb-3">
+  <label for="template-search" class="form-label">ค้นหาเทมเพลต</label>
+  <input id="template-search" class="form-control" placeholder="ค้นหาชื่อไฟล์หรือคำอธิบาย..." />
+</div>
+
+{% for group_key, group in template_groups.items %}
+  <div class="mb-2">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <button class="btn btn-sm btn-link p-0 me-2 group-toggle" data-bs-target="#grp-{{ forloop.counter }}" aria-expanded="true">▾</button>
+        <strong class="h6 mb-0">{{ group.name }}</strong>
+        {% if group.description %}
+          <small class="text-muted ms-2">{{ group.description }}</small>
+        {% endif %}
+      </div>
+      <span class="badge bg-secondary">{{ group.items|length }}</span>
+    </div>
+
+    <div id="grp-{{ forloop.counter }}" class="collapse show mt-2" data-group-key="{{ group_key }}">
+      <ul class="list-group">
+        {% for t in group.items %}
+          <li class="list-group-item">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div><strong class="template-label">{{ t.label }}</strong></div>
+                <div class="text-muted small template-desc">{{ t.description }}</div>
+                <div class="text-muted small">{{ t.path }}</div>
+              </div>
+              <div class="text-end">
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'template_source' %}?path={{ t.path|urlencode }}">ซอร์ส</a>
+                <a class="btn btn-sm btn-outline-primary ms-1" href="{% url 'template_render' %}?path={{ t.path|urlencode }}">แสดงตัวอย่าง</a>
+                <a class="btn btn-sm btn-outline-info ms-1" href="{% url 'templates_index_group_csv' group_key=group_key %}">ดาวน์โหลดกลุ่ม</a>
+              </div>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+{% endfor %}
+
+<style>
+  /* Small readability tweaks */
+  .list-group-item { padding: .75rem 1rem; }
+  .template-desc { margin-top: .25rem; }
+  .highlight { background: linear-gradient(90deg, #fff7cc, #fff3b0); }
+  .group-toggle { font-size: 0.9rem; color: #333; }
+</style>
+
+<script>
+// Client-side search: filter list items by label, path, or description
+(function(){
+  const input = document.getElementById('template-search');
+  if(!input) return;
+
+  // toggle collapse when clicking arrow
+  document.querySelectorAll('.group-toggle').forEach(btn => {
+    btn.addEventListener('click', function(e){
+      const target = document.querySelector(this.dataset.bsTarget);
+      if(!target) return;
+      if(target.classList.contains('show')){
+        target.classList.remove('show');
+        this.textContent = '▸';
+      } else {
+        target.classList.add('show');
+        this.textContent = '▾';
+      }
+    });
+  });
+
+  input.addEventListener('input', function(){
+    const q = this.value.trim().toLowerCase();
+    document.querySelectorAll('[id^="grp-"]').forEach(groupEl => {
+      let anyVisible = false;
+      groupEl.querySelectorAll('.list-group-item').forEach(li => {
+        const text = (li.textContent || '').toLowerCase();
+        const visible = q === '' || text.indexOf(q) !== -1;
+        li.style.display = visible ? '' : 'none';
+        // highlight match
+        li.querySelectorAll('.template-label, .template-desc, .small').forEach(el => el.classList.remove('highlight'));
+        if(visible && q !== ''){
+          const label = li.querySelector('.template-label');
+          const desc = li.querySelector('.template-desc');
+          [label, desc].forEach(el => {
+            if(!el) return;
+            if(el.textContent.toLowerCase().indexOf(q) !== -1){
+              el.classList.add('highlight');
+            }
+          });
+        }
+        if(visible) anyVisible = true;
+      });
+      // show or hide group container
+      const container = groupEl.closest('div.mb-2');
+      if(container) container.style.display = anyVisible ? '' : 'none';
+    });
+  });
+  // expand / collapse all
+  const expandAll = document.getElementById('expand-all');
+  const collapseAll = document.getElementById('collapse-all');
+  expandAll && expandAll.addEventListener('click', function(){
+    document.querySelectorAll('[id^="grp-"]').forEach(g => { g.classList.add('show'); });
+    document.querySelectorAll('.group-toggle').forEach(b => b.textContent = '▾');
+  });
+  collapseAll && collapseAll.addEventListener('click', function(){
+    document.querySelectorAll('[id^="grp-"]').forEach(g => { g.classList.remove('show'); });
+    document.querySelectorAll('.group-toggle').forEach(b => b.textContent = '▸');
+  });
+})();
+</script>
+{% endblock %}

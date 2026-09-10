@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}
+    <title>สร้างบัญชีใหม่ — CMMS</title>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .register-wrapper {
+        min-height: calc(100vh - var(--navbar-height) - 80px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+    }
+    .register-card {
+        width: 100%;
+        max-width: 540px;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 8px 40px rgba(102, 126, 234, 0.12);
+        border: none;
+    }
+    .register-card:hover {
+        transform: none;
+    }
+    .register-header {
+        background: var(--primary-gradient);
+        color: #fff;
+        padding: 2rem 2rem 1.5rem;
+        text-align: center;
+    }
+    .register-header .icon-circle {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.75rem;
+        font-size: 1.75rem;
+    }
+    .register-header h3 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.35rem;
+    }
+    .register-header p {
+        margin: 0.35rem 0 0;
+        opacity: 0.85;
+        font-size: 0.9rem;
+    }
+    .register-body {
+        padding: 2rem;
+    }
+    .section-divider {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 1.5rem 0 1rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #667eea;
+    }
+    .section-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, #667eea33, transparent);
+    }
+    .section-divider i {
+        font-size: 1rem;
+    }
+    .form-floating-modern {
+        position: relative;
+        margin-bottom: 1rem;
+    }
+    .form-floating-modern .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 0.75rem 1rem 0.75rem 2.75rem;
+        height: auto;
+        font-size: 0.95rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-floating-modern .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
+    }
+    .form-floating-modern .form-control.is-invalid {
+        border-color: #dc3545;
+    }
+    .form-floating-modern .field-icon {
+        position: absolute;
+        left: 0.9rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #adb5bd;
+        font-size: 1.1rem;
+        pointer-events: none;
+        transition: color 0.2s;
+        z-index: 2;
+    }
+    .form-floating-modern .form-control:focus ~ .field-icon {
+        color: #667eea;
+    }
+    .form-floating-modern .invalid-feedback {
+        font-size: 0.8rem;
+        margin-top: 0.3rem;
+    }
+    .password-toggle {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #adb5bd;
+        cursor: pointer;
+        z-index: 2;
+        padding: 0.25rem;
+        font-size: 1.1rem;
+        transition: color 0.2s;
+    }
+    .password-toggle:hover {
+        color: #667eea;
+    }
+    .btn-register {
+        background: var(--primary-gradient);
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem;
+        font-weight: 600;
+        font-size: 1rem;
+        letter-spacing: 0.02em;
+        transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn-register:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+    }
+    .strength-bar {
+        height: 4px;
+        border-radius: 2px;
+        background: #e9ecef;
+        margin-top: 0.4rem;
+        overflow: hidden;
+    }
+    .strength-bar .fill {
+        height: 100%;
+        border-radius: 2px;
+        width: 0;
+        transition: width 0.3s, background 0.3s;
+    }
+    .strength-label {
+        font-size: 0.75rem;
+        margin-top: 0.2rem;
+        font-weight: 500;
+    }
+    .login-link {
+        text-align: center;
+        padding: 1.25rem 2rem;
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        font-size: 0.9rem;
+    }
+    .login-link a {
+        color: #667eea;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .login-link a:hover {
+        color: #764ba2;
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-wrapper">
+    <div class="card register-card">
+        <!-- Header -->
+        <div class="register-header">
+            <div class="icon-circle">
+                <i class="bi bi-person-plus-fill"></i>
+            </div>
+            <h3>สร้างบัญชีใหม่</h3>
+            <p>กรอกข้อมูลเพื่อสมัครเข้าใช้งานระบบ CMMS</p>
+        </div>
+
+        <!-- Body -->
+        <div class="register-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="ปิด"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" novalidate autocomplete="off">
+                {% csrf_token %}
+
+                <!-- ── Account Section ── -->
+                <div class="section-divider">
+                    <i class="bi bi-shield-lock"></i> ข้อมูลบัญชี
+                </div>
+
+                <div class="form-floating-modern">
+                    <input type="text"
+                           name="username"
+                           id="id_username"
+                           class="form-control {% if errors.username %}is-invalid{% endif %}"
+                           value="{{ form_values.username|default:'' }}"
+                           placeholder="ชื่อผู้ใช้"
+                           required
+                           autofocus
+                           autocomplete="username"
+                           maxlength="150">
+                    <i class="bi bi-person field-icon"></i>
+                    {% if errors.username %}
+                        <div class="invalid-feedback">{{ errors.username }}</div>
+                    {% else %}
+                        <div class="form-text small text-muted ps-1">ใช้ตัวอักษร ตัวเลข และ @/./+/-/_ เท่านั้น</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-floating-modern">
+                    <input type="password"
+                           name="password"
+                           id="id_password"
+                           class="form-control {% if errors.password %}is-invalid{% endif %}"
+                           placeholder="รหัสผ่าน"
+                           required
+                           autocomplete="new-password"
+                           minlength="8">
+                    <i class="bi bi-lock field-icon"></i>
+                    <button type="button" class="password-toggle" data-target="id_password" aria-label="แสดง/ซ่อนรหัสผ่าน">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    {% if errors.password %}
+                        <div class="invalid-feedback">{{ errors.password }}</div>
+                    {% endif %}
+                    <div class="strength-bar"><div class="fill" id="pw-strength-fill"></div></div>
+                    <div class="strength-label" id="pw-strength-label"></div>
+                </div>
+
+                <div class="form-floating-modern">
+                    <input type="password"
+                           name="password2"
+                           id="id_password2"
+                           class="form-control {% if errors.password2 %}is-invalid{% endif %}"
+                           placeholder="ยืนยันรหัสผ่าน"
+                           required
+                           autocomplete="new-password">
+                    <i class="bi bi-lock-fill field-icon"></i>
+                    <button type="button" class="password-toggle" data-target="id_password2" aria-label="แสดง/ซ่อนรหัสผ่าน">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    {% if errors.password2 %}
+                        <div class="invalid-feedback">{{ errors.password2 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- ── Personal Info Section ── -->
+                <div class="section-divider">
+                    <i class="bi bi-person-vcard"></i> ข้อมูลส่วนตัว
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="form-floating-modern">
+                            <input type="text"
+                                   name="first_name"
+                                   id="id_first_name"
+                                   class="form-control {% if errors.first_name %}is-invalid{% endif %}"
+                                   value="{{ form_values.first_name|default:'' }}"
+                                   placeholder="ชื่อ"
+                                   required
+                                   maxlength="150">
+                            <i class="bi bi-type field-icon"></i>
+                            {% if errors.first_name %}
+                                <div class="invalid-feedback">{{ errors.first_name }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-floating-modern">
+                            <input type="text"
+                                   name="last_name"
+                                   id="id_last_name"
+                                   class="form-control {% if errors.last_name %}is-invalid{% endif %}"
+                                   value="{{ form_values.last_name|default:'' }}"
+                                   placeholder="นามสกุล"
+                                   required
+                                   maxlength="150">
+                            <i class="bi bi-type field-icon"></i>
+                            {% if errors.last_name %}
+                                <div class="invalid-feedback">{{ errors.last_name }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-floating-modern">
+                    <input type="email"
+                           name="email"
+                           id="id_email"
+                           class="form-control {% if errors.email %}is-invalid{% endif %}"
+                           value="{{ form_values.email|default:'' }}"
+                           placeholder="อีเมล">
+                    <i class="bi bi-envelope field-icon"></i>
+                    {% if errors.email %}
+                        <div class="invalid-feedback">{{ errors.email }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- ── Organization Section ── -->
+                <div class="section-divider">
+                    <i class="bi bi-building"></i> ข้อมูลหน่วยงาน
+                </div>
+
+                <div class="form-floating-modern">
+                    <input type="text"
+                           name="telephone"
+                           id="id_telephone"
+                           class="form-control {% if errors.telephone %}is-invalid{% endif %}"
+                           value="{{ form_values.telephone|default:'' }}"
+                           placeholder="เบอร์โทรศัพท์"
+                           maxlength="50">
+                    <i class="bi bi-telephone field-icon"></i>
+                    {% if errors.telephone %}
+                        <div class="invalid-feedback">{{ errors.telephone }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-floating-modern">
+                    <input type="text"
+                           name="department"
+                           id="id_department"
+                           class="form-control {% if errors.department %}is-invalid{% endif %}"
+                           value="{{ form_values.department|default:'' }}"
+                           placeholder="แผนก / หน่วยงาน"
+                           maxlength="200">
+                    <i class="bi bi-diagram-3 field-icon"></i>
+                    {% if errors.department %}
+                        <div class="invalid-feedback">{{ errors.department }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-floating-modern">
+                    <input type="text"
+                           name="position"
+                           id="id_position"
+                           class="form-control {% if errors.position %}is-invalid{% endif %}"
+                           value="{{ form_values.position|default:'' }}"
+                           placeholder="ตำแหน่ง"
+                           maxlength="200">
+                    <i class="bi bi-briefcase field-icon"></i>
+                    {% if errors.position %}
+                        <div class="invalid-feedback">{{ errors.position }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Submit -->
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary btn-register">
+                        <i class="bi bi-person-plus me-1"></i>
+                        สร้างบัญชี
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Footer link -->
+        <div class="login-link">
+            มีบัญชีอยู่แล้ว?
+            <a href="{% url 'login' %}">เข้าสู่ระบบ</a>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Password visibility toggle
+    document.querySelectorAll('.password-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var target = document.getElementById(btn.dataset.target);
+            if (!target) return;
+            var isPassword = target.type === 'password';
+            target.type = isPassword ? 'text' : 'password';
+            btn.querySelector('i').classList.toggle('bi-eye', !isPassword);
+            btn.querySelector('i').classList.toggle('bi-eye-slash', isPassword);
+        });
+    });
+
+    // Password strength meter
+    var pwInput = document.getElementById('id_password');
+    var fill = document.getElementById('pw-strength-fill');
+    var label = document.getElementById('pw-strength-label');
+    if (pwInput && fill && label) {
+        pwInput.addEventListener('input', function () {
+            var v = pwInput.value;
+            var score = 0;
+            if (v.length >= 8) score++;
+            if (v.length >= 12) score++;
+            if (/[a-z]/.test(v) && /[A-Z]/.test(v)) score++;
+            if (/\d/.test(v)) score++;
+            if (/[^a-zA-Z0-9]/.test(v)) score++;
+
+            var pct = Math.min(score, 4) * 25;
+            var colors = ['#dc3545', '#fd7e14', '#ffc107', '#20c997', '#198754'];
+            var labels = ['', 'อ่อน', 'พอใช้', 'ดี', 'แข็งแรง'];
+            var idx = Math.min(score, 4);
+
+            fill.style.width = pct + '%';
+            fill.style.background = colors[idx];
+            label.textContent = v ? labels[idx] : '';
+            label.style.color = colors[idx];
+        });
+    }
+});
+</script>
+{% endblock %}

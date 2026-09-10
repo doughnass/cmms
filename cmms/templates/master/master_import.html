@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}
+  <title>Import Master Data</title>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h2>Import Master Data (Excel)</h2>
+  <p>อัปโหลดไฟล์ Excel (.xlsx) ที่มี header row: <code>category, code, label, description, active, order, parent_category, parent_code</code>
+  <br />
+  หมายเหตุ: สามารถเพิ่มคอลัมน์เพิ่มเติมสำหรับค่าที่เก็บใน <code>meta</code> ได้โดยตั้งชื่อหัวคอลัมน์เป็น <code>meta.&lt;field_name&gt;</code> เช่น <code>meta.floor</code> หรือ <code>meta.capacity</code>. ฟิลด์เหล่านี้จะถูกแปลง/ตรวจสอบตามการกำหนดใน Master Category (MasterFieldDefinition) ถ้าไม่มีการกำหนดไว้ จะบันทึกค่าแบบข้อความ</p>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="file" class="form-label">เลือกไฟล์ Excel</label>
+      <input type="file" id="file" name="file" accept=".xlsx" class="form-control" aria-label="เลือกไฟล์ Excel สำหรับ import" />
+    </div>
+    <button type="submit" class="btn btn-primary">Upload and Import</button>
+    <a href="{% url 'master_list' %}" class="btn btn-secondary ms-2">Cancel</a>
+  </form>
+  <div class="mt-3">
+    <a href="{% url 'master_download_template' %}" class="btn btn-outline-primary invisible" target="_blank" rel="noopener noreferrer">Download Excel template (generic)</a>
+    <!-- Category-specific template download -->
+    <form method="get" action="{% url 'master_download_template' %}" class="d-inline ms-2" target="_blank" rel="noopener noreferrer">
+      <label for="template_category" class="visually-hidden">Category</label>
+      <select id="template_category" name="category" class="form-select d-inline w-auto">
+        <option value="">-- select category --</option>
+        {% for c in categories %}
+          <option value="{{ c.key }}">{{ c.label }} ({{ c.key }})</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-outline-secondary mt-2">ดาวน์โหลดแบบฟอร์ม</button>
+    </form>
+  </div>
+
+  <hr />
+  <h5>ตัวอย่าง (รวมคอลัมน์ parent)</h5>
+  <pre>
+category,code,label,description,active,order,parent_category,parent_code
+customers,cntu,คณะแพทยศาสตร์ มหาวิทยาลัยเชียงใหม่,Imported customer,true,10,,
+division,cntu_div1,Division 1,,true,20,customers,cntu
+department,cntu_dep1,ภาควิชา X,,true,30,division,cntu_div1
+  </pre>
+</div>
+{% endblock %}

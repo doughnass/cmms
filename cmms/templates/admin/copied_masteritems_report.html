@@ -1,0 +1,25 @@
+{% extends 'admin/base_site.html' %}
+{% block content %}
+  <h1>Copied MasterItems report</h1>
+  <p>Total equipments MasterItem: {{ total_equip }}</p>
+  <p>Total technician_skill MasterItem: {{ total_tech }}</p>
+  <p>Technician_skill items that have technician relations: {{ tech_with_rel_count }}</p>
+
+  <h2>Copied entries (marker)</h2>
+  <table class="adminlist table table-striped">
+    <thead><tr><th>ID</th><th>Label</th><th>Code</th><th>Active</th><th>Description</th></tr></thead>
+    <tbody>
+      {% for mi in copied %}
+        <tr>
+          <td>{{ mi.id }}</td>
+          <td>{{ mi.label }}</td>
+          <td>{{ mi.code }}</td>
+          <td>{{ mi.active }}</td>
+          <td>{{ mi.description }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">No copied entries found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

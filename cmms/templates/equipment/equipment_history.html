@@ -1,0 +1,808 @@
+﻿{% extends "base.html" %}
+{% load static %}
+{% load cmms_filters %}
+
+{% block content %}
+<style>
+/* ── root tokens ── */
+:root {
+  --eh-primary: #4f46e5;
+  --eh-primary-light: #eef2ff;
+  --eh-radius: 14px;
+  --eh-radius-sm: 8px;
+  --eh-shadow-sm: 0 1px 4px rgba(0,0,0,.07);
+  --eh-shadow: 0 2px 12px rgba(0,0,0,.08);
+  --eh-shadow-md: 0 4px 20px rgba(0,0,0,.11);
+}
+
+/* ── layout ── */
+.eh-wrap { max-width: 1280px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+
+/* ── breadcrumb bar ── */
+.eh-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: .5rem;
+  margin-bottom: 1.5rem;
+}
+.eh-breadcrumb {
+  display: flex; align-items: center; gap: .5rem;
+  font-size: .82rem; color: #6b7280;
+}
+.eh-breadcrumb a { color: var(--eh-primary); text-decoration: none; font-weight: 500; }
+.eh-breadcrumb a:hover { text-decoration: underline; }
+.eh-breadcrumb .sep { color: #d1d5db; }
+.eh-breadcrumb .current { color: #374151; font-weight: 600; }
+.eh-nav-actions { display: flex; gap: .5rem; }
+.eh-btn {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .45rem 1rem; border-radius: var(--eh-radius-sm); font-size: .8rem;
+  font-weight: 600; border: 1.5px solid; cursor: pointer; transition: all .18s;
+  text-decoration: none;
+}
+.eh-btn-outline { background: #fff; color: #374151; border-color: #e5e7eb; }
+.eh-btn-outline:hover { background: #f9fafb; border-color: #d1d5db; color: #111827; }
+.eh-btn-primary { background: var(--eh-primary); color: #fff; border-color: var(--eh-primary); }
+.eh-btn-primary:hover { background: #4338ca; border-color: #4338ca; color: #fff; }
+
+/* ── hero ── */
+.eh-hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff; padding: 1.75rem 2rem; border-radius: var(--eh-radius);
+  margin-bottom: 1.5rem; box-shadow: 0 6px 28px rgba(102,126,234,.3);
+  position: relative; overflow: hidden;
+}
+.eh-hero::before {
+  content: ''; position: absolute; right: -3rem; top: -3rem;
+  width: 12rem; height: 12rem; border-radius: 50%;
+  background: rgba(255,255,255,.06);
+}
+.eh-hero::after {
+  content: ''; position: absolute; right: 3rem; bottom: -4rem;
+  width: 9rem; height: 9rem; border-radius: 50%;
+  background: rgba(255,255,255,.04);
+}
+.eh-hero-inner { position: relative; z-index: 1; }
+.eh-hero h1 { font-size: 1.45rem; font-weight: 800; margin: 0 0 .5rem; letter-spacing: -.01em; }
+.eh-hero-id {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: rgba(255,255,255,.18); border-radius: 6px;
+  padding: .25rem .65rem; font-size: .78rem; font-weight: 700;
+  letter-spacing: .04em; margin-bottom: .75rem; backdrop-filter: blur(4px);
+}
+.eh-hero-meta {
+  display: flex; flex-wrap: wrap; gap: .5rem 2rem;
+  font-size: .83rem; opacity: .93;
+}
+.eh-hero-meta span { display: flex; align-items: center; gap: .4rem; }
+
+/* ── stat cards ── */
+.eh-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 1rem; margin-bottom: 1.75rem;
+}
+.stat-card {
+  background: #fff; border-radius: var(--eh-radius); padding: 1.1rem 1.25rem;
+  box-shadow: var(--eh-shadow); display: flex; align-items: center; gap: .9rem;
+  border-left: 4px solid var(--sc, #667eea);
+  transition: transform .18s, box-shadow .18s;
+}
+.stat-card:hover { transform: translateY(-3px); box-shadow: var(--eh-shadow-md); }
+.stat-icon {
+  width: 46px; height: 46px; border-radius: 11px;
+  background: var(--si, #ede9fe); color: var(--sc, #667eea);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; flex-shrink: 0;
+}
+.stat-num { font-size: 1.65rem; font-weight: 800; line-height: 1; color: #111827; }
+.stat-lbl { font-size: .72rem; color: #6b7280; margin-top: .2rem; }
+
+/* ── tabs ── */
+.eh-tabs-wrap { position: sticky; top: 0; z-index: 20; padding: .5rem 0; background: #f8f9fb; margin-bottom: 1.5rem; }
+.eh-tabs {
+  display: flex; flex-wrap: wrap; gap: 0;
+  background: #fff; border-radius: var(--eh-radius); padding: .35rem;
+  box-shadow: var(--eh-shadow);
+}
+.eh-tab {
+  flex: 1; min-width: 110px; padding: .6rem 1rem;
+  border: none; border-radius: 9px; background: transparent;
+  cursor: pointer; font-size: .855rem; font-weight: 500; color: #6b7280;
+  display: flex; align-items: center; justify-content: center; gap: .45rem;
+  transition: all .18s; white-space: nowrap;
+}
+.eh-tab:hover { background: #f3f4f6; color: #374151; }
+.eh-tab.active {
+  background: var(--eh-primary-light); color: var(--eh-primary);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1.5px rgba(79,70,229,.2);
+}
+.tab-cnt {
+  background: #e0e7ff; color: var(--eh-primary); border-radius: 20px;
+  padding: 0 .45rem; font-size: .68rem; font-weight: 700;
+  min-width: 18px; text-align: center; line-height: 1.6;
+}
+.eh-tab.active .tab-cnt { background: var(--eh-primary); color: #fff; }
+
+/* ── panels ── */
+.eh-panel { display: none; animation: fadeUp .2s ease; }
+.eh-panel.active { display: block; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── section toolbar ── */
+.panel-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: .75rem; margin-bottom: 1.1rem;
+}
+.panel-toolbar-title {
+  font-size: .82rem; font-weight: 700; color: #6b7280;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.eh-search {
+  display: flex; align-items: center; gap: .4rem;
+  background: #fff; border: 1.5px solid #e5e7eb; border-radius: var(--eh-radius-sm);
+  padding: .35rem .75rem; font-size: .82rem; transition: border .18s;
+}
+.eh-search:focus-within { border-color: var(--eh-primary); box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+.eh-search i { color: #9ca3af; }
+.eh-search input { border: none; outline: none; background: transparent; font-size: .82rem; color: #374151; width: 160px; }
+
+/* ── registration timeline ── */
+.timeline { position: relative; padding-left: 2rem; }
+.timeline::before {
+  content: ''; position: absolute; left: .75rem; top: 0; bottom: 0;
+  width: 2px; background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+}
+.history-card {
+  position: relative; background: #fff; border-radius: var(--eh-radius);
+  padding: 1.1rem 1.4rem; margin-bottom: 1.25rem;
+  box-shadow: var(--eh-shadow); margin-left: 1.5rem;
+  border-left: 4px solid; transition: transform .18s, box-shadow .18s;
+}
+.history-card:hover { transform: translateX(4px); box-shadow: var(--eh-shadow-md); }
+.history-card.create { border-left-color: #10b981; }
+.history-card.update { border-left-color: #f59e0b; }
+.history-card.delete { border-left-color: #ef4444; }
+.history-card::before {
+  content: ''; position: absolute; left: -2.35rem; top: 1.1rem;
+  width: 1.3rem; height: 1.3rem; border-radius: 50%;
+  border: 3px solid #f3f4f6;
+}
+.history-card.create::before { background: #10b981; }
+.history-card.update::before { background: #f59e0b; }
+.history-card.delete::before { background: #ef4444; }
+
+.action-badge {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .3rem .85rem; border-radius: 20px; font-size: .78rem; font-weight: 700;
+}
+.action-badge.create { background: linear-gradient(135deg,#10b981,#059669); color:#fff; }
+.action-badge.update { background: linear-gradient(135deg,#f59e0b,#d97706); color:#fff; }
+.action-badge.delete { background: linear-gradient(135deg,#ef4444,#dc2626); color:#fff; }
+
+.history-meta { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; color: #6b7280; font-size: .8rem; margin: .6rem 0; }
+.meta-item { display: flex; align-items: center; gap: .35rem; }
+.meta-item i { color: #9ca3af; font-size: .85em; }
+
+.changes-toggle {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: #f3f4f6; border: none; border-radius: 6px;
+  padding: .3rem .75rem; font-size: .77rem; font-weight: 600;
+  color: #4b5563; cursor: pointer; margin-top: .5rem;
+  transition: background .15s;
+}
+.changes-toggle:hover { background: #e5e7eb; }
+.changes-toggle i { transition: transform .2s; }
+.changes-toggle.open i.toggle-icon { transform: rotate(180deg); }
+
+.changes-body { margin-top: .65rem; }
+.change-item {
+  background: #f9fafb; border-radius: 7px; padding: .55rem .875rem;
+  margin-bottom: .35rem; border: 1px solid #f3f4f6;
+}
+.field-name { font-weight: 700; color: #4b5563; margin-bottom: .25rem; font-size: .78rem; }
+.value-change { display: flex; align-items: center; gap: .5rem; font-size: .82rem; flex-wrap: wrap; }
+.old-value {
+  color: #dc2626; text-decoration: line-through;
+  background: #fef2f2; padding: .2rem .4rem; border-radius: 4px; max-width: 280px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.new-value {
+  color: #059669; background: #f0fdf4;
+  padding: .2rem .4rem; border-radius: 4px; font-weight: 600;
+  max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.arrow { color: #9ca3af; font-size: .8rem; }
+
+/* ── WO timeline ── */
+.wo-timeline { position: relative; padding-left: 2rem; }
+.wo-timeline::before {
+  content: ''; position: absolute; left: .75rem; top: 0; bottom: 0;
+  width: 2px; background: linear-gradient(180deg, #0ea5e9 0%, #6366f1 100%);
+}
+.wo-hcard {
+  position: relative; background: #fff; border-radius: var(--eh-radius);
+  padding: 1.1rem 1.4rem; margin-bottom: 1.1rem;
+  box-shadow: var(--eh-shadow); margin-left: 1.5rem;
+  border-left: 4px solid var(--wc, #6366f1);
+  transition: transform .18s, box-shadow .18s;
+}
+.wo-hcard:hover { transform: translateX(4px); box-shadow: var(--eh-shadow-md); }
+.wo-hcard::before {
+  content: ''; position: absolute; left: -2.35rem; top: 1.1rem;
+  width: 1.3rem; height: 1.3rem; border-radius: 50%;
+  border: 3px solid #f3f4f6; background: var(--wc, #6366f1);
+}
+.wo-hcard[data-status="open"]        { --wc: #3b82f6; }
+.wo-hcard[data-status="assigned"]    { --wc: #6366f1; }
+.wo-hcard[data-status="in_progress"] { --wc: #f59e0b; }
+.wo-hcard[data-status="on_hold"]     { --wc: #c2410c; }
+.wo-hcard[data-status="completed"]   { --wc: #10b981; }
+.wo-hcard[data-status="verified"]    { --wc: #0891b2; }
+.wo-hcard[data-status="closed"]      { --wc: #9ca3af; }
+
+.wo-hcard-top {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem;
+  margin-bottom: .55rem;
+}
+.wo-hcard-id {
+  font-size: .68rem; font-weight: 800; background: #e0e7ff; color: #4338ca;
+  border-radius: 5px; padding: .2rem .55rem; letter-spacing: .02em;
+}
+.wo-hcard-title {
+  font-weight: 700; color: #111827; font-size: .92rem;
+  flex: 1 1 180px; line-height: 1.35;
+}
+.wo-badge {
+  display: inline-flex; align-items: center; gap: .3rem;
+  padding: .18rem .55rem; border-radius: 20px; font-size: .7rem;
+  font-weight: 700; border: 1.5px solid;
+}
+.wbs-open        { background:#eff6ff; color:#2563eb; border-color:#bfdbfe; }
+.wbs-assigned    { background:#eef2ff; color:#4338ca; border-color:#c7d2fe; }
+.wbs-in_progress { background:#fffbeb; color:#b45309; border-color:#fde68a; }
+.wbs-on_hold     { background:#fff7ed; color:#c2410c; border-color:#fed7aa; }
+.wbs-completed   { background:#f0fdf4; color:#15803d; border-color:#bbf7d0; }
+.wbs-verified    { background:#ecfeff; color:#0e7490; border-color:#a5f3fc; }
+.wbs-closed      { background:#f9fafb; color:#6b7280; border-color:#e5e7eb; }
+.wbt-repair        { background:#fef2f2; color:#b91c1c; border-color:#fecaca; }
+.wbt-maintenance   { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+.wbt-calibration   { background:#f5f3ff; color:#6d28d9; border-color:#ddd6fe; }
+.wbt-installation  { background:#f0fdf4; color:#15803d; border-color:#bbf7d0; }
+.wbt-consultation  { background:#f0fdfa; color:#0f766e; border-color:#99f6e4; }
+.wbt-other         { background:#f9fafb; color:#4b5563; border-color:#e5e7eb; }
+.wbp-high   { background:#fef2f2; color:#b91c1c; border-color:#fecaca; }
+.wbp-medium { background:#fffbeb; color:#b45309; border-color:#fde68a; }
+.wbp-low    { background:#f0fdf4; color:#15803d; border-color:#bbf7d0; }
+
+.wo-hcard-meta {
+  display: flex; flex-wrap: wrap; gap: .4rem 1.25rem;
+  font-size: .78rem; color: #6b7280; margin-bottom: .55rem;
+}
+.wo-hcard-meta span { display: flex; align-items: center; gap: .3rem; }
+.wo-hcard-meta i { font-size: .85em; }
+
+.wo-duration {
+  display: inline-flex; align-items: center; gap: .3rem;
+  background: #f3f4f6; border-radius: 6px;
+  padding: .2rem .55rem; font-size: .72rem; font-weight: 600; color: #374151;
+}
+
+.wo-divider { border: none; border-top: 1px solid #f3f4f6; margin: .65rem 0; }
+
+.wo-tech-report {
+  padding: .7rem .9rem;
+  background: #f0f9ff; border-left: 3px solid #0ea5e9;
+  border-radius: 0 8px 8px 0;
+  font-size: .8rem; color: #374151; white-space: pre-line;
+  max-height: 120px; overflow-y: auto;
+}
+.wo-tech-label {
+  font-size: .68rem; font-weight: 800; color: #0284c7;
+  letter-spacing: .04em; text-transform: uppercase; margin-bottom: .35rem;
+}
+
+.wo-parts-mini { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; margin-top: .55rem; }
+.part-chip {
+  display: inline-flex; align-items: center; gap: .3rem;
+  background: #f5f3ff; color: #5b21b6; border: 1px solid #ddd6fe;
+  border-radius: 6px; padding: .2rem .5rem; font-size: .7rem; font-weight: 600;
+}
+.part-chip.custom { background: #fff7ed; color: #92400e; border-color: #fed7aa; }
+
+.wo-footer {
+  display: flex; align-items: center; justify-content: flex-end;
+  margin-top: .75rem;
+}
+.wo-open-link {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-size: .78rem; font-weight: 700; color: var(--eh-primary);
+  text-decoration: none; padding: .3rem .7rem;
+  background: var(--eh-primary-light); border-radius: 6px;
+  transition: background .15s;
+}
+.wo-open-link:hover { background: #e0e7ff; color: var(--eh-primary); }
+
+/* ── spare parts table ── */
+.sp-table-wrap {
+  overflow-x: auto; border-radius: var(--eh-radius);
+  box-shadow: var(--eh-shadow); border: 1px solid #f3f4f6;
+}
+.sp-table { width: 100%; border-collapse: collapse; background: #fff; }
+.sp-table thead th {
+  background: #f8f9fa; padding: .7rem 1rem;
+  text-align: left; font-size: .75rem; font-weight: 800;
+  color: #374151; border-bottom: 2px solid #e5e7eb; white-space: nowrap;
+  cursor: pointer; user-select: none; transition: background .15s;
+}
+.sp-table thead th:hover { background: #f0f0f0; }
+.sp-table thead th .sort-icon { opacity: .35; margin-left: .2rem; }
+.sp-table thead th.sorted-asc .sort-icon::after { content: ' ▲'; opacity: 1; }
+.sp-table thead th.sorted-desc .sort-icon::after { content: ' ▼'; opacity: 1; }
+.sp-table tbody td {
+  padding: .6rem 1rem; font-size: .82rem; color: #374151;
+  border-bottom: 1px solid #f3f4f6; vertical-align: middle;
+}
+.sp-table tbody tr:nth-child(even) td { background: #fafafa; }
+.sp-table tbody tr:hover td { background: #f0f4ff; }
+.sp-table tfoot td {
+  padding: .7rem 1rem; font-size: .82rem; font-weight: 700;
+  background: #f8f9fa; border-top: 2px solid #e5e7eb;
+}
+.sp-no-results { display: none; text-align: center; padding: 2rem; color: #9ca3af; font-size: .85rem; }
+
+/* ── empty state ── */
+.empty-state {
+  text-align: center; padding: 3.5rem 2rem; color: #9ca3af;
+  background: #fff; border-radius: var(--eh-radius); box-shadow: var(--eh-shadow);
+}
+.empty-state i { font-size: 2.75rem; margin-bottom: .85rem; opacity: .4; display: block; }
+.empty-state p { font-size: .9rem; margin: 0; }
+
+/* ── scroll-to-top ── */
+#scrollTop {
+  position: fixed; bottom: 1.75rem; right: 1.75rem; z-index: 100;
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--eh-primary); color: #fff; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+  box-shadow: 0 4px 14px rgba(79,70,229,.35);
+  opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
+  transform: translateY(8px);
+}
+#scrollTop.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+#scrollTop:hover { background: #4338ca; }
+
+/* ── print ── */
+@media print {
+  .eh-nav, .eh-tabs-wrap, #scrollTop { display: none !important; }
+  .eh-panel { display: block !important; }
+  .wo-hcard, .history-card { break-inside: avoid; }
+}
+
+/* ── responsive ── */
+@media (max-width: 600px) {
+  .eh-hero { padding: 1.25rem; }
+  .eh-hero h1 { font-size: 1.15rem; }
+  .stat-num { font-size: 1.3rem; }
+  .wo-hcard-title { font-size: .85rem; }
+}
+</style>
+
+<div class="eh-wrap">
+
+  <!-- breadcrumb + actions -->
+  <div class="eh-nav">
+    <nav class="eh-breadcrumb" aria-label="breadcrumb">
+      <a href="{% url 'equipment_list' %}"><i class="bi bi-grid-3x3-gap-fill"></i> อุปกรณ์</a>
+      <span class="sep">/</span>
+      <a href="{% url 'edit_equipment' equipment.id %}">{{ equipment.equipment_id }}</a>
+      <span class="sep">/</span>
+      <span class="current">ประวัติ</span>
+    </nav>
+    <div class="eh-nav-actions">
+      <button class="eh-btn eh-btn-outline" onclick="window.print()">
+        <i class="bi bi-printer"></i> พิมพ์
+      </button>
+      <a href="{% url 'edit_equipment' equipment.id %}" class="eh-btn eh-btn-primary">
+        <i class="bi bi-pencil-square"></i> แก้ไขทะเบียน
+      </a>
+    </div>
+  </div>
+
+  <!-- hero -->
+  <div class="eh-hero">
+    <div class="eh-hero-inner">
+      <div class="eh-hero-id"><i class="bi bi-qr-code"></i> {{ equipment.equipment_id }}</div>
+      <h1>{{ equipment.equipment_name_TH|default:equipment.equipment_name_EN|default:'—' }}</h1>
+      <div class="eh-hero-meta">
+        {% if equipment.equipment_brand %}<span><i class="bi bi-building"></i> {{ equipment.equipment_brand }}</span>{% endif %}
+        {% if equipment.equipment_model %}<span><i class="bi bi-layers"></i> {{ equipment.equipment_model }}</span>{% endif %}
+        {% if equipment.equipment_sn %}<span><i class="bi bi-upc-scan"></i> S/N: {{ equipment.equipment_sn }}</span>{% endif %}
+        {% if equipment.equipment_user_customer %}<span><i class="bi bi-people-fill"></i> {{ equipment.equipment_user_customer }}</span>{% endif %}
+        {% if equipment.equipment_type %}<span><i class="bi bi-tag-fill"></i> {{ equipment.equipment_type }}</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- stats -->
+  <div class="eh-stats">
+    <div class="stat-card" style="--sc:#6366f1;--si:#eef2ff;">
+      <div class="stat-icon"><i class="bi bi-journal-text"></i></div>
+      <div class="stat-body">
+        <div class="stat-num" data-count="{{ history|length }}">{{ history|length }}</div>
+        <div class="stat-lbl">เปลี่ยนแปลงทะเบียน</div>
+      </div>
+    </div>
+    <div class="stat-card" style="--sc:#0ea5e9;--si:#e0f2fe;">
+      <div class="stat-icon"><i class="bi bi-wrench-adjustable"></i></div>
+      <div class="stat-body">
+        <div class="stat-num" data-count="{{ wo_count }}">{{ wo_count }}</div>
+        <div class="stat-lbl">ใบงานทั้งหมด</div>
+      </div>
+    </div>
+    <div class="stat-card" style="--sc:#7c3aed;--si:#f5f3ff;">
+      <div class="stat-icon"><i class="bi bi-box-seam-fill"></i></div>
+      <div class="stat-body">
+        <div class="stat-num" data-count="{{ sp_count }}">{{ sp_count }}</div>
+        <div class="stat-lbl">รายการอะไหล่เบิก</div>
+      </div>
+    </div>
+    <div class="stat-card" style="--sc:#059669;--si:#ecfdf5;">
+      <div class="stat-icon"><i class="bi bi-cash-stack"></i></div>
+      <div class="stat-body">
+        <div class="stat-num">{% if total_sp_cost %}{{ total_sp_cost|floatformat:0 }}{% else %}—{% endif %}</div>
+        <div class="stat-lbl">มูลค่าอะไหล่ (฿)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- sticky tabs -->
+  <div class="eh-tabs-wrap">
+    <div class="eh-tabs" role="tablist">
+      <button class="eh-tab active" data-panel="panel-reg" role="tab" aria-selected="true">
+        <i class="bi bi-journal-text"></i> ทะเบียน
+        <span class="tab-cnt">{{ history|length }}</span>
+      </button>
+      <button class="eh-tab" data-panel="panel-wo" role="tab" aria-selected="false">
+        <i class="bi bi-wrench-adjustable"></i> ซ่อมบำรุง / ใบงาน
+        <span class="tab-cnt">{{ wo_count }}</span>
+      </button>
+      <button class="eh-tab" data-panel="panel-sp" role="tab" aria-selected="false">
+        <i class="bi bi-box-seam-fill"></i> อะไหล่ที่เบิก
+        <span class="tab-cnt">{{ sp_count }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ Panel: Registration ══ -->
+  <div class="eh-panel active" id="panel-reg">
+    <div class="panel-toolbar">
+      <span class="panel-toolbar-title"><i class="bi bi-journal-text"></i> ประวัติทะเบียนอุปกรณ์</span>
+    </div>
+    {% if history %}
+    <div class="timeline">
+      {% for record in history %}
+      <div class="history-card {{ record.action_type|lower }}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.5rem;">
+          <span class="action-badge {{ record.action_type|lower }}">
+            {% if record.action_type == 'CREATE' %}<i class="bi bi-plus-circle-fill"></i> สร้างทะเบียน
+            {% elif record.action_type == 'UPDATE' %}<i class="bi bi-pencil-square"></i> แก้ไขทะเบียน
+            {% elif record.action_type == 'DELETE' %}<i class="bi bi-trash-fill"></i> ลบทะเบียน
+            {% endif %}
+          </span>
+          <span style="font-size:.72rem;color:#9ca3af;">{{ record.action_at|date:'d/m/Y H:i' }}</span>
+        </div>
+        <div class="history-meta">
+          <span class="meta-item"><i class="bi bi-person-circle"></i> <strong>{{ record.action_by }}</strong></span>
+          <span class="meta-item"><i class="bi bi-clock"></i> {{ record.action_at|date:'d/m/Y H:i:s' }}</span>
+          {% if record.ip_address %}<span class="meta-item"><i class="bi bi-geo-alt"></i> {{ record.ip_address }}</span>{% endif %}
+        </div>
+        {% if record.notes %}
+        <div style="font-size:.8rem;color:#4b5563;background:#fffbeb;border-radius:6px;padding:.4rem .7rem;margin-bottom:.4rem;">
+          <i class="bi bi-sticky-fill" style="color:#f59e0b;"></i> {{ record.notes }}
+        </div>
+        {% endif %}
+        {% if record.changed_fields %}
+        <button class="changes-toggle" onclick="toggleChanges(this)">
+          <i class="bi bi-list-check"></i>
+          <span>{{ record.changed_fields|length }} ฟิลด์ที่เปลี่ยนแปลง</span>
+          <i class="bi bi-chevron-down toggle-icon"></i>
+        </button>
+        <div class="changes-body" style="display:none;">
+          {% for field in record.changed_fields %}
+          <div class="change-item">
+            <div class="field-name">{{ field }}</div>
+            <div class="value-change">
+              {% if record.old_values and field in record.old_values %}
+                <span class="old-value" title="{{ record.old_values|get_item:field }}">{{ record.old_values|get_item:field|default:'(ว่าง)' }}</span>
+                <span class="arrow"><i class="bi bi-arrow-right"></i></span>
+              {% endif %}
+              {% if record.new_values and field in record.new_values %}
+                <span class="new-value" title="{{ record.new_values|get_item:field }}">{{ record.new_values|get_item:field|default:'(ว่าง)' }}</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-journal-x"></i>
+      <p>ยังไม่มีประวัติการดำเนินการ</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ══ Panel: Work Orders ══ -->
+  <div class="eh-panel" id="panel-wo">
+    <div class="panel-toolbar">
+      <span class="panel-toolbar-title"><i class="bi bi-wrench-adjustable"></i> ประวัติซ่อมบำรุงและใบงาน</span>
+      {% if wo_status_counts %}
+      <div style="display:flex;flex-wrap:wrap;gap:.35rem;">
+        {% for status, cnt in wo_status_counts.items %}
+        <span class="wo-badge wbs-{{ status }}" style="cursor:pointer;" onclick="filterWO('{{ status }}')">{{ status|title }} ({{ cnt }})</span>
+        {% endfor %}
+        <span class="wo-badge" style="background:#f9fafb;color:#6b7280;border-color:#e5e7eb;cursor:pointer;" onclick="filterWO('')">ทั้งหมด</span>
+      </div>
+      {% endif %}
+    </div>
+    {% if work_orders %}
+    <div class="wo-timeline" id="wo-list">
+      {% for wo in work_orders %}
+      <div class="wo-hcard" data-status="{{ wo.status }}" data-wo-id="{{ wo.id }}">
+        <div class="wo-hcard-top">
+          <span class="wo-hcard-id">WO-{{ wo.id }}</span>
+          <span class="wo-hcard-title">{{ wo.title }}</span>
+          <span class="wo-badge wbs-{{ wo.status }}">
+            {% if wo.status == 'open' %}<i class="bi bi-circle"></i>
+            {% elif wo.status == 'assigned' %}<i class="bi bi-person-check"></i>
+            {% elif wo.status == 'in_progress' %}<i class="bi bi-play-fill"></i>
+            {% elif wo.status == 'on_hold' %}<i class="bi bi-pause-fill"></i>
+            {% elif wo.status == 'completed' %}<i class="bi bi-check-circle-fill"></i>
+            {% elif wo.status == 'verified' %}<i class="bi bi-patch-check-fill"></i>
+            {% elif wo.status == 'closed' %}<i class="bi bi-lock-fill"></i>
+            {% endif %}
+            {{ wo.get_status_display }}
+          </span>
+          {% if wo.workorder_type %}
+          <span class="wo-badge wbt-{{ wo.workorder_type }}">
+            {% if wo.workorder_type == 'repair' %}<i class="bi bi-tools"></i>
+            {% elif wo.workorder_type == 'maintenance' %}<i class="bi bi-gear-fill"></i>
+            {% elif wo.workorder_type == 'calibration' %}<i class="bi bi-rulers"></i>
+            {% elif wo.workorder_type == 'installation' %}<i class="bi bi-hammer"></i>
+            {% elif wo.workorder_type == 'consultation' %}<i class="bi bi-chat-left-dots-fill"></i>
+            {% else %}<i class="bi bi-tag-fill"></i>{% endif %}
+            {{ wo.get_workorder_type_display }}
+          </span>
+          {% endif %}
+          <span class="wo-badge wbp-{{ wo.priority }}">{{ wo.get_priority_display }}</span>
+          {% if wo.actual_start and wo.actual_end %}
+          <span class="wo-duration">
+            <i class="bi bi-stopwatch" style="color:#6366f1;"></i>
+            <span id="dur-{{ wo.id }}"
+              data-start="{{ wo.actual_start|date:'Y-m-d H:i' }}"
+              data-end="{{ wo.actual_end|date:'Y-m-d H:i' }}">—</span>
+          </span>
+          {% endif %}
+        </div>
+
+        <div class="wo-hcard-meta">
+          <span><i class="bi bi-calendar3" style="color:#6366f1;"></i> แจ้ง {{ wo.reported_at|date:'d/m/Y H:i' }}</span>
+          {% if wo.actual_start %}<span><i class="bi bi-play-fill" style="color:#f59e0b;"></i> เริ่ม {{ wo.actual_start|date:'d/m/Y H:i' }}</span>{% endif %}
+          {% if wo.actual_end %}<span><i class="bi bi-check-circle-fill" style="color:#10b981;"></i> เสร็จ {{ wo.actual_end|date:'d/m/Y H:i' }}</span>{% endif %}
+          {% if wo.assigned_to %}<span><i class="bi bi-wrench" style="color:#0ea5e9;"></i> {{ wo.assigned_to.get_full_name|default:wo.assigned_to.username }}</span>{% endif %}
+          {% if wo.verified_by %}<span><i class="bi bi-patch-check-fill" style="color:#0891b2;"></i> รับรองโดย {{ wo.verified_by.get_full_name|default:wo.verified_by.username }}</span>{% endif %}
+        </div>
+
+        {% if wo.technician_report %}
+        <hr class="wo-divider">
+        <div class="wo-tech-label"><i class="bi bi-clipboard2-pulse-fill"></i> รายงานช่าง</div>
+        <div class="wo-tech-report">{{ wo.technician_report }}</div>
+        {% endif %}
+
+        {% with parts=wo.used_spare_parts.all %}
+        {% if parts %}
+        <div class="wo-parts-mini">
+          <span style="font-size:.68rem;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;"><i class="bi bi-box-seam-fill"></i> อะไหล่:</span>
+          {% for p in parts %}
+          <span class="part-chip {% if p.spare_part is None %}custom{% endif %}">
+            {% if p.spare_part is None %}<i class="bi bi-box"></i>{% else %}<i class="bi bi-box-seam"></i>{% endif %}
+            {{ p.display_name }} &times;{{ p.quantity }}
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="wo-footer">
+          <a href="{% url 'workorder_detail' wo.id %}" class="wo-open-link">
+            <i class="bi bi-arrow-up-right-square-fill"></i> เปิดใบงาน
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="sp-no-results" id="wo-no-results" style="display:none;background:#fff;border-radius:var(--eh-radius);box-shadow:var(--eh-shadow);padding:2.5rem;text-align:center;color:#9ca3af;">
+      <i class="bi bi-funnel" style="font-size:2rem;opacity:.4;display:block;margin-bottom:.5rem;"></i>
+      <p>ไม่มีใบงานในสถานะที่เลือก</p>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-wrench-adjustable"></i>
+      <p>ยังไม่มีใบงานสำหรับอุปกรณ์นี้</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ══ Panel: Spare Parts ══ -->
+  <div class="eh-panel" id="panel-sp">
+    <div class="panel-toolbar">
+      <span class="panel-toolbar-title"><i class="bi bi-box-seam-fill"></i> อะไหล่ทั้งหมดที่เบิกใช้</span>
+      {% if spare_parts_qs %}
+      <label class="eh-search">
+        <i class="bi bi-search"></i>
+        <input type="text" id="sp-search" placeholder="ค้นหาอะไหล่ / ใบงาน…" oninput="filterSP(this.value)">
+      </label>
+      {% endif %}
+    </div>
+    {% if spare_parts_qs %}
+    <div class="sp-table-wrap">
+      <table class="sp-table" id="sp-table">
+        <thead>
+          <tr>
+            <th style="width:36px;">#</th>
+            <th>ใบงาน</th>
+            <th>รหัสอะไหล่</th>
+            <th>ชื่ออะไหล่</th>
+            <th style="text-align:center;width:70px;">จำนวน</th>
+            <th style="width:60px;">หน่วย</th>
+            <th style="text-align:right;width:110px;">ราคา/หน่วย (฿)</th>
+            <th style="width:100px;">สถานะ</th>
+            <th style="width:90px;">วันที่</th>
+          </tr>
+        </thead>
+        <tbody id="sp-tbody">
+          {% for sp in spare_parts_qs %}
+          <tr data-search="{{ sp.display_name|lower }} {{ sp.workorder.id }} {% if sp.spare_part %}{{ sp.spare_part.code|lower }}{% endif %}">
+            <td style="color:#9ca3af;font-size:.75rem;">{{ forloop.counter }}</td>
+            <td>
+              <a href="{% url 'workorder_detail' sp.workorder.id %}" class="wo-open-link" style="font-size:.75rem;padding:.2rem .5rem;">
+                WO-{{ sp.workorder.id }}
+              </a>
+            </td>
+            <td>
+              {% if sp.spare_part %}
+              <code style="font-size:.75rem;background:#f5f3ff;color:#5b21b6;padding:.2rem .45rem;border-radius:4px;border:1px solid #ddd6fe;">{{ sp.spare_part.code }}</code>
+              {% else %}
+              <span style="font-size:.72rem;background:#fff7ed;color:#92400e;padding:.2rem .45rem;border-radius:4px;border:1px solid #fed7aa;">อื่นๆ</span>
+              {% endif %}
+            </td>
+            <td style="font-weight:600;">{{ sp.display_name }}</td>
+            <td style="text-align:center;font-weight:800;color:#374151;">{{ sp.quantity }}</td>
+            <td style="color:#6b7280;font-size:.78rem;">{{ sp.display_unit }}</td>
+            <td style="text-align:right;color:#6b7280;">
+              {% if sp.spare_part and sp.spare_part.unit_cost %}{{ sp.spare_part.unit_cost|floatformat:2 }}
+              {% elif sp.custom_unit_cost %}{{ sp.custom_unit_cost|floatformat:2 }}
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if sp.is_out_of_stock %}
+              <span style="font-size:.7rem;background:#fff7ed;color:#c2410c;border:1.5px solid #fed7aa;border-radius:20px;padding:.15rem .5rem;font-weight:700;white-space:nowrap;"><i class="bi bi-cart-plus"></i> รอจัดซื้อ</span>
+              {% else %}
+              <span style="font-size:.7rem;background:#f0fdf4;color:#15803d;border:1.5px solid #bbf7d0;border-radius:20px;padding:.15rem .5rem;font-weight:700;white-space:nowrap;"><i class="bi bi-check-circle-fill"></i> เบิกแล้ว</span>
+              {% endif %}
+            </td>
+            <td style="color:#6b7280;font-size:.76rem;white-space:nowrap;">{{ sp.workorder.reported_at|date:'d/m/Y' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="6" style="text-align:right;color:#6b7280;">มูลค่ารวมโดยประมาณ</td>
+            <td style="text-align:right;color:#059669;font-size:.9rem;">{% if total_sp_cost %}{{ total_sp_cost|floatformat:2 }} ฿{% else %}—{% endif %}</td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+      <p class="sp-no-results" id="sp-no-results">ไม่พบรายการที่ค้นหา</p>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-box-seam"></i>
+      <p>ยังไม่มีการเบิกอะไหล่สำหรับอุปกรณ์นี้</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div style="margin-top:2rem;">
+    <a href="{% url 'equipment_list' %}" class="eh-btn eh-btn-outline">
+      <i class="bi bi-arrow-left"></i> กลับสู่รายการอุปกรณ์
+    </a>
+  </div>
+</div>
+
+<!-- scroll-to-top -->
+<button id="scrollTop" title="กลับด้านบน" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <i class="bi bi-chevron-up"></i>
+</button>
+
+<script>
+/* ── Tabs ── */
+(function () {
+  var tabs   = document.querySelectorAll('.eh-tab');
+  var panels = document.querySelectorAll('.eh-panel');
+  function activate(id) {
+    tabs.forEach(function (t) {
+      var active = t.dataset.panel === id;
+      t.classList.toggle('active', active);
+      t.setAttribute('aria-selected', active);
+    });
+    panels.forEach(function (p) { p.classList.toggle('active', p.id === id); });
+    history.replaceState(null, '', '#' + id);
+  }
+  tabs.forEach(function (t) { t.addEventListener('click', function () { activate(t.dataset.panel); }); });
+  var hash = location.hash.replace('#', '');
+  if (hash && document.getElementById(hash)) activate(hash);
+})();
+
+/* ── Collapsible changed fields ── */
+function toggleChanges(btn) {
+  var body = btn.nextElementSibling;
+  var open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  btn.classList.toggle('open', !open);
+}
+
+/* ── WO status filter ── */
+function filterWO(status) {
+  var cards = document.querySelectorAll('#wo-list .wo-hcard');
+  var none  = document.getElementById('wo-no-results');
+  var shown = 0;
+  cards.forEach(function (c) {
+    var vis = !status || c.dataset.status === status;
+    c.style.display = vis ? '' : 'none';
+    if (vis) shown++;
+  });
+  if (none) none.style.display = shown === 0 ? 'block' : 'none';
+}
+
+/* ── Spare parts search ── */
+function filterSP(q) {
+  var rows = document.querySelectorAll('#sp-tbody tr');
+  var term = q.toLowerCase().trim();
+  var shown = 0;
+  rows.forEach(function (r) {
+    var match = !term || (r.dataset.search || '').includes(term);
+    r.style.display = match ? '' : 'none';
+    if (match) shown++;
+  });
+  var noRes = document.getElementById('sp-no-results');
+  if (noRes) noRes.style.display = shown === 0 ? 'block' : 'none';
+}
+
+/* ── Work order duration ── */
+document.querySelectorAll('[id^="dur-"]').forEach(function (el) {
+  var s = new Date(el.dataset.start);
+  var e = new Date(el.dataset.end);
+  var diff = Math.round((e - s) / 60000); // minutes
+  var txt;
+  if (diff < 60)       txt = diff + ' นาที';
+  else if (diff < 1440) txt = Math.round(diff/60*10)/10 + ' ชม.';
+  else                  txt = Math.round(diff/1440*10)/10 + ' วัน';
+  el.textContent = txt;
+});
+
+/* ── Scroll-to-top ── */
+(function () {
+  var btn = document.getElementById('scrollTop');
+  window.addEventListener('scroll', function () {
+    btn.classList.toggle('show', window.scrollY > 320);
+  }, { passive: true });
+})();
+</script>
+{% endblock %}

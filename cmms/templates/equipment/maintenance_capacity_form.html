@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}<title>เพิ่ม/แก้ไข ความจุบำรุงรักษา</title>{% endblock %}
+{% block content %}
+<div class="container mt-3">
+  <h2>เพิ่มความจุการบำรุงรักษา</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="date" class="form-label">วันที่</label>
+      <input type="date" id="date" name="date" class="form-control" value="{{ form_values.date|default:'' }}">
+    </div>
+    <div class="mb-3">
+      <label for="equipment_type" class="form-label">ประเภทเครื่อง</label>
+      <input type="text" id="equipment_type" name="equipment_type" class="form-control" value="{{ form_values.equipment_type|default:'' }}">
+    </div>
+    <div class="mb-3">
+      <label for="capacity" class="form-label">ความจุ</label>
+      <input type="number" id="capacity" name="capacity" class="form-control" value="{{ form_values.capacity|default:'0' }}">
+    </div>
+    <div class="text-end">
+      <button type="submit" class="btn btn-primary">บันทึก</button>
+      <a href="{% url 'maintenance_capacity_list' %}" class="btn btn-secondary ms-2">ยกเลิก</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

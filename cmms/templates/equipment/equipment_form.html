@@ -1,0 +1,2864 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if edit %}
+        <title>CMMS MedCMU : แก้ไขเครื่องมือแพทย์</title>
+    {% else %}
+        <title>CMMS MedCMU : ขึ้นทะเบียนเครื่องมือแพทย์</title>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<style>
+/* === Modern Design System (Matching equipment_list.html) === */
+:root {
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --primary-light: #dbeafe;
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --info: #06b6d4;
+  --info-light: #cffafe;
+  --purple: #8b5cf6;
+  --purple-light: #ede9fe;
+  --bg-light: #f1f5f9;
+  --bg-card: #ffffff;
+  --border: #e2e8f0;
+  --border-light: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --radius: 0.75rem;
+  --radius-lg: 1rem;
+}
+
+
+/* === Page Header === */
+.page-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 2.5rem;
+  margin-top: 4rem;
+  margin-bottom: 2rem;
+  border-radius:  var(--radius-lg) var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+    
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+}
+
+.page-header h1 {
+  position: relative;
+  z-index: 1;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.page-header .subtitle {
+  position: relative;
+  z-index: 1;
+  font-size: 0.95rem;
+  opacity: 0.95;
+  margin-top: 0.5rem;
+}
+
+/* === Progress Tracker === */
+.progress-tracker {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-light);
+}
+
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.progress-steps::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 10%;
+  right: 10%;
+  height: 3px;
+  background: var(--border);
+  z-index: 0;
+  border-radius: 2px;
+}
+
+.progress-step {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  flex: 1;
+}
+
+.progress-step .step-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 3px solid var(--border);
+  margin: 0 auto 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  color: var(--text-muted);
+}
+
+.progress-step.active .step-circle {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  border-color: var(--primary);
+  color: white;
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.progress-step.completed .step-circle {
+  background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+  border-color: var(--success);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.progress-step .step-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.progress-step.active .step-label {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.progress-step.completed .step-label {
+  color: var(--success);
+}
+
+/* === Card Components === */
+.card-modern {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  margin-bottom: 2rem;
+  overflow: visible;
+  border: 1px solid var(--border-light);
+  transition: all 0.3s ease;
+}
+
+.card-header-modern {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 1.75rem 2rem;
+  border-bottom: 2px solid var(--border);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.card-header-modern h3 {
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: var(--text-primary);
+  margin: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.card-header-modern .badge-info {
+  background: var(--info-light);
+  color: var(--info);
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+}
+
+.card-header-modern .badge-info.badge-success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.card-header-modern .badge-info.badge-warning {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.card-body-modern {
+  padding: 2.5rem;
+}
+
+/* === Form Groups === */
+.form-row-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.form-group {
+  margin-bottom: 0;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-group label .required {
+  color: var(--danger);
+  margin-left: 0.25rem;
+}
+
+.form-control, .form-select {
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  background: white;
+  font-weight: 500;
+  color: var(--text-primary);
+  width: 100%;
+}
+
+.form-control:focus, .form-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.form-control.is-invalid, .form-select.is-invalid {
+  border-color: var(--danger);
+}
+
+.form-control.is-valid, .form-select.is-valid {
+  border-color: var(--success);
+}
+
+.readonly-field {
+  background: var(--bg-light);
+  cursor: not-allowed;
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+
+.invalid-feedback {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  font-weight: 600;
+}
+
+/* === Info Badge === */
+.info-badge {
+  background: linear-gradient(135deg, var(--info-light) 0%, rgba(6, 182, 212, 0.05) 100%);
+  border-left: 4px solid var(--info);
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius);
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.info-badge i {
+  color: var(--info);
+  font-size: 1.25rem;
+}
+
+/* === Buttons === */
+.btn-modern {
+  border-radius: var(--radius);
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.2s ease;
+  border: none;
+  box-shadow: var(--shadow-sm);
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.btn-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-primary-modern {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+}
+
+.btn-success-modern {
+  background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+  color: white;
+}
+
+.btn-danger-modern {
+  background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+  color: white;
+}
+
+/* === Action Buttons === */
+.action-buttons {
+  background: var(--bg-card);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  margin-top: 2rem;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-light);
+}
+
+/* === Clear/Search Buttons === */
+.clear-search-btn {
+  display: none;
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  padding: 0.4rem 0.6rem;
+  z-index: 10;
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  background: white;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clear-search-btn:hover {
+  background: var(--danger-light);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* === Modal Animations === */
+.modal.fade .modal-dialog {
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.modal.show .modal-dialog {
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* === Selected Info Display === */
+.selected-info-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(37, 99, 235, 0.05) 100%);
+  border-left: 4px solid var(--primary);
+  padding: 1.25rem;
+  border-radius: var(--radius);
+  margin-top: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.selected-info-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem 1.25rem;
+  font-size: 0.9rem;
+}
+
+.selected-info-label {
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+}
+
+.selected-info-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* === Ancestors Display === */
+.ancestors-display {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(37, 99, 235, 0.02) 100%);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-top: 0.75rem;
+  border-left: 3px solid var(--primary);
+  display: none;
+}
+
+/* === EML Modal === */
+.modal-modern .modal-content {
+  border-radius: var(--radius-lg);
+  border: none;
+  box-shadow: var(--shadow-xl);
+}
+
+.modal-modern .modal-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  border: none;
+  padding: 1.75rem 2rem;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.modal-modern .modal-title {
+  font-weight: 700;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.modal-modern .btn-close {
+  filter: brightness(0) invert(1);
+  opacity: 0.8;
+}
+
+.modal-modern .btn-close:hover {
+  opacity: 1;
+}
+
+.modal-modern .modal-body {
+  padding: 0;
+}
+
+/* === EML Table === */
+.eml-table-wrapper {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.eml-modal-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0;
+}
+
+.eml-modal-table thead th {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 1.25rem 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border);
+  text-align: left;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.eml-modal-table tbody td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-light);
+  transition: all 0.2s ease;
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.eml-modal-row {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.eml-modal-row:hover {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.03) 100%);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.2);
+  transform: scale(1.005);
+  z-index: 1;
+}
+
+.eml-modal-row:active {
+  transform: scale(0.995);
+}
+
+.eml-modal-row.hidden {
+  display: none;
+}
+
+/* Selected row styling (applied via JS) */
+.eml-modal-row[style*="box-shadow: inset 0 0 0 2px"] {
+  animation: selectedPulse 1.5s ease-in-out;
+}
+
+@keyframes selectedPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.9; }
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .card-body-modern {
+    padding: 1.5rem;
+  }
+  
+  .form-row-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header {
+    padding: 1.5rem 0;
+  }
+
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .progress-tracker {
+    padding: 1.5rem;
+  }
+  
+  .progress-step .step-label {
+    font-size: 0.7rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+}
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1>{% if edit %}<i class="bi bi-pencil-square"></i> แก้ไขเครื่องมือแพทย์{% else %}<i class="bi bi-clipboard-plus"></i> ขึ้นทะเบียนเครื่องมือแพทย์{% endif %}</h1>
+                <p class="subtitle mb-0">{% if edit %}แก้ไขข้อมูลเครื่องมือแพทย์ที่มีอยู่ในระบบ{% else %}กรอกข้อมูลเครื่องมือแพทย์ใหม่เข้าสู่ระบบ CMMS{% endif %}</p>
+            </div>
+            <div>
+                <a href="{% url 'import_equipment_list' %}" class="btn btn-light btn-lg"><i class="bi bi-upload"></i> อัพโหลดไฟล์</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="progress-tracker">
+        <ul class="progress-steps">
+            <li class="progress-step active" data-step="1"><div class="step-circle">1</div><div class="step-label">ข้อมูลทั่วไป</div></li>
+            <li class="progress-step" data-step="2"><div class="step-circle">2</div><div class="step-label">การรับประกัน</div></li>
+            <li class="progress-step" data-step="3"><div class="step-circle">3</div><div class="step-label">การบำรุงรักษา</div></li>
+            <li class="progress-step" data-step="4"><div class="step-circle">4</div><div class="step-label">หน่วยงาน</div></li>
+            <li class="progress-step" data-step="5"><div class="step-circle">5</div><div class="step-label">เสร็จสิ้น</div></li>
+        </ul>
+    </div>
+
+    <div class="info-badge"><i class="bi bi-info-circle-fill"></i> กรอกข้อมูลตามที่ต้องการ สามารถบันทึกได้โดยไม่ต้องระบุข้อมูลใดๆ</div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill"></i> {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" action="{% if edit %}{% url 'edit_equipment' equipment_list.id %}{% else %}{% url 'add_equipment' %}{% endif %}" data-check-url="{% url 'api_check_equipment_id' %}" id="equipmentForm">
+    {% csrf_token %}
+
+    <!-- Section 1: ข้อมูลทั่วไป -->
+    <div class="card-modern" data-section="1">
+        <div class="card-header-modern" onclick="toggleSection(this)" style="cursor: pointer;">
+            <h3><i class="bi bi-info-circle-fill"></i> ข้อมูลทั่วไป</h3>
+            <span class="badge-info" id="section1-badge">ข้อมูลพื้นฐาน</span>
+        </div>
+        <div class="card-body-modern collapse-transition show">
+            <div class="form-row-grid">
+                <div class="form-group">
+                    <label for="equipment_id"><i class="bi bi-qr-code"></i> รหัสเครื่อง (QR Code)</label>
+                    <div class="input-group">
+                        <input readonly aria-readonly="true" id="equipment_id" type="text" name="equipment_id" minlength="13" class="form-control readonly-field {% if errors.equipment_id %}is-invalid{% elif form_values.suggested_equipment_id or form_values.equipment_id %}is-valid{% endif %}" value="{% if form_values.suggested_equipment_id %}{{ form_values.suggested_equipment_id }}{% else %}{{ form_values.equipment_id|default:'MEDCMU-' }}{% endif %}" placeholder="MEDCMU-XXXXXX">
+                    </div>
+                    <div class="form-text invisible"><i class="bi bi-lightbulb"></i> รหัสล่าสุด: <strong id="latest_code">{{ form_values.equipment_id }}</strong>{% if form_values.suggested_equipment_id %} — แนะนำ: <strong id="suggested_code">{{ form_values.suggested_equipment_id }}</strong>{% endif %}</div>
+                    {% if errors.equipment_id %}<div class="invalid-feedback d-block">{{ errors.equipment_id }}</div>{% endif %}
+                </div>
+
+                <script>
+                // Sync selected_eml_name_en into equipment_name_EN and keep it readonly.
+                (function(){
+                    function syncEN(){
+                        try{
+                            var span = document.getElementById('selected_eml_name_en');
+                            var input = document.getElementById('equipment_name_EN');
+                            if(!input) return;
+                            if(span){
+                                var v = (span.textContent || '').trim();
+                                if(v && v !== '-' ){
+                                    input.value = v;
+                                }
+                            }
+                            // Ensure it's read-only in case templates were changed
+                            input.readOnly = true;
+                            input.setAttribute('aria-readonly','true');
+                        }catch(e){console && console.debug && console.debug('syncEN error', e);}    
+                    }
+
+                    // Run on DOM load - keep existing value in edit mode
+                    document.addEventListener('DOMContentLoaded', function(){
+                        var input = document.getElementById('equipment_name_EN');
+                        // Only clear if NOT in edit mode and field is empty
+                        var isEditMode = {{ edit|yesno:'true,false' }};
+                        if(input && !isEditMode && !input.value) {
+                            input.value = ''; // Clear only in add mode if empty
+                        }
+                        syncEN();
+
+                        // Observe changes to the selected span (works when modal updates textContent)
+                        var span = document.getElementById('selected_eml_name_en');
+                        if(span && window.MutationObserver){
+                            try{
+                                var mo = new MutationObserver(function(){ syncEN(); });
+                                mo.observe(span, { childList: true, characterData: true, subtree: true });
+                            }catch(err){ /* ignore */ }
+                        }
+                    });
+
+                    // Re-sync whenever selected_eml_name_en text changes (modal selection updates that span)
+                    document.addEventListener('click', function(e){
+                        // some modal selection handlers update the span and hidden input; defer sync briefly
+                        if(e.target && (e.target.closest && e.target.closest('#emlModal') || e.target.id === 'equipment_code_browse')){
+                            setTimeout(syncEN, 150);
+                        }
+                    });
+
+                    // Also listen to hidden equipment_code changes
+                    var codeInput = document.getElementById('equipment_code');
+                    if(codeInput){ codeInput.addEventListener('change', syncEN); }
+                })();
+                </script>
+
+                <script>
+                // Sync selected_eml_name_th into equipment_name_TH and keep it readonly.
+                (function(){
+                    function syncTH(){
+                        try{
+                            var span = document.getElementById('selected_eml_name_th');
+                            var input = document.getElementById('equipment_name_TH');
+                            if(!input) return;
+                            if(span){
+                                var v = (span.textContent || '').trim();
+                                if(v && v !== '-' ){
+                                    input.value = v;
+                                }
+                            }
+                            // Ensure it's read-only in case templates were changed
+                            input.readOnly = true;
+                            input.setAttribute('aria-readonly','true');
+                        }catch(e){console && console.debug && console.debug('syncTH error', e);}    
+                    }
+
+                    // Run on DOM load - keep existing value in edit mode
+                    document.addEventListener('DOMContentLoaded', function(){
+                        var input = document.getElementById('equipment_name_TH');
+                        // Only clear if NOT in edit mode and field is empty
+                        var isEditMode = {{ edit|yesno:'true,false' }};
+                        if(input && !isEditMode && !input.value) {
+                            input.value = ''; // Clear only in add mode if empty
+                        }
+                        syncTH();
+
+                        // Observe changes to the selected span (works when modal updates textContent)
+                        var span = document.getElementById('selected_eml_name_th');
+                        if(span && window.MutationObserver){
+                            try{
+                                var mo = new MutationObserver(function(){ syncTH(); });
+                                mo.observe(span, { childList: true, characterData: true, subtree: true });
+                            }catch(err){ /* ignore */ }
+                        }
+                    });
+
+                    // Re-sync whenever selected_eml_name_th text changes (modal selection updates that span)
+                    document.addEventListener('click', function(e){
+                        // some modal selection handlers update the span and hidden input; defer sync briefly
+                        if(e.target && (e.target.closest && e.target.closest('#emlModal') || e.target.id === 'equipment_code_browse')){
+                            setTimeout(syncTH, 150);
+                        }
+                    });
+
+                    // Also listen to hidden equipment_code changes
+                    var codeInput = document.getElementById('equipment_code');
+                    if(codeInput){ codeInput.addEventListener('change', syncTH); }
+                })();
+                </script>
+
+                <script>
+                // Sync selected_eml_pm_fq into equipment_pm_fq select
+                (function(){
+                    function syncPM(){
+                        try{
+                            var span = document.getElementById('selected_eml_pm_fq');
+                            var select = document.getElementById('equipment_pm_fq');
+                            if(!select || !span) return;
+                            
+                            var pmValue = (span.textContent || '').trim();
+                            
+                            if(pmValue && pmValue !== '-'){
+                                // Try to find and select the matching option by value
+                                var found = false;
+                                for(var i = 0; i < select.options.length; i++){
+                                    if(select.options[i].value === pmValue){
+                                        select.selectedIndex = i;
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                
+                                // If not found by value, try by text
+                                if(!found){
+                                    for(var i = 0; i < select.options.length; i++){
+                                        if(select.options[i].value === pmValue || select.options[i].text === pmValue){
+                                            select.selectedIndex = i;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }catch(e){console && console.debug && console.debug('syncPM error', e);}    
+                    }
+
+                    document.addEventListener('DOMContentLoaded', function(){
+                        syncPM();
+
+                        // Observe changes to the selected span (works when modal updates textContent)
+                        var span = document.getElementById('selected_eml_pm_fq');
+                        if(span && window.MutationObserver){
+                            try{
+                                var mo = new MutationObserver(function(){ syncPM(); });
+                                mo.observe(span, { childList: true, characterData: true, subtree: true });
+                            }catch(err){ /* ignore */ }
+                        }
+                    });
+
+                    // Re-sync shortly after modal interactions where the span is updated
+                    document.addEventListener('click', function(e){
+                        if(e.target && (e.target.closest && e.target.closest('#emlModal') || e.target.id === 'equipment_code_browse')){
+                            setTimeout(syncPM, 150);
+                        }
+                    });
+
+                    // Also listen to hidden equipment_code changes
+                    var codeInput = document.getElementById('equipment_code');
+                    if(codeInput){ codeInput.addEventListener('change', syncPM); }
+                })();
+                </script>
+
+                <script>
+                // Sync selected_eml_cal_fq into equipment_cal_fq select
+                (function(){
+                    function syncCAL(){
+                        try{
+                            var span = document.getElementById('selected_eml_cal_fq');
+                            var select = document.getElementById('equipment_cal_fq');
+                            if(!select || !span) return;
+                            
+                            var calValue = (span.textContent || '').trim();
+                            
+                            if(calValue && calValue !== '-'){
+                                // Try to find and select the matching option by value
+                                var found = false;
+                                for(var i = 0; i < select.options.length; i++){
+                                    if(select.options[i].value === calValue){
+                                        select.selectedIndex = i;
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                
+                                // If not found by value, try by text
+                                if(!found){
+                                    for(var i = 0; i < select.options.length; i++){
+                                        if(select.options[i].value === calValue || select.options[i].text === calValue){
+                                            select.selectedIndex = i;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }catch(e){console && console.debug && console.debug('syncCAL error', e);}    
+                    }
+
+                    document.addEventListener('DOMContentLoaded', function(){
+                        syncCAL();
+
+                        // Observe changes to the selected span (works when modal updates textContent)
+                        var span = document.getElementById('selected_eml_cal_fq');
+                        if(span && window.MutationObserver){
+                            try{
+                                var mo = new MutationObserver(function(){ syncCAL(); });
+                                mo.observe(span, { childList: true, characterData: true, subtree: true });
+                            }catch(err){ /* ignore */ }
+                        }
+                    });
+
+                    // Re-sync shortly after modal interactions where the span is updated
+                    document.addEventListener('click', function(e){
+                        if(e.target && (e.target.closest && e.target.closest('#emlModal') || e.target.id === 'equipment_code_browse')){
+                            setTimeout(syncCAL, 150);
+                        }
+                    });
+
+                    // Also listen to hidden equipment_code changes
+                    var codeInput = document.getElementById('equipment_code');
+                    if(codeInput){ codeInput.addEventListener('change', syncCAL); }
+                })();
+                </script>
+
+                <div class="form-group">
+                    <label for="equipment_code"><i class="bi bi-card-list"></i> Equipment Master List (EML) </label>
+                    
+                    <!-- EML Input with Modal Trigger -->
+                    <div class="eml-input-wrapper position-relative" style="margin-bottom: 0.5rem;">
+                        <!-- Display Input (Read-only, opens modal) -->
+                        <input type="text" 
+                               id="equipment_code_display_input" 
+                               class="form-control {% if errors.equipment_code %}is-invalid{% elif form_values.equipment_code %}is-valid{% endif %}" 
+                               placeholder="🔍 คลิกเพื่อเลือก EML จากรายการ... (Click to select from Equipment Master List)" 
+                               readonly
+                               style="cursor: pointer; padding-right: 7rem; background: white; font-weight: 500; transition: all 0.3s ease;"
+                               onmouseover="this.style.borderColor='var(--primary)'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)'"
+                               onmouseout="this.style.borderColor=''; this.style.boxShadow=''">
+                        
+                        <!-- Action Buttons -->
+                        <div style="position: absolute; top: 50%; right: 0.5rem; transform: translateY(-50%); display: flex; gap: 0.35rem; z-index: 10;">
+                            <!-- Browse Button -->
+                            <button type="button"
+                                    id="equipment_code_browse"
+                                    class="btn-modern btn-primary-modern"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#emlModal"
+                                    style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                                <i class="bi bi-search"></i> เลือก
+                            </button>
+                            
+                            <!-- Clear Button -->
+                            <button type="button"
+                                    id="equipment_code_clear"
+                                    class="btn-modern btn-danger-modern"
+                                    aria-label="ล้างการเลือก"
+                                    title="ล้างการเลือก"
+                                    style="display: none; padding: 0.5rem 0.75rem;">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Hidden input for form submission -->
+                        <input type="hidden" 
+                               id="equipment_code" 
+                               name="equipment_code" 
+                               value="{{ form_values.equipment_code|default:'' }}">
+                        
+                        <!-- Selected Display (below input) -->
+                        <div id="equipment_code_selected_info" 
+                             class="selected-info-card" 
+                             style="display: none;">
+                            <div class="selected-info-grid">
+                                <div class="selected-info-label"><i class="bi bi-qr-code"></i> รหัส EML</div>
+                                <div class="selected-info-value" id="selected_eml_code">-</div>
+                                
+                                <div class="selected-info-label"><i class="bi bi-translate"></i> ชื่อ (EN)</div>
+                                <div class="selected-info-value" id="selected_eml_name_en">-</div>
+                                
+                                <div class="selected-info-label"><i class="bi bi-type"></i> ชื่อ (TH)</div>
+                                <div class="selected-info-value" id="selected_eml_name_th">-</div>
+
+                                <div class="selected-info-label"><i class="bi bi-diagram-3"></i> ความเสี่ยง</div>
+                                <div class="selected-info-value" id="selected_eml_risk_level">-</div>
+
+                                <div class="selected-info-label"><i class="bi bi-tools"></i> บำรุงรักษา</div>
+                                <div class="selected-info-value" id="selected_eml_pm_fq">-</div>
+                                
+                                <div class="selected-info-label"><i class="bi bi-speedometer2"></i> สอบเทียบ</div>
+                                <div class="selected-info-value" id="selected_eml_cal_fq">-</div>
+
+                                <div class="selected-info-label"><i class="bi bi-tags"></i> ประเภท</div>
+                                <div class="selected-info-value" id="selected_eml_type">-</div> 
+
+                                <div class="selected-info-label"><i class="bi bi-hourglass-split"></i> อายุการใช้งาน (ปี)</div>
+                                <div class="selected-info-value" id="selected_eml_lifespan">-</div>
+
+                                <div class="selected-info-label"><i class="bi bi-people"></i> ผู้ดูแล</div>
+                                <div class="selected-info-value" id="selected_eml_sv_provider">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if errors.equipment_code %}<div class="invalid-feedback">{{ errors.equipment_code }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="form-row-grid">
+                <div class="form-group">
+                    <label for="equipment_name_EN"><i class="bi bi-type"></i> ชื่อเครื่อง (English)</label>
+                    <input type="text" id="equipment_name_EN" name="equipment_name_EN" class="form-control readonly-field {% if errors.equipment_name_EN %}is-invalid{% elif form_values.equipment_name_EN %}is-valid{% endif %}" value="{{ form_values.equipment_name_EN|default:'' }}" placeholder="โปรดลือก EML" readonly aria-readonly="true" title="ค่ามาจาก Master EML">
+                    {% if errors.equipment_name_EN %}<div class="invalid-feedback">{{ errors.equipment_name_EN }}</div>{% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="equipment_name_TH"><i class="bi bi-translate"></i> ชื่อเครื่อง (ไทย)</label>
+                    <!-- Read-only: show selected_eml_name_th and disallow manual edits -->
+                    <input type="text" id="equipment_name_TH" name="equipment_name_TH" class="form-control readonly-field {% if errors.equipment_name_TH %}is-invalid{% elif form_values.equipment_name_TH %}is-valid{% endif %}" value="{{ form_values.equipment_name_TH|default:'' }}" placeholder="โปรดลือก EML" readonly aria-readonly="true" title="ค่ามาจาก Master EML">
+                    {% if errors.equipment_name_TH %}<div class="invalid-feedback">{{ errors.equipment_name_TH }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="form-row-grid">
+                <div class="form-group">
+                    <label for="equipment_brand"><i class="bi bi-building"></i> ยี่ห้อ/ผู้ผลิต</label>
+                    <select id="equipment_brand" name="equipment_brand" class="form-select {% if errors.equipment_brand %}is-invalid{% endif %}">
+                        <option value="">-- เลือกยี่ห้อ --</option>
+                        {# Only render top-level / parent manufacturers. Child items will have an `ancestors` value. #}
+                        {% for m in master_manufacturers %}
+                            {% if not m.ancestors %}
+                                <option value="{{ m.label }}" {% if form_values.equipment_brand == m.label %}selected{% endif %}>{{ m.label }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    {% if errors.equipment_brand %}<div class="invalid-feedback">{{ errors.equipment_brand }}</div>{% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="equipment_model"><i class="bi bi-gear"></i> รุ่น (Model) </label>
+                    {# Replace free-text model input with a select populated from children of master/category/manufacturers #}
+                    <select id="equipment_model" name="equipment_model" class="form-select {% if errors.equipment_model %}is-invalid{% endif %}">
+                        <option value="">-- เลือกรุ่น --</option>
+                        {# Options will be populated by JS based on selected brand. We still render any currently-selected model so edit mode shows value. #}
+                        {% if form_values.equipment_model %}
+                            <option value="{{ form_values.equipment_model|escape }}" selected>{{ form_values.equipment_model|escape }}</option>
+                        {% endif %}
+                    </select>
+                    {% if errors.equipment_model %}<div class="invalid-feedback">{{ errors.equipment_model }}</div>{% endif %}
+                </div>
+
+                <script>
+                (function(){
+                    // Build a JS array of model items (children of manufacturers) from server-side master_manufacturers
+                    // Emit raw ancestors and compute parent in JS to avoid calling Python methods in template
+                    var allModels = [
+                        {% for m in master_manufacturers %}
+                            {% if m.ancestors %}
+                                { label: '{{ m.label|escapejs }}', ancestors: '{{ m.ancestors|escapejs }}' },
+                            {% endif %}
+                        {% endfor %}
+                    ];
+
+                    var initialModel = '{{ form_values.equipment_model|default:""|escapejs }}';
+
+                    function refreshModelOptions(){
+                        try{
+                            var brand = document.getElementById('equipment_brand')?.value || '';
+                            var sel = document.getElementById('equipment_model');
+                            if(!sel) return;
+                            // Remove all options except the placeholder
+                            sel.innerHTML = '<option value="">-- เลือกรุ่น --</option>';
+
+                            var filtered = allModels.filter(function(m){ 
+                                var parent = '';
+                                try { parent = (m.ancestors || '').split(' → ')[0]; } catch(e) { parent = ''; }
+                                return brand ? parent === brand : false; 
+                            });
+
+                            // If brand not selected, keep select disabled
+                            if(filtered.length === 0){
+                                // If we have an initialModel that isn't in filtered, show it so edit mode keeps value
+                                if(initialModel){
+                                    var opt = document.createElement('option'); opt.value = initialModel; opt.textContent = initialModel; opt.selected = true; sel.appendChild(opt);
+                                }
+                                sel.disabled = true;
+                                return;
+                            }
+
+                            filtered.forEach(function(m){
+                                var opt = document.createElement('option');
+                                opt.value = m.label; opt.textContent = m.label;
+                                if(initialModel && m.label === initialModel) opt.selected = true;
+                                sel.appendChild(opt);
+                            });
+                            sel.disabled = false;
+                        }catch(e){ console && console.debug && console.debug('refreshModelOptions error', e); }
+                    }
+
+                    document.addEventListener('DOMContentLoaded', function(){
+                        refreshModelOptions();
+                        var brandSel = document.getElementById('equipment_brand');
+                        if(brandSel) brandSel.addEventListener('change', function(){
+                            // clear any manually selected model when brand changes
+                            initialModel = '';
+                            refreshModelOptions();
+                        });
+                    });
+                })();
+                </script>
+
+                <div class="form-group">
+                    <label for="equipment_sn"><i class="bi bi-upc-scan"></i> Serial Number</label>
+                    <input type="text" id="equipment_sn" name="equipment_sn" class="form-control {% if errors.equipment_sn %}is-invalid{% elif form_values.equipment_sn %}is-valid{% endif %}" value="{{ form_values.equipment_sn|default:'' }}" placeholder="S/N">
+                    {% if errors.equipment_sn %}<div class="invalid-feedback">{{ errors.equipment_sn }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="form-row-grid">
+                <div class="form-group">
+                    <label for="equipment_gov"><i class="bi bi-file-text"></i> เลขครุภัณฑ์</label>
+                    <input type="text" id="equipment_gov" name="equipment_gov" class="form-control {% if errors.equipment_gov %}is-invalid{% elif form_values.equipment_gov %}is-valid{% endif %}" value="{{ form_values.equipment_gov|default:'' }}" placeholder="รหัสครุภัณฑ์">
+                    {% if errors.equipment_gov %}<div class="invalid-feedback">{{ errors.equipment_gov }}</div>{% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="equipment_price"><i class="bi bi-cash-coin"></i> ราคา (บาท)</label>
+                    <input type="number" id="equipment_price" name="equipment_price" class="form-control {% if errors.equipment_price %}is-invalid{% elif form_values.equipment_price %}is-valid{% endif %}" value="{{ form_values.equipment_price|default:'' }}" placeholder="0.00">
+                    {% if errors.equipment_price %}<div class="invalid-feedback">{{ errors.equipment_price }}</div>{% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="equipment_type"><i class="bi bi-tag"></i> ประเภท</label>
+                    <select id="equipment_type" name="equipment_type" class="form-select {% if errors.equipment_type %}is-invalid{% endif %}">
+                        <option value="">-- เลือกประเภท --</option>
+                        {% for t in master_equipment_type %}
+                            <option value="{{ t.label }}" {% if form_values.equipment_type == t.label %}selected{% endif %}>{{ t.label }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if errors.equipment_type %}<div class="invalid-feedback">{{ errors.equipment_type }}</div>{% endif %}
+                </div>
+            </div>
+
+            <script>
+            // Sync selected_eml_type into equipment_type select
+            (function(){
+                function syncType(){
+                    try{
+                        var span = document.getElementById('selected_eml_type');
+                        var select = document.getElementById('equipment_type');
+                        if(!select || !span) return;
+                        
+                        var typeCode = span.getAttribute('data-type-code') || '';
+                        var typeLabel = (span.textContent || '').trim();
+                        
+                        if(typeCode && typeCode !== '-'){
+                            // Try to find and select the matching option by value
+                            var found = false;
+                            for(var i = 0; i < select.options.length; i++){
+                                if(select.options[i].value === typeCode){
+                                    select.selectedIndex = i;
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            
+                            // If not found by code, try by label
+                            if(!found && typeLabel && typeLabel !== '-'){
+                                for(var i = 0; i < select.options.length; i++){
+                                    if(select.options[i].value === typeLabel || select.options[i].text === typeLabel){
+                                        select.selectedIndex = i;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }catch(e){console && console.debug && console.debug('syncType error', e);}    
+                }
+
+                document.addEventListener('DOMContentLoaded', function(){
+                    syncType();
+
+                    // Observe changes to the selected span (works when modal updates textContent)
+                    var span = document.getElementById('selected_eml_type');
+                    if(span && window.MutationObserver){
+                        try{
+                            var mo = new MutationObserver(function(){ syncType(); });
+                            mo.observe(span, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['data-type-code'] });
+                        }catch(err){ /* ignore */ }
+                    }
+                });
+
+                // Re-sync shortly after modal interactions where the span is updated
+                document.addEventListener('click', function(e){
+                    if(e.target && (e.target.closest && e.target.closest('#emlModal') || e.target.id === 'equipment_code_browse')){
+                        setTimeout(syncType, 150);
+                    }
+                });
+
+                // Also listen to hidden equipment_code changes
+                var codeInput = document.getElementById('equipment_code');
+                if(codeInput){ codeInput.addEventListener('change', syncType); }
+            })();
+            </script>
+
+            <script>
+            // Sync selected_eml_lifespan into equipment_life input
+            (function(){
+                function syncLifespan(){
+                    try{
+                        var span = document.getElementById('selected_eml_lifespan');
+                        var input = document.getElementById('equipment_life');
+                        if(!input || !span) return;
+                        
+                        var lifespanValue = (span.textContent || '').trim();
+                        
+                        if(lifespanValue && lifespanValue !== '-'){
+                            input.value = lifespanValue;
+                        }
+                    }catch(e){console && console.debug && console.debug('syncLifespan error', e);}    
+                }
+
+                document.addEventListener('DOMContentLoaded', function(){
+                    syncLifespan();
+
+                    // Observe changes to the selected span
+                    var span = document.getElementById('selected_eml_lifespan');
+                    if(span && window.MutationObserver){
+                        try{
+                            var mo = new MutationObserver(function(){ syncLifespan(); });
+                            mo.observe(span, { childList: true, characterData: true, subtree: true });
+                        }catch(err){ /* ignore */ }
+                    }
+                });
+
+                // Re-sync after modal interactions
+                document.addEventListener('click', function(e){
+                    if(e.target && (e.target.closest && e.target.closest('#emlModal') || e.target.id === 'equipment_code_browse')){
+                        setTimeout(syncLifespan, 150);
+                    }
+                });
+
+                // Listen to equipment_code changes
+                var codeInput = document.getElementById('equipment_code');
+                if(codeInput){ codeInput.addEventListener('change', syncLifespan); }
+            })();
+            </script>
+
+            <div class="form-row-grid">
+                <div class="form-group">
+                    <label for="equipment_life"><i class="bi bi-hourglass-split"></i> อายุการใช้งาน (ปี)</label>
+                    <input type="number" id="equipment_life" name="equipment_life" class="form-control {% if errors.equipment_life %}is-invalid{% elif form_values.equipment_life %}is-valid{% endif %}" value="{{ form_values.equipment_life|default:'' }}" placeholder="ปี">
+                    {% if errors.equipment_life %}<div class="invalid-feedback">{{ errors.equipment_life }}</div>{% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="equipment_photo"><i class="bi bi-image"></i> รูปภาพ (URL)</label>
+                    <input type="text" id="equipment_photo" name="equipment_photo" class="form-control {% if errors.equipment_photo %}is-invalid{% elif form_values.equipment_photo %}is-valid{% endif %}" value="{{ form_values.equipment_photo|default:'' }}" placeholder="https://...">
+                    {% if errors.equipment_photo %}<div class="invalid-feedback">{{ errors.equipment_photo }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: การรับประกัน -->
+    <div class="card-modern" data-section="2">
+        <div class="card-header-modern collapsed" onclick="toggleSection(this)" style="cursor: pointer;">
+            <h3><i class="bi bi-shield-check"></i> การรับประกัน</h3>
+            <span class="badge-info" id="section2-badge">ข้อมูลการรับประกัน</span>
+        </div>
+        <div class="card-body-modern collapse-transition" style="display:none;">
+            <div class="form-row-grid">
+                <div class="form-group">
+                    <label for="equipment_waranty_date"><i class="bi bi-calendar-check"></i> วันที่เริ่มรับประกัน</label>
+                    <input type="date" id="equipment_waranty_date" name="equipment_waranty_date" class="form-control {% if errors.equipment_waranty_date %}is-invalid{% elif form_values.equipment_waranty_date %}is-valid{% endif %}" value="{{ form_values.equipment_waranty_date|default:'' }}">
+                    {% if errors.equipment_waranty_date %}<div class="invalid-feedback">{{ errors.equipment_waranty_date }}</div>{% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="equipment_waranty_due"><i class="bi bi-calendar-x"></i> วันที่หมดประกัน</label>
+                    <input type="date" id="equipment_waranty_due" name="equipment_waranty_due" class="form-control {% if errors.equipment_waranty_due %}is-invalid{% elif form_values.equipment_waranty_due %}is-valid{% endif %}" value="{{ form_values.equipment_waranty_due|default:'' }}">
+                    {% if errors.equipment_waranty_due %}<div class="invalid-feedback">{{ errors.equipment_waranty_due }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="form-row-grid">
+                <div class="form-group">
+                    <label for="equipment_distributor_name"><i class="bi bi-shop"></i> บริษัทผู้จำหน่าย</label>
+                    <input type="text" id="equipment_distributor_name" name="equipment_distributor_name" class="form-control {% if errors.equipment_distributor_name %}is-invalid{% endif %}" value="{{ form_values.equipment_distributor_name|default:'' }}" placeholder="ชื่อบริษัท">
+                    {% if errors.equipment_distributor_name %}<div class="invalid-feedback">{{ errors.equipment_distributor_name }}</div>{% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="equipment_distributor_tel"><i class="bi bi-telephone"></i> เบอร์ติดต่อ</label>
+                    <input type="text" id="equipment_distributor_tel" name="equipment_distributor_tel" class="form-control {% if errors.equipment_distributor_tel %}is-invalid{% endif %}" value="{{ form_values.equipment_distributor_tel|default:'' }}" placeholder="0X-XXXX-XXXX">
+                    {% if errors.equipment_distributor_tel %}<div class="invalid-feedback">{{ errors.equipment_distributor_tel }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Section 5.5: ผู้ดูแลเครื่องมือ (Service Provider) -->
+    <div class="card-modern" data-section="5.5">
+        <div class="card-header-modern collapsed" onclick="toggleSection(this)" style="cursor: pointer;">
+            <h3><i class="bi bi-person-badge"></i> ผู้ดูแลเครื่องมือ</h3>
+            <span class="badge-info" id="section5_5-badge">Service Provider</span>
+        </div>
+        <div class="card-body-modern collapse-transition" style="display:none;">
+            <div style="background:linear-gradient(135deg,rgba(240,147,251,0.08),rgba(245,87,108,0.08));border-left:4px solid #f093fb;padding:1rem;border-radius:8px;margin-bottom:1.5rem">
+                <div style="display:flex;align-items:start;gap:0.75rem">
+                    <i class="bi bi-info-circle-fill" style="color:#f093fb;font-size:1.5rem;flex-shrink:0"></i>
+                    <div>
+                        <strong style="color:#d63384">ผู้ดูแล/ผู้ให้บริการ</strong>
+                        <p style="margin:0.5rem 0 0 0;color:#6c757d;font-size:0.9rem">เลือกหน่วยงานที่รับผิดชอบในการดูแล บำรุงรักษา หรือให้บริการเครื่องมือนี้</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="equipment_service_provider">
+                    <i class="bi bi-person-badge"></i> ผู้ดูแล/ผู้ให้บริการ
+                    <span class="badge bg-gradient" style="background:linear-gradient(135deg,#f093fb,#f5576c);font-size:0.7rem;margin-left:0.5rem">จาก Master Data</span>
+                </label>
+                
+                <!-- Enhanced searchable select wrapper -->
+                <div class="position-relative">
+                    <input type="text" 
+                        id="equipment_service_provider_search" 
+                        class="form-control" 
+                        placeholder="🔍 พิมพ์เพื่อค้นหาผู้ดูแล... (Search service provider)" 
+                        autocomplete="off"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-controls="equipment_service_provider_dropdown"
+                        style="border-color:#f093fb;border-width:2px;padding-right:2.5rem">
+                    <button type="button"
+                            id="equipment_service_provider_clear"
+                            class="clear-search-btn btn btn-sm"
+                            aria-label="ล้างการเลือก"
+                            title="ล้างการเลือก"
+                            aria-hidden="true">
+                        <i class="bi bi-x-lg" aria-hidden="true"></i>
+                        <span class="visually-hidden">ล้างการเลือก</span>
+                    </button>
+                    
+                    <!-- Hidden select for form submission -->
+                    <select id="equipment_service_provider" 
+                            name="equipment_service_provider" 
+                            class="form-select d-none">
+                        <option value="">-- เลือกผู้ดูแล --</option>
+                        {% for sp in master_service_providers %}
+                            <option value="{{ sp.label }}" 
+                                    data-id="{{ sp.id }}" 
+                                    data-ancestors="{{ sp.ancestors }}" 
+                                    {% if form_values.equipment_service_provider == sp.label %}selected{% endif %}>
+                                {{ sp.label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    
+                    <!-- Dropdown results (custom) -->
+                    <div id="equipment_service_provider_dropdown" 
+                         class="searchable-dropdown w-100" 
+                         role="listbox"
+                         aria-labelledby="equipment_service_provider_search"
+                         style="max-height:300px;overflow-y:auto;display:none;box-shadow:0 10px 30px rgba(0,0,0,0.15)">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                
+                <!-- Selected organization tree display -->
+                <div id="equipment_service_provider_tree" 
+                     class="ancestors-display mt-2" 
+                     style="background:linear-gradient(135deg,rgba(240,147,251,0.05),rgba(245,87,108,0.05));border-left:3px solid #f093fb;padding:0.75rem;border-radius:6px;display:none">
+                    <i class="bi bi-diagram-2-fill me-1" style="color:#f093fb"></i>
+                    <strong style="color:#d63384">โครงสร้างองค์กร:</strong> 
+                    <span id="equipment_service_provider_chain" style="color:#495057"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Sync selected_eml_sv_provider into equipment_service_provider select
+    function syncServiceProvider(){
+        try{
+            var span = document.getElementById('selected_eml_sv_provider');
+            var searchInput = document.getElementById('equipment_service_provider_search');
+            var select = document.getElementById('equipment_service_provider');
+            var clearBtn = document.getElementById('equipment_service_provider_clear');
+            if(!select || !span) return;
+            
+            // Read the DISPLAYED LABEL (textContent) because equipment_service_provider select uses labels as values
+            // The span shows sv_provider_label which matches the select option values
+            var svProviderLabel = (span.textContent || '').trim();
+            
+            if(svProviderLabel && svProviderLabel !== '-'){
+                // Try exact match by label (select options use label as value)
+                var found = false;
+                for(var i = 0; i < select.options.length; i++){
+                    if(select.options[i].value === svProviderLabel){
+                        select.selectedIndex = i;
+                        found = true;
+                        
+                        // Update search input with the option's text (label), normalized
+                        if(searchInput){
+                            searchInput.value = (select.options[i].textContent || '').replace(/\s+/g, ' ').trim();
+                        }
+                        
+                        // Show clear button
+                        if(clearBtn) clearBtn.style.display = 'block';
+                        
+                        // Trigger change event for tree display
+                        var event = new Event('change', { bubbles: true });
+                        select.dispatchEvent(event);
+                        break;
+                    }
+                }
+                
+                // Try text/partial match if exact match not found
+                if(!found){
+                    for(var i = 0; i < select.options.length; i++){
+                        var optText = (select.options[i].textContent || '').replace(/\s+/g, ' ').trim();
+                        if(optText === svProviderLabel || optText.includes(svProviderLabel)){
+                            select.selectedIndex = i;
+                            if(searchInput){
+                                searchInput.value = optText;
+                            }
+                            if(clearBtn) clearBtn.style.display = 'block';
+                            var event = new Event('change', { bubbles: true });
+                            select.dispatchEvent(event);
+                            break;
+                        }
+                    }
+                }
+            }
+        }catch(e){console && console.debug && console.debug('syncServiceProvider error', e);}    
+    }
+
+    document.addEventListener('DOMContentLoaded', function(){
+        syncServiceProvider();
+        
+        // MutationObserver for real-time updates
+        var span = document.getElementById('selected_eml_sv_provider');
+        if(span && window.MutationObserver){
+            try{
+                var mo = new MutationObserver(function(){ syncServiceProvider(); });
+                mo.observe(span, { childList: true, characterData: true, subtree: true });
+            }catch(err){ /* ignore */ }
+        }
+    });
+
+    // Re-sync after modal interactions
+    document.addEventListener('click', function(e){
+        if(e.target && (e.target.closest && e.target.closest('#emlModal') || 
+           e.target.id === 'equipment_code_browse')){
+            setTimeout(syncServiceProvider, 150);
+        }
+    });
+
+    // Listen to equipment_code changes
+    var codeInput = document.getElementById('equipment_code');
+    if(codeInput){ codeInput.addEventListener('change', syncServiceProvider); }
+    </script>
+
+    <!-- Section 3: การบำรุงรักษา -->
+    <div class="card-modern" data-section="3">
+        <div class="card-header-modern collapsed" onclick="toggleSection(this)" style="cursor: pointer;">
+            <h3><i class="bi bi-tools"></i> การบำรุงรักษา (PM)</h3>
+            <span class="badge-info" id="section3-badge">Preventive Maintenance</span>
+        </div>
+        <div class="card-body-modern collapse-transition" style="display:none;">
+            <div class="form-row-grid">
+                <div class="form-group">
+                    <label for="equipment_pm_fq"><i class="bi bi-arrow-repeat"></i> ความถี่การบำรุงรักษา</label>
+                    <select id="equipment_pm_fq" name="equipment_pm_fq" class="form-select {% if errors.equipment_pm_fq %}is-invalid{% endif %}">
+                        <option value="">-- เลือกความถี่ --</option>
+                        {% for f in master_frequency_pm %}
+                            <option value="{{ f.label }}" {% if form_values.equipment_pm_fq == f.label %}selected{% endif %}>{{ f.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="equipment_pm_due"><i class="bi bi-calendar-check"></i> ครบกำหนดการบำรุงรักษา</label>
+                    <input type="date" id="equipment_pm_due" name="equipment_pm_due" class="form-control {% if errors.equipment_pm_due %}is-invalid{% endif %}" value="{{ form_values.equipment_pm_due|default:'' }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: การสอบเทียบ -->
+    <div class="card-modern" data-section="4">
+        <div class="card-header-modern collapsed" onclick="toggleSection(this)" style="cursor: pointer;">
+            <h3><i class="bi bi-speedometer2"></i> การสอบเทียบ (Calibration)</h3>
+            <span class="badge-info" id="section4-badge">Calibration</span>
+        </div>
+        <div class="card-body-modern collapse-transition" style="display:none;">
+            <div class="form-row-grid">
+                <div class="form-group">
+                    <label for="equipment_cal_fq"><i class="bi bi-arrow-repeat"></i> ความถี่การสอบเทียบ</label>
+                    <select id="equipment_cal_fq" name="equipment_cal_fq" class="form-select {% if errors.equipment_cal_fq %}is-invalid{% endif %}">
+                        <option value="">-- เลือกความถี่ --</option>
+                        {% for f in master_frequency_cal %}
+                            <option value="{{ f.label }}" {% if form_values.equipment_cal_fq == f.label %}selected{% endif %}>{{ f.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="equipment_cal_due"><i class="bi bi-calendar-check"></i> ครบกำหนดการสอบเทียบ</label>
+                    <input type="date" id="equipment_cal_due" name="equipment_cal_due" class="form-control {% if errors.equipment_cal_due %}is-invalid{% endif %}" value="{{ form_values.equipment_cal_due|default:'' }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 5: เจ้าของเครื่องมือ -->
+    <div class="card-modern" data-section="5">
+        <div class="card-header-modern collapsed" onclick="toggleSection(this)" style="cursor: pointer;">
+            <h3><i class="bi bi-building"></i> เจ้าของเครื่องมือ</h3>
+            <span class="badge-info" id="section5-badge">Owner</span>
+        </div>
+        <div class="card-body-modern collapse-transition" style="display:none;">
+            <div style="background:linear-gradient(135deg,rgba(250,112,154,0.08),rgba(254,225,64,0.08));border-left:4px solid #fa709a;padding:1rem;border-radius:8px;margin-bottom:1.5rem">
+                <div style="display:flex;align-items:start;gap:0.75rem">
+                    <i class="bi bi-info-circle-fill" style="color:#fa709a;font-size:1.5rem;flex-shrink:0"></i>
+                    <div>
+                        <strong style="color:#d63384">เกี่ยวกับโครงสร้างองค์กร</strong>
+                        <p style="margin:0.5rem 0 0 0;color:#6c757d;font-size:0.9rem">ระบบจะแสดงโครงสร้างหน่วยงานตั้งแต่ระดับบนสุด (Parent) ไปจนถึงหน่วยงานปัจจุบัน ช่วยให้เห็นภาพรวมของโครงสร้างองค์กรได้ชัดเจน</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="equipment_owner_customer">
+                    <i class="bi bi-building"></i> หน่วยงานเจ้าของ
+                    <span class="badge bg-gradient" style="background:linear-gradient(135deg,#fa709a,#fee140);font-size:0.7rem;margin-left:0.5rem">จาก Master Data</span>
+                </label>
+                
+                <!-- Enhanced searchable select wrapper -->
+                <div class="position-relative">
+              <input type="text" 
+                  id="equipment_owner_customer_search" 
+                  class="form-control" 
+                  placeholder="🔍 พิมพ์เพื่อค้นหาหน่วยงาน... (Search organization)" 
+                  autocomplete="off"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-controls="equipment_owner_customer_dropdown"
+                  style="border-color:#fa709a;border-width:2px;padding-right:2.5rem">
+                    <button type="button"
+                            id="equipment_owner_customer_clear"
+                            class="clear-search-btn btn btn-sm me-4"
+                            aria-label="ล้างการเลือก"
+                            title="ล้างการเลือก"
+                            aria-hidden="true">
+                        <i class="bi bi-x-lg" aria-hidden="true"></i>
+                        <span class="visually-hidden">ล้างการเลือก</span>
+                    </button>
+                    
+                    <!-- Hidden select for form submission -->
+                    <select id="equipment_owner_customer" 
+                            name="equipment_owner_customer" 
+                            class="form-select d-none">
+                        <option value="">-- เลือกหน่วยงาน --</option>
+                        {% for c in master_customers %}
+                            <option value="{{ c.label }}" 
+                                    data-id="{{ c.id }}" 
+                                    data-ancestors="{{ c.ancestors }}" 
+                                    {% if form_values.equipment_owner_customer == c.label %}selected{% endif %}>
+                                {{ c.label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    
+                    <!-- Dropdown results (custom) - avoid Bootstrap's dropdown-menu class to prevent auto-initialization -->
+                    <div id="equipment_owner_customer_dropdown" 
+                         class="searchable-dropdown w-100" 
+                         role="listbox"
+                         aria-labelledby="equipment_owner_customer_search"
+                         style="max-height:300px;overflow-y:auto;display:none;box-shadow:0 10px 30px rgba(0,0,0,0.15)">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                
+                <!-- Selected organization tree display -->
+                <div id="equipment_owner_customer_tree" 
+                     class="ancestors-display mt-2" 
+                     style="background:linear-gradient(135deg,rgba(250,112,154,0.05),rgba(254,225,64,0.05));border-left:3px solid #fa709a;padding:0.75rem;border-radius:6px;display:none">
+                    <i class="bi bi-diagram-2-fill me-1" style="color:#fa709a"></i>
+                    <strong style="color:#d63384">โครงสร้างองค์กร:</strong> 
+                    <span id="equipment_owner_customer_chain" style="color:#495057"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Section 6: ผู้ใช้งานเครื่องมือ -->
+    <div class="card-modern" data-section="6">
+        <div class="card-header-modern collapsed" onclick="toggleSection(this)" style="cursor: pointer;">
+            <h3><i class="bi bi-people-fill"></i> ผู้ใช้งานเครื่องมือ</h3>
+            <span class="badge-info" id="section6-badge">User</span>
+        </div>
+        <div class="card-body-modern collapse-transition" style="display:none;">
+            <div style="background:linear-gradient(135deg,rgba(17,153,142,0.08),rgba(56,239,125,0.08));border-left:4px solid #11998e;padding:1rem;border-radius:8px;margin-bottom:1.5rem">
+                <div style="display:flex;align-items:start;gap:0.75rem">
+                    <i class="bi bi-info-circle-fill" style="color:#11998e;font-size:1.5rem;flex-shrink:0"></i>
+                    <div>
+                        <strong style="color:#0d6e5e">หน่วยงานผู้ใช้</strong>
+                        <p style="margin:0.5rem 0 0 0;color:#6c757d;font-size:0.9rem">เลือกหน่วยงานที่ใช้งานเครื่องมือนี้จริง อาจต่างจากหน่วยงานเจ้าของได้ ระบบจะแสดงโครงสร้างองค์กรเช่นเดียวกับหน่วยงานเจ้าของ</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="equipment_user_customer">
+                    <i class="bi bi-people-fill"></i> หน่วยงานผู้ใช้
+                    <span class="badge bg-gradient" style="background:linear-gradient(135deg,#11998e,#38ef7d);font-size:0.7rem;margin-left:0.5rem">จาก Master Data</span>
+                </label>
+                
+                <!-- Enhanced searchable select wrapper -->
+                <div class="position-relative">
+              <input type="text" 
+                  id="equipment_user_customer_search" 
+                  class="form-control" 
+                  placeholder="🔍 พิมพ์เพื่อค้นหาหน่วยงาน... (Search organization)" 
+                  autocomplete="off"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-controls="equipment_user_customer_dropdown"
+                  style="border-color:#11998e;border-width:2px;padding-right:2.5rem">
+                    <button type="button"
+                            id="equipment_user_customer_clear"
+                            class="clear-search-btn btn btn-sm"
+                            aria-label="ล้างการเลือก"
+                            title="ล้างการเลือก"
+                            aria-hidden="true">
+                        <i class="bi bi-x-lg" aria-hidden="true"></i>
+                        <span class="visually-hidden">ล้างการเลือก</span>
+                    </button>
+                    
+                    <!-- Hidden select for form submission -->
+                    <select id="equipment_user_customer" 
+                            name="equipment_user_customer" 
+                            class="form-select d-none">
+                        <option value="">-- เลือกหน่วยงาน --</option>
+                        {% for c in master_customers %}
+                            <option value="{{ c.label }}" 
+                                    data-id="{{ c.id }}" 
+                                    data-ancestors="{{ c.ancestors }}" 
+                                    {% if form_values.equipment_user_customer == c.label %}selected{% endif %}>
+                                {{ c.label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    
+                    <!-- Dropdown results (custom) - avoid Bootstrap's dropdown-menu class to prevent auto-initialization -->
+                <div id="equipment_user_customer_dropdown" 
+                    class="searchable-dropdown w-100" 
+                    role="listbox"
+                    aria-labelledby="equipment_user_customer_search"
+                    style="max-height:300px;overflow-y:auto;display:none;box-shadow:0 10px 30px rgba(0,0,0,0.15)">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                
+                <!-- Selected organization tree display -->
+                <div id="equipment_user_customer_tree" 
+                     class="ancestors-display mt-2" 
+                     style="background:linear-gradient(135deg,rgba(17,153,142,0.05),rgba(56,239,125,0.05));border-left:3px solid #11998e;padding:0.75rem;border-radius:6px;display:none">
+                    <i class="bi bi-diagram-2-fill me-1" style="color:#11998e"></i>
+                    <strong style="color:#0d6e5e">โครงสร้างองค์กร:</strong> 
+                    <span id="equipment_user_customer_chain" style="color:#495057"></span>
+                </div>
+                
+
+            </div>
+
+            <button type="button" id="copy_owner_to_user_btn" class="btn btn-outline-success btn-sm mb-3 mt-2">
+                <i class="bi bi-arrow-down-circle"></i> ใช้ข้อมูลเดียวกับเจ้าของ
+            </button>
+
+
+        </div>
+    </div>
+
+    <!-- Section 7: รายละเอียดการขึ้นทะเบียน -->
+    <div class="card-modern" data-section="7">
+        <div class="card-header-modern collapsed" onclick="toggleSection(this)" style="cursor: pointer;">
+            <h3><i class="bi bi-pen"></i> รายละเอียดการขึ้นทะเบียน</h3>
+            <span class="badge-info" id="section7-badge">Registration Details</span>
+        </div>
+        <div class="card-body-modern collapse-transition" style="display:none;">
+            <div class="form-row-grid">
+                <div class="form-group">
+                    <label for="equipment_register_username"><i class="bi bi-person"></i> ผู้ขอขึ้นทะเบียน</label>
+                    <input type="text" id="equipment_register_username" name="equipment_register_username" class="form-control {% if errors.equipment_register_username %}is-invalid{% endif %}" value="{{ form_values.equipment_register_username|default:'' }}" placeholder="ชื่อผู้ขอ">
+                </div>
+
+                <div class="form-group">
+                    <label for="equipment_register_adminname"><i class="bi bi-person-check"></i> ผู้ขึ้นทะเบียน</label>
+                    <input type="text" id="equipment_register_adminname" name="equipment_register_adminname" class="form-control readonly-field {% if errors.equipment_register_adminname %}is-invalid{% endif %}" value="{{ form_values.equipment_register_adminname|default:'' }}" placeholder="ชื่อผู้บันทึก" readonly aria-readonly="true" title="ชื่อผู้ใช้ที่ล็อกอินอยู่">
+                    <input type="hidden" id="current_user_fullname" value="{% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% endif %}">
+                </div>
+            </div>
+
+            <script>
+            // Auto-fill equipment_register_adminname with current logged-in user
+            (function(){
+                document.addEventListener('DOMContentLoaded', function(){
+                    var adminInput = document.getElementById('equipment_register_adminname');
+                    var currentUser = document.getElementById('current_user_fullname');
+                    
+                    if(adminInput && currentUser){
+                        var userName = currentUser.value.trim();
+                        if(userName){
+                            // Set current user as the admin registrant
+                            adminInput.value = userName;
+                            // Make it readonly
+                            adminInput.readOnly = true;
+                            adminInput.setAttribute('aria-readonly', 'true');
+                            if(!adminInput.classList.contains('readonly-field')){
+                                adminInput.classList.add('readonly-field');
+                            }
+                        }
+                    }
+                });
+            })();
+            </script>
+
+            <div class="form-group">
+                <label for="equipment_note"><i class="bi bi-chat-left-text"></i> หมายเหตุ</label>
+                <textarea id="equipment_note" name="equipment_note" rows="4" class="form-control {% if errors.equipment_note %}is-invalid{% endif %}" placeholder="บันทึกเพิ่มเติม...">{{ form_values.equipment_note|default:'' }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button type="submit" class="btn-modern btn-success-modern"><i class="bi bi-check-circle"></i> บันทึกข้อมูล</button>
+        <a href="{% url 'equipment_list' %}" class="btn-modern btn-danger-modern"><i class="bi bi-x-circle"></i> ยกเลิก</a>
+    </div>
+
+    </form>
+</div>
+
+<!-- EML Selection Modal -->
+<div class="modal fade modal-modern" id="emlModal" tabindex="-1" aria-labelledby="emlModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      
+      <!-- Modal Header -->
+      <div class="modal-header" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; padding: 1.5rem 2rem;">
+        <h5 class="modal-title" id="emlModalLabel" style="font-weight: 700; font-size: 1.5rem;">
+          <i class="bi bi-card-list me-2"></i>
+          เลือก Equipment Master List (EML)
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="modal-body" style="padding: 0;">
+        
+        <!-- Search Bar -->
+        <div style="padding: 1.5rem 2rem; background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 2px solid #e2e8f0;">
+          <div class="position-relative">
+            <div class="input-group input-group-lg">
+              <span class="input-group-text" style="background: white; border: 2px solid var(--border); border-right: none;">
+                <i class="bi bi-search" style="color: var(--primary);"></i>
+              </span>
+              <input type="text" 
+                     id="emlModalSearch" 
+                     class="form-control" 
+                     placeholder="ค้นหาด้วยรหัส EML, ชื่อภาษาอังกฤษ-ไทย..."
+                     autocomplete="off"
+                     style="border: 2px solid var(--border); border-left: none; font-size: 1rem; padding-right: 3rem;">
+              <button type="button" 
+                      id="emlModalSearchClear"
+                      class="btn btn-sm"
+                      style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); z-index: 10; display: none; padding: 0.5rem 0.75rem; background: var(--danger-light); color: var(--danger); border: none; border-radius: var(--radius);">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+          </div>
+          <div class="mt-2 text-muted small" style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <i class="bi bi-info-circle" style="color: var(--info);"></i>
+              <span>พบ <strong id="emlResultCount" style="color: var(--primary);">{{ master_equipments|length }}</strong> รายการ</span>
+            </div>
+            <div id="emlSearchHint" style="display: none; color: var(--success); font-weight: 600;">
+              <i class="bi bi-check-circle"></i> กรองแล้ว
+            </div>
+          </div>
+        </div>
+        
+        <!-- Table Container -->
+        <div style="overflow-x: auto; max-height: 500px; overflow-y: auto;">
+          <table class="table table-hover mb-0" id="emlModalTable" style="min-width: 800px;">
+            <thead style="position: sticky; top: 0; z-index: 10; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+              <tr>
+                <th style="width: 50px; padding: 1rem; text-align: center; font-weight: 700; color: #64748b; font-size: 0.85rem; text-transform: uppercase;">ที่</th>
+                <th style="width: 150px; padding: 1rem; font-weight: 700; color: #64748b; font-size: 0.85rem; text-transform: uppercase;">รหัส EML</th>
+                <th style="padding: 1rem; font-weight: 700; color: #64748b; font-size: 0.85rem; text-transform: uppercase;">ชื่อเครื่อง (EN)</th>
+                <th style="padding: 1rem; font-weight: 700; color: #64748b; font-size: 0.85rem; text-transform: uppercase;">ชื่อเครื่อง (TH)</th>
+                <th style="width:120px; padding: 1rem; font-weight: 700; color: #64748b; font-size: 0.75rem; text-transform: uppercase; text-align:center;">ความเสี่ยง</th>
+                <th style="width:120px; padding: 1rem; font-weight: 700; color: #64748b; font-size: 0.75rem; text-transform: uppercase; text-align:center;">PM</th>
+                <th style="width:120px; padding: 1rem; font-weight: 700; color: #64748b; font-size: 0.75rem; text-transform: uppercase; text-align:center;">CAL</th>
+                <th style="width:140px; padding: 1rem; font-weight: 700; color: #64748b; font-size: 0.75rem; text-transform: uppercase;">ประเภท</th>
+                <th style="width: 100px; padding: 1rem; text-align: center; font-weight: 700; color: #64748b; font-size: 0.85rem; text-transform: uppercase;">เลือก</th>
+              </tr>
+            </thead>
+            <tbody id="emlModalTableBody">
+              {% for eq in master_equipments %}
+              <tr class="eml-modal-row" 
+                  data-code="{{ eq.code|escape }}"
+                  data-name-en="{{ eq.label|default:''|escape }}"
+                  data-name-th="{{ eq.name_th|default:''|escape }}"
+                  data-risk="{{ eq.risk|default:''|escape }}"
+                  data-risk-label="{{ eq.risk_label|default:''|escape }}"
+                  data-pm-fq="{{ eq.pm_fq|default:''|escape }}"
+                  data-pm-fq-label="{{ eq.pm_fq_label|default:''|escape }}"
+                  data-cal-fq="{{ eq.cal_fq|default:''|escape }}"
+                  data-cal-fq-label="{{ eq.cal_fq_label|default:''|escape }}"
+                  data-equipment-type="{{ eq.equipment_type|default:''|escape }}"
+                  data-equipment-type-label="{{ eq.equipment_type_label|default:''|escape }}"
+                  data-lifespan="{{ eq.lifespan|default:''|escape }}"
+                  data-sv-provider="{{ eq.sv_provider|default:''|escape }}"
+                  data-sv-provider-label="{{ eq.sv_provider_label|default:''|escape }}"
+                  style="cursor: pointer; transition: all 0.2s ease; border-bottom: 1px solid var(--border-light);">
+                <td style="padding: 1rem; text-align: center; color: #94a3b8; font-weight: 600;">{{ forloop.counter }}</td>
+                <td style="padding: 1rem;"><span class="badge" style="background: linear-gradient(135deg, #3b82f6, #2563eb); font-size: 0.9rem; padding: 0.5rem 0.75rem; font-weight: 700;">{{ eq.code }}</span></td>
+                <td style="padding: 1rem; color: #0f172a; font-weight: 500; font-size: 0.95rem;">{% if eq.label %}{{ eq.label|escape }}{% else %}<span style="color: #cbd5e1;">-</span>{% endif %}</td>
+                <td style="padding: 1rem; color: #64748b; font-size: 0.95rem;">{% if eq.name_th %}{{ eq.name_th|escape }}{% else %}<span style="color: #cbd5e1;">-</span>{% endif %}</td>
+                <td style="padding: 1rem; text-align: center; color: #b91c1c; font-weight: 700;">{% if eq.risk_label %}{{ eq.risk_label|escape }}{% elif eq.risk %}{{ eq.risk|escape }}{% else %}-{% endif %}</td>
+                <td style="padding: 1rem; text-align: center; color: #0f172a;">{% if eq.pm_fq_label %}{{ eq.pm_fq_label|escape }}{% elif eq.pm_fq %}{{ eq.pm_fq|escape }}{% else %}-{% endif %}</td>
+                <td style="padding: 1rem; text-align: center; color: #0f172a;">{% if eq.cal_fq_label %}{{ eq.cal_fq_label|escape }}{% elif eq.cal_fq %}{{ eq.cal_fq|escape }}{% else %}-{% endif %}</td>
+                <td style="padding: 1rem; color: #0f172a; font-weight: 500;">{% if eq.equipment_type_label %}{{ eq.equipment_type_label|escape }}{% elif eq.equipment_type %}{{ eq.equipment_type|escape }}{% else %}-{% endif %}</td>
+                <td style="padding: 1rem; text-align: center;">
+                  <button type="button" 
+                          class="btn-modern btn-primary-modern eml-select-btn"
+                          style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                    <i class="bi bi-check-circle-fill"></i> เลือก
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          
+          <!-- No Results Message -->
+          <div id="emlNoResults" style="display: none; padding: 4rem 2rem; text-align: center;">
+            <i class="bi bi-search" style="font-size: 4rem; color: #cbd5e1;"></i>
+            <p style="margin-top: 1rem; color: #94a3b8; font-size: 1.1rem; font-weight: 500;">ไม่พบรายการที่ตรงกับคำค้นหา</p>
+            <p style="color: #cbd5e1; font-size: 0.9rem;">ลองใช้คำค้นหาอื่นหรือพิมพ์เพียงบางส่วนของชื่อ</p>
+          </div>
+        </div>
+        
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="modal-footer" style="background: #f8f9fa; border-top: 2px solid #e2e8f0; padding: 1rem 2rem;">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle me-1"></i>ปิด
+        </button>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSection(header){
+    const body = header.nextElementSibling;
+    header.classList.toggle('collapsed');
+    if(!body) return;
+    if(body.style.display==='none' || body.style.display===''){
+        body.style.display='block';
+        setTimeout(()=>body.classList.add('show'),10);
+    } else {
+        body.classList.remove('show');
+        setTimeout(()=>body.style.display='none',300);
+    }
+}
+
+// Generic function to count and update empty fields badge for any section
+function updateSectionBadge(sectionNumber) {
+    try {
+        const section = document.querySelector(`[data-section="${sectionNumber}"]`);
+        const badge = document.getElementById(`section${sectionNumber.toString().replace('.', '_')}-badge`);
+        if (!section || !badge) return;
+
+        // Get all input/select/textarea in section (exclude hidden, readonly, and buttons)
+        const fields = section.querySelectorAll('input:not([type="hidden"]):not([readonly]):not([type="button"]), select:not(.d-none), textarea');
+        
+        let emptyCount = 0;
+        let totalCount = 0;
+
+        fields.forEach(field => {
+            // Skip if field is not visible or is a button
+            if (field.type === 'button' || field.type === 'submit') return;
+            
+            totalCount++;
+            const value = (field.value || '').trim();
+            
+            // For select: check if it has a selected value (not empty option)
+            if (field.tagName.toLowerCase() === 'select') {
+                if (!value || value === '' || field.selectedIndex === 0) {
+                    emptyCount++;
+                }
+            } else {
+                // For input/textarea: check if empty
+                if (!value || value === '') {
+                    emptyCount++;
+                }
+            }
+        });
+
+        // Update badge text
+        if (emptyCount === 0 && totalCount > 0) {
+            badge.innerHTML = '<i class="bi bi-check-circle-fill"></i> ครบถ้วน';
+            badge.className = 'badge-info badge-success';
+        } else if (totalCount > 0) {
+            badge.innerHTML = `<i class="bi bi-pencil-fill"></i> เหลือ ${emptyCount} ช่อง`;
+            badge.className = 'badge-info badge-warning';
+        }
+    } catch (e) {
+        console && console.debug && console.debug(`updateSectionBadge(${sectionNumber}) error`, e);
+    }
+}
+
+// Update all section badges
+function updateAllSectionBadges() {
+    updateSectionBadge('1');
+    updateSectionBadge('2');
+    updateSectionBadge('3');
+    updateSectionBadge('4');
+    updateSectionBadge('5');
+    updateSectionBadge('5.5');
+    updateSectionBadge('6');
+    updateSectionBadge('7');
+}
+
+// Update badge on input/change events
+document.addEventListener('DOMContentLoaded', function() {
+    updateAllSectionBadges();
+    
+    // Listen to all input/select/textarea changes in all sections
+    document.querySelectorAll('[data-section]').forEach(section => {
+        section.addEventListener('input', updateAllSectionBadges);
+        section.addEventListener('change', updateAllSectionBadges);
+    });
+    
+    // Also update after modal selections (EML sync)
+    const selectedInfo = document.getElementById('equipment_code_selected_info');
+    if (selectedInfo) {
+        const observer = new MutationObserver(updateAllSectionBadges);
+        observer.observe(selectedInfo, { childList: true, subtree: true, characterData: true });
+    }
+    
+    // Update periodically in case of programmatic changes
+    setInterval(updateAllSectionBadges, 2000);
+});
+
+function updateParentDisplay(selectId,targetId){
+    const sel = document.getElementById(selectId);
+    const target = document.getElementById(targetId);
+    if(!sel||!target) return;
+    const opt = sel.options[sel.selectedIndex];
+    const ancestors = opt?opt.getAttribute('data-ancestors') : '';
+    if(ancestors){ target.textContent = '📍 ' + ancestors; target.style.display='block'; } else { target.style.display='none'; }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+    const form = document.getElementById('equipmentForm');
+    if(form){
+        // Clear all localStorage data on page load for fresh start
+        try {
+            // Remove all equipment form related keys
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('eq_')) {
+                    localStorage.removeItem(key);
+                }
+            });
+        } catch (err) {
+            // ignore
+        }
+
+        const inputs = form.querySelectorAll('input, select, textarea');
+        
+        // NO LONGER persist or restore values from localStorage
+        // Form starts fresh on every page load/refresh
+
+        // Single submit handler: synchronize searchable selects, then validate required fields.
+        form.addEventListener('submit', function(e){
+            // 1) Synchronize searchable visible inputs into hidden selects so server receives values.
+            try {
+                function syncSearchToSelect(searchId, selectId, clearId) {
+                    const s = document.getElementById(searchId);
+                    const sel = document.getElementById(selectId);
+                    if (!s || !sel) return;
+                    const typed = (s.value || '').replace(/\s+/g, ' ').trim();
+                    if (typed && !sel.value) {
+                        const match = Array.from(sel.options).find(o => (o.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase() === typed.toLowerCase());
+                        if (match) {
+                            sel.value = match.value;
+                            try { sel.dispatchEvent(new Event('change')); } catch (err) {}
+                            const clearBtn = document.getElementById(clearId);
+                            if (clearBtn) clearBtn.style.display = 'block';
+                        }
+                    }
+                }
+
+                syncSearchToSelect('equipment_owner_customer_search', 'equipment_owner_customer', 'equipment_owner_customer_clear');
+                syncSearchToSelect('equipment_user_customer_search', 'equipment_user_customer', 'equipment_user_customer_clear');
+                syncSearchToSelect('equipment_service_provider_search', 'equipment_service_provider', 'equipment_service_provider_clear');
+            } catch (syncErr) {
+                try { console && console.debug && console.debug('syncSearchToSelect error', syncErr); } catch(e){}
+            }
+
+            // 2) No required field validation - allow saving with any data
+            // (validation disabled per user request: ปลด request ออกทั้งหมด)
+        });
+    }
+
+
+
+    // Enhanced searchable organization selects with fuzzy search and grouping
+    function initSearchableSelect(config) {
+        const searchInput = document.getElementById(config.searchId);
+        const hiddenSelect = document.getElementById(config.selectId);
+        const dropdown = document.getElementById(config.dropdownId);
+        const clearBtn = document.getElementById(config.clearId);
+        const chainEl = document.getElementById(config.chainId);
+        const treeEl = document.getElementById(config.treeId);
+        
+        if (!searchInput || !hiddenSelect || !dropdown) return;
+        
+        // Build options cache with top-level parent for grouping
+        const options = Array.from(hiddenSelect.options).filter(opt => opt.value).map(opt => {
+            const ancestors = opt.getAttribute('data-ancestors') || '';
+            const topParent = ancestors ? ancestors.split(' → ')[0] : 'อื่นๆ';
+            return {
+                value: opt.value,
+                text: opt.textContent,
+                ancestors: ancestors,
+                id: opt.getAttribute('data-id'),
+                topParent: topParent
+            };
+        });
+        
+        // Initialize: do NOT prefill the visible search input from the hidden select.
+        // This avoids showing prior typed queries or recent-selection remnants after a refresh.
+        const selectedOpt = hiddenSelect.options[hiddenSelect.selectedIndex];
+        if (selectedOpt && selectedOpt.value) {
+            // If the server explicitly rendered this option as selected (edit/view mode)
+            // then prefill the visible search input so the user sees the current selection.
+            // Otherwise (fresh form or persisted hidden value), avoid prefilling the
+            // visible input to prevent showing prior typed queries as "recent selections".
+            const serverSelected = Array.from(hiddenSelect.options).some(o => o === selectedOpt && o.hasAttribute('selected'));
+            if (serverSelected) {
+                try {
+                    searchInput.value = (selectedOpt.textContent || '').replace(/\s+/g, ' ').trim();
+                    clearBtn.style.display = 'block';
+                } catch (e) {
+                    // ignore if any DOM/read error
+                }
+            } else {
+                if (searchInput.value && searchInput.value.trim()) {
+                    clearBtn.style.display = 'block';
+                } else {
+                    clearBtn.style.display = 'none';
+                }
+            }
+            updateTreeDisplay();
+        }
+        
+        // Fuzzy search function
+        function fuzzyMatch(text, query) {
+            const pattern = query.split('').join('.*');
+            const regex = new RegExp(pattern, 'i');
+            return regex.test(text);
+        }
+        
+        // Calculate fuzzy score (lower is better)
+        function fuzzyScore(text, query) {
+            text = text.toLowerCase();
+            query = query.toLowerCase();
+            
+            // Exact match gets best score
+            if (text === query) return 0;
+            if (text.includes(query)) return query.length / text.length;
+            
+            // Fuzzy match score based on character positions
+            let score = 0;
+            let lastIndex = -1;
+            for (let char of query) {
+                const index = text.indexOf(char, lastIndex + 1);
+                if (index === -1) return Infinity; // No match
+                score += (index - lastIndex) * 0.1;
+                lastIndex = index;
+            }
+            return score;
+        }
+        
+        // Search input handler with fuzzy search
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            if (!query) {
+                // When query is empty, hide dropdown and clear button
+                dropdown.style.display = 'none';
+                searchInput.setAttribute('aria-expanded', 'false');
+                clearBtn.style.display = 'none';
+                return;
+            }
+            
+            clearBtn.style.display = 'block';
+            const queryLower = query.toLowerCase();
+            
+            // Filter with fuzzy matching
+            let matches = options.filter(opt => 
+                opt.text.toLowerCase().includes(queryLower) || 
+                opt.ancestors.toLowerCase().includes(queryLower) ||
+                fuzzyMatch(opt.text, queryLower) ||
+                fuzzyMatch(opt.ancestors, queryLower)
+            );
+            
+            // Sort by relevance
+            matches.sort((a, b) => {
+                const scoreA = Math.min(
+                    fuzzyScore(a.text, queryLower),
+                    fuzzyScore(a.ancestors, queryLower)
+                );
+                const scoreB = Math.min(
+                    fuzzyScore(b.text, queryLower),
+                    fuzzyScore(b.ancestors, queryLower)
+                );
+                return scoreA - scoreB;
+            });
+            
+            // Group by top parent
+            const grouped = {};
+            matches.forEach(opt => {
+                if (!grouped[opt.topParent]) grouped[opt.topParent] = [];
+                grouped[opt.topParent].push(opt);
+            });
+            
+            // Render grouped dropdown
+            if (matches.length > 0) {
+                let html = '';
+                let totalShown = 0;
+                const maxPerGroup = 15;
+                const maxTotal = 50;
+                
+                Object.keys(grouped).sort().forEach(groupName => {
+                    if (totalShown >= maxTotal) return;
+                    
+                    const groupItems = grouped[groupName].slice(0, maxPerGroup);
+                    
+                    // Group header
+                    html += `<div class="dropdown-header" style="background:#f8f9fa;font-weight:600;color:#495057;padding:0.5rem 1rem;border-top:2px solid #dee2e6">
+                        <i class="bi bi-folder2-open"></i> ${groupName}
+                    </div>`;
+                    
+                    // Group items
+                    groupItems.forEach(opt => {
+                        if (totalShown >= maxTotal) return;
+                        html += `
+                            <button type="button" 
+                                    class="dropdown-item" 
+                                    data-value="${opt.value}"
+                                    style="padding:0.75rem 1rem 0.75rem 2rem;border-bottom:1px solid #f0f0f0;white-space:normal">
+                                <div style="font-weight:600;color:#2d3748">${highlightMatch(opt.text, query)}</div>
+                                ${opt.ancestors ? `<small style="color:#718096;display:block;margin-top:0.25rem">
+                                    <i class="bi bi-arrow-right"></i> ${highlightMatch(opt.ancestors, query)}
+                                </small>` : ''}
+                            </button>
+                        `;
+                        totalShown++;
+                    });
+                });
+                
+                if (matches.length > totalShown) {
+                    html += `<div class="dropdown-item text-muted" style="padding:0.5rem 1rem;background:#f8f9fa">
+                        <small><i class="bi bi-info-circle"></i> แสดง ${totalShown} จาก ${matches.length} รายการ - พิมพ์เพิ่มเติมเพื่อกรอง</small>
+                    </div>`;
+                }
+                
+                dropdown.innerHTML = html;
+                dropdown.style.display = 'block';
+                searchInput.setAttribute('aria-expanded', 'true');
+
+                // Attach click + keyboard handlers and set accessibility attributes
+                const itemButtons = Array.from(dropdown.querySelectorAll('.dropdown-item[data-value]'));
+                itemButtons.forEach((btn, idx) => {
+                    // mark as option for assistive tech; keep tabindex -1 so Tab order remains on input
+                    btn.setAttribute('role', 'option');
+                    btn.setAttribute('tabindex', '-1');
+                    btn.setAttribute('aria-selected', 'false');
+
+                    // Click selects
+                    btn.addEventListener('click', function() {
+                        const value = this.getAttribute('data-value');
+                        selectOption(value);
+                    });
+
+                    // Keyboard navigation when item is focused
+                    btn.addEventListener('keydown', function(e) {
+                        if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            const next = itemButtons[idx + 1];
+                            if (next) next.focus();
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            const prev = itemButtons[idx - 1];
+                            if (prev) prev.focus(); else searchInput.focus();
+                        } else if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            this.click();
+                        } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            dropdown.style.display = 'none';
+                            searchInput.setAttribute('aria-expanded', 'false');
+                            searchInput.focus();
+                        }
+                    });
+
+                    // Update aria-selected when focused
+                    btn.addEventListener('focus', function() {
+                        itemButtons.forEach(b => b.setAttribute('aria-selected', 'false'));
+                        this.setAttribute('aria-selected', 'true');
+                    });
+                });
+            } else {
+                dropdown.innerHTML = `<div class="dropdown-item text-muted" style="padding:1rem">
+                    <i class="bi bi-search"></i> ไม่พบหน่วยงานที่ตรงกับ "<strong>${query}</strong>"<br>
+                    <small class="text-muted">ลองใช้คำค้นหาอื่นหรือพิมพ์เพียงบางส่วนของชื่อ</small>
+                </div>`;
+                dropdown.style.display = 'block';
+            }
+        });
+        
+        // Clear button
+        clearBtn?.addEventListener('click', function() {
+            searchInput.value = '';
+            hiddenSelect.value = '';
+            this.style.display = 'none';
+            dropdown.style.display = 'none';
+            searchInput.setAttribute('aria-expanded', 'false');
+            updateTreeDisplay();
+            searchInput.focus();
+        });
+        
+        // Focus handler
+        searchInput.addEventListener('focus', function() {
+            const query = (this.value || '').trim();
+            if (!query) {
+                // When empty: show grouped list of available options (useful for service provider)
+                const maxTotal = 200;
+                const matches = options.slice(0, maxTotal);
+                const grouped = {};
+                matches.forEach(opt => {
+                    if (!grouped[opt.topParent]) grouped[opt.topParent] = [];
+                    grouped[opt.topParent].push(opt);
+                });
+
+                let html = '';
+                Object.keys(grouped).sort().forEach(groupName => {
+                    html += '<div class="dropdown-group">';
+                    html += '<div class="dropdown-group-title" style="font-weight:700;padding:0.35rem 0.75rem;color:#6b7280;">' + (groupName || 'อื่นๆ') + '</div>';
+                    grouped[groupName].slice(0, 50).forEach(opt => {
+                        const dv = encodeURIComponent(opt.value || '');
+                        const anc = opt.ancestors ? (' <small style="color:#94a3b8">' + (opt.ancestors || '') + '</small>') : '';
+                        const escText = (opt.text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                        html += '<button type="button" class="dropdown-item" data-value="' + dv + '" style="width:100%;text-align:left;padding:0.5rem 0.75rem;border:none;background:transparent;">' + escText + anc + '</button>';
+                    });
+                    html += '</div>';
+                });
+
+                dropdown.innerHTML = html;
+                dropdown.style.display = 'block';
+                searchInput.setAttribute('aria-expanded', 'true');
+
+                // attach click handlers to items (decode value)
+                Array.from(dropdown.querySelectorAll('.dropdown-item[data-value]')).forEach(btn => {
+                    btn.addEventListener('click', function(e){
+                        try{
+                            const val = decodeURIComponent(this.getAttribute('data-value') || '');
+                            selectOption(val);
+                        }catch(err){ console && console.debug && console.debug('select item decode error', err); }
+                    });
+                });
+            } else if (dropdown.children.length > 0) {
+                dropdown.style.display = 'block';
+                searchInput.setAttribute('aria-expanded', 'true');
+            }
+        });
+        
+        // Click outside to close
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+                searchInput.setAttribute('aria-expanded', 'false');
+            }
+        });
+        
+        // Keyboard navigation
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                dropdown.style.display = 'none';
+                searchInput.setAttribute('aria-expanded', 'false');
+            } else if (e.key === 'ArrowDown' && dropdown.style.display === 'block') {
+                e.preventDefault();
+                const firstBtn = dropdown.querySelector('.dropdown-item[data-value]');
+                if (firstBtn) {
+                    firstBtn.focus();
+                    // aria-selected will be updated on focus handler
+                }
+            }
+        });
+        
+        function selectOption(value) {
+            hiddenSelect.value = value;
+            const opt = Array.from(hiddenSelect.options).find(o => o.value === value);
+                if (opt) {
+                // Normalize whitespace from option text before putting into the input
+                searchInput.value = (opt.textContent || '').replace(/\s+/g, ' ').trim();
+                clearBtn.style.display = 'block';
+            }
+            // Hide dropdown and update aria
+            dropdown.style.display = 'none';
+            searchInput.setAttribute('aria-expanded', 'false');
+
+            // If dropdown items exist, update their aria-selected attributes
+            const items = dropdown.querySelectorAll('.dropdown-item[data-value]');
+            if (items && items.length) {
+                items.forEach(it => {
+                    it.setAttribute('aria-selected', it.getAttribute('data-value') === value ? 'true' : 'false');
+                });
+            }
+
+            updateTreeDisplay();
+            hiddenSelect.dispatchEvent(new Event('change'));
+        }
+        
+        function updateTreeDisplay() {
+            const opt = hiddenSelect.options[hiddenSelect.selectedIndex];
+            const ancestors = opt ? opt.getAttribute('data-ancestors') : '';
+
+            // If the visible search input is empty, don't show the tree even if a hidden
+            // <select> value exists. This prevents a hidden persisted value from looking
+            // like a "recent search" in the UI.
+            if (searchInput && !searchInput.value.trim()) {
+                if (chainEl) chainEl.textContent = '';
+                if (treeEl) treeEl.style.display = 'none';
+                return;
+            }
+
+            if (chainEl && treeEl) {
+                if (ancestors && ancestors.trim()) {
+                    chainEl.textContent = ancestors + ' → ' + (opt.textContent || '');
+                    treeEl.style.display = 'block';
+                } else if (opt && opt.value) {
+                    chainEl.textContent = opt.textContent || '';
+                    treeEl.style.display = 'block';
+                } else {
+                    treeEl.style.display = 'none';
+                }
+            }
+        }
+        
+        function highlightMatch(text, query) {
+            if (!query) return text;
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<mark style="background:#fef08a;padding:0 0rem;border-radius:2px">$1</mark>');
+        }
+        
+        // Initial tree display
+        updateTreeDisplay();
+    }
+    
+    // Initialize owner organization search
+    initSearchableSelect({
+        searchId: 'equipment_owner_customer_search',
+        selectId: 'equipment_owner_customer',
+        dropdownId: 'equipment_owner_customer_dropdown',
+        clearId: 'equipment_owner_customer_clear',
+        chainId: 'equipment_owner_customer_chain',
+        treeId: 'equipment_owner_customer_tree'
+    });
+    
+    // Initialize user organization search
+    initSearchableSelect({
+        searchId: 'equipment_user_customer_search',
+        selectId: 'equipment_user_customer',
+        dropdownId: 'equipment_user_customer_dropdown',
+        clearId: 'equipment_user_customer_clear',
+        chainId: 'equipment_user_customer_chain',
+        treeId: 'equipment_user_customer_tree'
+    });
+    
+    // Initialize service provider search
+    initSearchableSelect({
+        searchId: 'equipment_service_provider_search',
+        selectId: 'equipment_service_provider',
+        dropdownId: 'equipment_service_provider_dropdown',
+        clearId: 'equipment_service_provider_clear',
+        chainId: 'equipment_service_provider_chain',
+        treeId: 'equipment_service_provider_tree'
+    });
+
+    // === Initialize EML Modal ===
+    (function initEMLModal(){
+        const displayInput = document.getElementById('equipment_code_display_input');
+        const hiddenInput = document.getElementById('equipment_code');
+        const clearBtn = document.getElementById('equipment_code_clear');
+        const selectedInfoDiv = document.getElementById('equipment_code_selected_info');
+        const browseBtn = document.getElementById('equipment_code_browse');
+        
+        // Modal elements
+        const modal = document.getElementById('emlModal');
+        const modalSearch = document.getElementById('emlModalSearch');
+        const modalTableBody = document.getElementById('emlModalTableBody');
+        const resultCount = document.getElementById('emlResultCount');
+        const noResults = document.getElementById('emlNoResults');
+        
+        if (!displayInput || !hiddenInput || !modal) return;
+        
+        // Collect all EML rows
+    const allRows = Array.from(modalTableBody.querySelectorAll('.eml-modal-row'));
+    const totalCount = allRows.length;
+        
+        // Fuzzy match helper
+        function fuzzyMatch(text, query) {
+            const pattern = query.split('').join('.*');
+            const regex = new RegExp(pattern, 'i');
+            return regex.test(text);
+        }
+        
+        // Calculate fuzzy score (lower is better)
+        function fuzzyScore(text, query) {
+            text = text.toLowerCase();
+            query = query.toLowerCase();
+            if (text === query) return 0;
+            if (text.includes(query)) return query.length / text.length;
+            let score = 0;
+            let lastIndex = -1;
+            for (let char of query) {
+                const index = text.indexOf(char, lastIndex + 1);
+                if (index === -1) return Infinity;
+                score += (index - lastIndex) * 0.1;
+                lastIndex = index;
+            }
+            return score;
+        }
+        
+        // Update display
+        function updateDisplay() {
+            const code = hiddenInput.value;
+            
+            // Clear all row highlights
+            allRows.forEach(row => {
+                row.style.background = '';
+                row.style.boxShadow = '';
+                row.style.borderLeft = '';
+            });
+            
+            if (!code) {
+                displayInput.value = '';
+                displayInput.placeholder = '🔍 คลิกเพื่อเลือก EML จากรายการ...';
+                // reset displayed selected fields
+                document.getElementById('selected_eml_code').textContent = '-';
+                document.getElementById('selected_eml_name_en').textContent = '-';
+                document.getElementById('selected_eml_name_th').textContent = '-';
+                var riskSpanReset = document.getElementById('selected_eml_risk_level');
+                if(riskSpanReset){
+                    riskSpanReset.setAttribute('data-risk-code','');
+                    riskSpanReset.textContent = '-';
+                }
+                var pmSpanReset = document.getElementById('selected_eml_pm_fq');
+                if(pmSpanReset){
+                    var pmLabel = document.querySelector('label[for="equipment_pm_fq"]');
+                    pmSpanReset.setAttribute('data-pm-code','');
+                    pmSpanReset.textContent = pmLabel ? (pmLabel.textContent || '').trim() : '-';
+                }
+                var calSpanReset = document.getElementById('selected_eml_cal_fq');
+                if(calSpanReset) calSpanReset.textContent = '-';
+                
+                var typeSpanReset = document.getElementById('selected_eml_type');
+                if(typeSpanReset){
+                    typeSpanReset.setAttribute('data-type-code','');
+                    typeSpanReset.textContent = '-';
+                }
+                var lifespanSpanReset = document.getElementById('selected_eml_lifespan');
+                if(lifespanSpanReset){
+                    lifespanSpanReset.textContent = '-';
+                }
+                var svProviderSpanReset = document.getElementById('selected_eml_sv_provider');
+                if(svProviderSpanReset){
+                    svProviderSpanReset.textContent = '-';
+                }
+                selectedInfoDiv.style.display = 'none';
+                clearBtn.style.display = 'none';
+                return;
+            }
+            
+            const selectedRow = allRows.find(row => row.getAttribute('data-code') === code);
+            if (selectedRow) {
+                const nameEn = selectedRow.getAttribute('data-name-en') || '';
+                const nameTh = selectedRow.getAttribute('data-name-th') || '';
+                const risk = selectedRow.getAttribute('data-risk') || '';
+                const riskLabel = selectedRow.getAttribute('data-risk-label') || '';
+                const pmFq = selectedRow.getAttribute('data-pm-fq') || '';
+                const pmFqLabel = selectedRow.getAttribute('data-pm-fq-label') || '';
+                const calFq = selectedRow.getAttribute('data-cal-fq') || '';
+                const calFqLabel = selectedRow.getAttribute('data-cal-fq-label') || '';
+                const equipmentType = selectedRow.getAttribute('data-equipment-type') || '';
+                const equipmentTypeLabel = selectedRow.getAttribute('data-equipment-type-label') || '';
+
+                displayInput.value = code + (nameEn ? ' - ' + nameEn : '');
+                
+                // Highlight the selected row
+                selectedRow.style.background = 'linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%)';
+                selectedRow.style.boxShadow = 'inset 0 0 0 2px var(--primary)';
+                selectedRow.style.borderLeft = '4px solid var(--primary)';
+
+                document.getElementById('selected_eml_code').textContent = code;
+                document.getElementById('selected_eml_name_en').textContent = nameEn || '-';
+                document.getElementById('selected_eml_name_th').textContent = nameTh || '-';
+                
+                var riskSpan = document.getElementById('selected_eml_risk_level');
+                if(riskSpan){
+                    // store raw risk code for syncing to the hidden input, display the label
+                    riskSpan.setAttribute('data-risk-code', risk || '');
+                    riskSpan.textContent = riskLabel || risk || '-';
+                }
+                var pmSpan = document.getElementById('selected_eml_pm_fq');
+                if(pmSpan){
+                    // store raw pm code for syncing to the hidden input, display the label
+                    pmSpan.setAttribute('data-pm-code', pmFq || '');
+                    pmSpan.textContent = pmFqLabel || pmFq || '-';
+                }
+                var calSpan = document.getElementById('selected_eml_cal_fq');
+                if(calSpan) calSpan.textContent = calFqLabel || calFq || '-';
+                
+                var typeSpan = document.getElementById('selected_eml_type');
+                if(typeSpan){
+                    // store raw equipment type code for syncing to the select, display the label
+                    typeSpan.setAttribute('data-type-code', equipmentType || '');
+                    typeSpan.textContent = equipmentTypeLabel || equipmentType || '-';
+                }
+                
+                // Update lifespan display
+                const lifespan = selectedRow.getAttribute('data-lifespan') || '';
+                var lifespanSpan = document.getElementById('selected_eml_lifespan');
+                if(lifespanSpan){
+                    lifespanSpan.textContent = lifespan || '-';
+                }
+                
+                // Update service provider display
+                const svProvider = selectedRow.getAttribute('data-sv-provider') || '';
+                const svProviderLabel = selectedRow.getAttribute('data-sv-provider-label') || '';
+                var svProviderSpan = document.getElementById('selected_eml_sv_provider');
+                if(svProviderSpan){
+                    // Store raw sv_provider code for syncing to the select, display the label
+                    svProviderSpan.setAttribute('data-sv-provider-code', svProvider || '');
+                    svProviderSpan.textContent = svProviderLabel || svProvider || '-';
+                }
+
+                selectedInfoDiv.style.display = 'block';
+                clearBtn.style.display = 'inline-block';
+            }
+        }
+        
+        // Initialize from hidden input value (for edit mode)
+        if (hiddenInput.value) {
+            updateDisplay();
+        }
+        
+        // Search clear button
+        const searchClearBtn = document.getElementById('emlModalSearchClear');
+        const searchHint = document.getElementById('emlSearchHint');
+        
+        // Modal search handler
+        modalSearch.addEventListener('input', function(){
+            const query = this.value.trim();
+            
+            // Toggle clear button
+            if (searchClearBtn) {
+                searchClearBtn.style.display = query ? 'block' : 'none';
+            }
+            
+            if (!query) {
+                allRows.forEach(row => row.classList.remove('hidden'));
+                noResults.style.display = 'none';
+                modalTableBody.parentElement.style.display = 'block';
+                resultCount.textContent = totalCount;
+                if (searchHint) searchHint.style.display = 'none';
+                return;
+            }
+            
+            if (searchHint) searchHint.style.display = 'block';
+            
+            const queryLower = query.toLowerCase();
+            
+            // Filter rows by code, name_en, or name_th
+            let matches = allRows.filter(row => {
+                const code = (row.getAttribute('data-code') || '').toLowerCase();
+                const nameEn = (row.getAttribute('data-name-en') || '').toLowerCase();
+                const nameTh = (row.getAttribute('data-name-th') || '').toLowerCase();
+                
+                return code.includes(queryLower) || 
+                       nameEn.includes(queryLower) || 
+                       nameTh.includes(queryLower) ||
+                       fuzzyMatch(code, queryLower) ||
+                       fuzzyMatch(nameEn, queryLower) ||
+                       fuzzyMatch(nameTh, queryLower);
+            });
+            
+            // Sort by relevance
+            matches.sort((a, b) => {
+                const scoreA = Math.min(
+                    fuzzyScore(a.getAttribute('data-code') || '', queryLower),
+                    fuzzyScore(a.getAttribute('data-name-en') || '', queryLower),
+                    fuzzyScore(a.getAttribute('data-name-th') || '', queryLower)
+                );
+                const scoreB = Math.min(
+                    fuzzyScore(b.getAttribute('data-code') || '', queryLower),
+                    fuzzyScore(b.getAttribute('data-name-en') || '', queryLower),
+                    fuzzyScore(b.getAttribute('data-name-th') || '', queryLower)
+                );
+                return scoreA - scoreB;
+            });
+            
+            // Show/hide rows
+            allRows.forEach(row => {
+                if (matches.includes(row)) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+            
+            // Update result count and show/hide no results
+            resultCount.textContent = matches.length;
+            if (matches.length === 0) {
+                noResults.style.display = 'block';
+                modalTableBody.parentElement.style.display = 'none';
+            } else {
+                noResults.style.display = 'none';
+                modalTableBody.parentElement.style.display = 'block';
+            }
+        });
+        
+        // Row selection handlers (both row click and button click)
+        allRows.forEach(row => {
+            const selectBtn = row.querySelector('.eml-select-btn');
+            
+            function selectRow() {
+                const code = row.dataset.code;
+                hiddenInput.value = code;
+                
+                // Visual feedback
+                const selectBtn = row.querySelector('.eml-select-btn');
+                if (selectBtn) {
+                    selectBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> เลือกแล้ว!';
+                    selectBtn.style.background = 'linear-gradient(135deg, var(--success) 0%, #059669 100%)';
+                }
+                
+                updateDisplay();
+                
+                // Close modal with slight delay for visual feedback
+                setTimeout(() => {
+                    const bsModal = bootstrap.Modal.getInstance(modal);
+                    if (bsModal) {
+                        bsModal.hide();
+                    }
+                    // Reset button after modal closes
+                    if (selectBtn) {
+                        selectBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> เลือก';
+                        selectBtn.style.background = '';
+                    }
+                }, 300);
+                
+                // Trigger change event for form validation
+                hiddenInput.dispatchEvent(new Event('change'));
+            }
+            
+            // Click on row
+            row.addEventListener('click', function(e){
+                // Don't trigger if clicking the button itself (button has its own handler)
+                if (e.target.closest('.eml-select-btn')) return;
+                selectRow();
+            });
+            
+            // Click on select button
+            selectBtn.addEventListener('click', function(e){
+                e.stopPropagation();
+                selectRow();
+            });
+        });
+        
+        // Clear button (main form)
+        clearBtn.addEventListener('click', function(){
+            hiddenInput.value = '';
+            updateDisplay();
+        });
+        
+        // Search clear button (modal)
+        if (searchClearBtn) {
+            searchClearBtn.addEventListener('click', function(){
+                modalSearch.value = '';
+                modalSearch.dispatchEvent(new Event('input'));
+                modalSearch.focus();
+            });
+        }
+        
+        // Display input click (open modal)
+        displayInput.addEventListener('click', function(){
+            browseBtn.click();
+        });
+        
+        // Scroll to selected row when modal opens
+        modal.addEventListener('shown.bs.modal', function(){
+            if (hiddenInput.value) {
+                const selectedRow = allRows.find(row => row.getAttribute('data-code') === hiddenInput.value);
+                if (selectedRow && !selectedRow.classList.contains('hidden')) {
+                    setTimeout(() => {
+                        selectedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 100);
+                }
+            }
+        });
+        
+        // Reset modal search when modal is shown
+        modal.addEventListener('show.bs.modal', function(){
+            modalSearch.value = '';
+            modalSearch.dispatchEvent(new Event('input'));
+            if (searchClearBtn) searchClearBtn.style.display = 'none';
+            if (searchHint) searchHint.style.display = 'none';
+            setTimeout(() => modalSearch.focus(), 300);
+        });
+        
+        // Keyboard navigation for modal search
+        modalSearch.addEventListener('keydown', function(e){
+            if (e.key === 'Escape') {
+                this.value = '';
+                this.dispatchEvent(new Event('input'));
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const firstVisibleRow = Array.from(allRows).find(row => !row.classList.contains('hidden'));
+                if (firstVisibleRow) {
+                    firstVisibleRow.querySelector('.eml-select-btn')?.click();
+                }
+            }
+        });
+        
+    })();
+
+    // Enhanced ancestor display for new organization selectors (legacy fallback)
+    ['equipment_owner_customer','equipment_user_customer','equipment_service_provider'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el){
+            el.addEventListener('change', function(){
+                const opt = this.options[this.selectedIndex];
+                const ancestors = opt ? opt.getAttribute('data-ancestors') : '';
+                const chainEl = document.getElementById(id + '_chain');
+                const treeEl = document.getElementById(id + '_tree');
+                if(chainEl && treeEl){
+                    if(ancestors && ancestors.trim()){
+                        chainEl.textContent = ancestors + ' → ' + (opt.text || '');
+                        treeEl.style.display = 'block';
+                    } else {
+                        chainEl.textContent = opt.text || '';
+                        treeEl.style.display = ancestors ? 'block' : 'none';
+                    }
+                }
+            });
+        }
+    });
+
+    // Copy owner to user button
+    document.getElementById('copy_owner_to_user_btn')?.addEventListener('click', function(){
+        const ownerSel = document.getElementById('equipment_owner_customer');
+        const userSel = document.getElementById('equipment_user_customer');
+        if(ownerSel && userSel && ownerSel.value){
+            userSel.value = ownerSel.value;
+            userSel.dispatchEvent(new Event('change'));
+            // Also update the visible search input for the user selector (normalized)
+            const ownerOpt = ownerSel.options[ownerSel.selectedIndex];
+            const userSearch = document.getElementById('equipment_user_customer_search');
+            if (ownerOpt && userSearch) {
+                userSearch.value = (ownerOpt.textContent || '').replace(/\s+/g, ' ').trim();
+                const userClear = document.getElementById('equipment_user_customer_clear');
+                if (userClear) userClear.style.display = 'block';
+                const userTree = document.getElementById('equipment_user_customer_tree');
+                const userChain = document.getElementById('equipment_user_customer_chain');
+                if (userTree && userChain) {
+                    // update display to reflect the copied selection
+                    userChain.textContent = (ownerOpt.getAttribute('data-ancestors') || '') + ' → ' + (ownerOpt.textContent || '');
+                    userTree.style.display = 'block';
+                }
+            }
+            this.innerHTML = '<i class="bi bi-check-circle-fill"></i> คัดลอกแล้ว!';
+            setTimeout(() => {
+                this.innerHTML = '<i class="bi bi-arrow-down-circle"></i> คัดลอกจากหน่วยงานเจ้าของ';
+            }, 2000);
+        } else {
+            alert('กรุณาเลือกหน่วยงานเจ้าของก่อน');
+        }
+    });
+
+    // Legacy compatibility: no-op — detailed unit/section fields were removed in favor
+    // of the unified owner/user customer selectors (`equipment_owner_customer` and
+    // `equipment_user_customer`). The searchable selects above handle ancestor
+    // display and synchronization.
+
+    // Progress tracker
+    function updateProgressTracker(){ const steps = document.querySelectorAll('.section-card'); const h = window.innerHeight; let active = 1; steps.forEach((s,i)=>{ const r = s.getBoundingClientRect(); if(r.top < h/2 && r.bottom > h/2) active = i+1; }); document.querySelectorAll('.progress-step').forEach((p,i)=>{ if(i < active-1){ p.classList.remove('active'); p.classList.add('completed'); } else if(i === active-1){ p.classList.add('active'); p.classList.remove('completed'); } else { p.classList.remove('active','completed'); }}); }
+    updateProgressTracker(); window.addEventListener('scroll', updateProgressTracker, {passive:true});
+    document.querySelectorAll('.progress-step').forEach((step, idx)=> step.addEventListener('click', ()=>{ const sec = document.querySelector(`.section-card[data-section="${idx+1}"]`); if(sec){ sec.scrollIntoView({behavior:'smooth', block:'start'}); const hdr = sec.querySelector('.section-header'); if(hdr && hdr.classList.contains('collapsed')) toggleSection(hdr); } }));
+
+    // Basic required validation for visible required inputs
+    if(form){
+        form.addEventListener('submit', function(e){
+            // Determine required fields by looking for labels that include a
+            // the required asterisk marker (this matches the server-side
+            // expectation in the template). Using this approach keeps client-side
+            // validation in sync with the visual hinting in the form.
+            let hasError = false;
+            try {
+                const requiredSpans = form.querySelectorAll('label .required');
+                requiredSpans.forEach(span => {
+                    const lbl = span.closest('label');
+                    if (!lbl) return;
+                    const fid = lbl.getAttribute('for');
+                    if (!fid) return;
+                    const field = form.querySelector('#' + fid);
+                    if (!field) return;
+                    const val = field.value;
+                    if (!val || !String(val).trim()) {
+                        field.classList.add('is-invalid');
+                        hasError = true;
+                    } else {
+                        field.classList.remove('is-invalid');
+                    }
+                });
+            } catch (vErr) {
+                try { console && console.debug && console.debug('validation error', vErr); } catch(e){}
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                alert('⚠️ กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน (เครื่องหมาย *)');
+                const first = form.querySelector('.is-invalid');
+                if (first) first.scrollIntoView({behavior:'smooth', block:'center'});
+            }
+        });
+    }
+});
+</script>
+
+<!-- Sync selected EML name into the read-only EN field -->
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const emlHidden = document.getElementById('equipment_code');
+    const selectedENSpan = document.getElementById('selected_eml_name_en');
+    const equipNameEN = document.getElementById('equipment_name_EN');
+
+    function syncSelectedEN(){
+        if(!equipNameEN) return;
+        let v = '';
+        if(selectedENSpan) v = (selectedENSpan.textContent || '').trim();
+
+        // fallback: read from selected row's data-name-en using the hidden code value
+        if((!v || v === '-' ) && emlHidden && emlHidden.value){
+            try{
+                const code = emlHidden.value;
+                const row = document.querySelector(`#emlModalTableBody tr[data-code="${code}"]`);
+                if(row) v = (row.getAttribute('data-name-en') || '').trim();
+            }catch(e){/* ignore selectors with special chars */}
+        }
+
+        if(v && v !== '-') {
+            equipNameEN.value = v;
+        }
+    }
+
+    // initial sync on load
+    syncSelectedEN();
+
+    // update when hidden EML code changes
+    emlHidden?.addEventListener('change', syncSelectedEN);
+
+    // delegate clicks on modal select buttons to run a short sync after selection
+    const body = document.getElementById('emlModalTableBody');
+    body?.addEventListener('click', function(e){
+        const btn = e.target.closest('.eml-select-btn');
+        if(btn){ setTimeout(syncSelectedEN, 50); }
+    });
+});
+</script>
+
+{% endblock %}

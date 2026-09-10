@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}<title>แบบฟอร์ม Checklist — CMMS</title>{% endblock %}
+{% block content %}
+<style>
+    .ct-page { min-height: 100vh; background: linear-gradient(135deg, #f5f7ff 0%, #f9fafe 50%, #f5f9ff 100%); padding: 1.5rem; }
+    .ct-container { max-width: 1100px; margin: 0 auto; }
+    .ct-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; }
+    .ct-title { display: flex; align-items: center; gap: 0.75rem; }
+    .ct-title-icon { width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #059669 0%, #10b981 100%); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.25rem; box-shadow: 0 4px 12px rgba(5,150,105,0.3); }
+    .ct-title h1 { font-size: 1.4rem; font-weight: 700; color: #1e293b; margin: 0; }
+    .ct-title p { font-size: 0.85rem; color: #64748b; margin: 0; }
+    .ct-filters { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .ct-filters select, .ct-filters input { border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.45rem 0.75rem; font-size: 0.85rem; }
+    .ct-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); overflow: hidden; }
+    table.ct-table { width: 100%; margin-bottom: 0; }
+    table.ct-table th { background: #f8fafc; font-size: 0.78rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.03em; padding: 0.85rem 1rem; border-bottom: 1px solid #e2e8f0; }
+    table.ct-table td { padding: 0.85rem 1rem; vertical-align: middle; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; }
+    .badge-active { background: #dcfce7; color: #15803d; padding: 0.3rem 0.65rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+    .badge-inactive { background: #f1f5f9; color: #64748b; padding: 0.3rem 0.65rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
+</style>
+<div class="ct-page">
+    <div class="ct-container">
+        <div class="ct-header">
+            <div class="ct-title">
+                <div class="ct-title-icon"><i class="bi bi-list-check"></i></div>
+                <div>
+                    <h1>แบบฟอร์ม Checklist บำรุงรักษา/สอบเทียบ</h1>
+                    <p>สร้างและแก้ไขรายการตรวจสอบตามประเภทเครื่องมือ — ใช้แทนไฟล์ Excel/PDF</p>
+                </div>
+            </div>
+            <a href="{% url 'checklist_template_create' %}" class="btn btn-success">
+                <i class="bi bi-plus-lg"></i> สร้างแบบฟอร์มใหม่
+            </a>
+        </div>
+
+        <form method="get" class="ct-filters">
+            <select name="workorder_type" onchange="this.form.submit()" aria-label="กรองตามประเภทใบงาน" title="กรองตามประเภทใบงาน">
+                <option value="">-- ทุกประเภทใบงาน --</option>
+                {% for value, label in workorder_type_choices %}
+                <option value="{{ value }}" {% if filter_workorder_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="equipment_type" value="{{ filter_equipment_type }}" placeholder="ค้นหาประเภทเครื่องมือ...">
+            <button type="submit" class="btn btn-sm btn-outline-secondary">กรอง</button>
+            {% if filter_workorder_type or filter_equipment_type %}
+            <a href="{% url 'checklist_templates' %}" class="btn btn-sm btn-link">ล้างตัวกรอง</a>
+            {% endif %}
+        </form>
+
+        <div class="ct-card">
+            {% if templates %}
+            <table class="ct-table">
+                <thead>
+                    <tr>
+                        <th>ชื่อแบบฟอร์ม</th>
+                        <th>ประเภทใบงาน</th>
+                        <th>ประเภทเครื่องมือ</th>
+                        <th>จำนวนรายการ</th>
+                        <th>สถานะ</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in templates %}
+                    <tr>
+                        <td style="font-weight:600;">
+                            {{ t.name }} <span class="badge bg-secondary" style="font-size:0.7rem;">v{{ t.version }}</span>
+                            {% if t.replaced_by %}
+                            <div class="text-muted" style="font-size:0.75rem; font-weight:400;">
+                                <i class="bi bi-arrow-right-circle"></i> ถูกแทนที่ด้วย
+                                <a href="{% url 'checklist_template_edit' t.replaced_by.id %}">v{{ t.replaced_by.version }}</a>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>{{ t.get_workorder_type_display }}</td>
+                        <td>{{ t.equipment_type_display|default:"ทุกประเภท" }}</td>
+                        <td>{{ t.items.count }}</td>
+                        <td>
+                            {% if t.active %}<span class="badge-active">เปิดใช้งาน</span>
+                            {% else %}<span class="badge-inactive">ปิดใช้งาน</span>{% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'checklist_template_edit' t.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> แก้ไข
+                            </a>
+                            <form method="post" action="{% url 'checklist_template_delete' t.id %}" style="display:inline;"
+                                  onsubmit="return confirm('ยืนยันลบแบบฟอร์มนี้?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="ลบแบบฟอร์ม">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <i class="bi bi-clipboard-x" style="font-size:2.5rem;"></i>
+                <p class="mt-2">ยังไม่มีแบบฟอร์ม Checklist — เริ่มสร้างแบบฟอร์มแรกของคุณ</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

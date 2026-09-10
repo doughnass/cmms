@@ -1,0 +1,5145 @@
+{% extends 'base.html' %}
+
+
+{% block title %}
+    <title>CMMS MedCMU : ทะเบียนเครื่องมือแพทย์</title>
+{% endblock %}
+
+{% block content %}
+
+<style>
+/* === Modern Design System 2026 === */
+:root {
+  /* Primary colors - Indigo/Violet theme */
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-light: #e0e7ff;
+  --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  
+  /* Status colors */
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --success-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --danger-gradient: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  --info: #06b6d4;
+  --info-light: #cffafe;
+  --info-gradient: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%);
+  --purple: #8b5cf6;
+  --purple-light: #ede9fe;
+  --purple-gradient: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  
+  /* Background & Surface */
+  --bg-page: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-hover: #f1f5f9;
+  
+  /* Borders */
+  --border: #e2e8f0;
+  --border-light: #f1f5f9;
+  --border-focus: rgba(99, 102, 241, 0.5);
+  
+  /* Text */
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-md: 0 6px 12px -2px rgb(0 0 0 / 0.08), 0 3px 6px -3px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 20px -3px rgb(0 0 0 / 0.1), 0 4px 8px -4px rgb(0 0 0 / 0.05);
+  --shadow-xl: 0 20px 30px -5px rgb(0 0 0 / 0.12), 0 8px 12px -6px rgb(0 0 0 / 0.05);
+  
+  /* Border Radius */
+  --radius-sm: 0.5rem;
+  --radius: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+}
+
+/* === Card Components === */
+.card-modern {
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  border: none;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card-modern:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.card-header-modern {
+  background: var(--primary-gradient);
+  color: white;
+  padding: 1.75rem 2rem;
+  border: none;
+  position: relative;
+  overflow: hidden;
+
+}
+
+.card-header-modern::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Allow dropdowns inside the filter card to overflow above the card
+   without changing global .card-modern behaviour. This keeps rounded
+   corners and clipping for other cards while allowing the checkbox
+   dropdown menus to render above. */
+.filter-bar .card-modern {
+  overflow: visible;
+}
+
+.card-header-modern h3 {
+  position: relative;
+  z-index: 1;
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.card-header-modern h3 i {
+  font-size: 1.25rem;
+  opacity: 0.9;
+}
+
+.card-header-modern p {
+  position: relative;
+  z-index: 1;
+  margin: 0.5rem 0 0 0;
+  opacity: 0.9;
+  font-size: 0.95rem;
+}
+
+.card-body-modern {
+  padding: 2rem;
+}
+
+/* === Stats Cards === */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-light);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  border-radius: 4px 0 0 4px;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.stat-card.primary::before { background: var(--primary-gradient); }
+.stat-card.success::before { background: var(--success-gradient); }
+.stat-card.purple::before { background: var(--purple-gradient); }
+.stat-card.info::before { background: var(--info-gradient); }
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.stat-icon.primary { background: var(--primary-light); color: var(--primary); }
+.stat-icon.success { background: var(--success-light); color: var(--success); }
+.stat-icon.purple { background: var(--purple-light); color: var(--purple); }
+.stat-icon.info { background: var(--info-light); color: var(--info); }
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* === Filter Bar === */
+.filter-bar {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border-light);
+}
+
+.form-group-modern label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-control-modern {
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  background: white;
+  font-weight: 500;
+  color: var(--text-primary);
+  width: 100%;
+}
+
+.form-control-modern:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+/* === Checkbox Filter Dropdown === */
+.checkbox-dropdown {
+  position: relative;
+}
+
+.checkbox-dropdown-button {
+  width: 100%;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  padding: 0.75rem 1rem;
+  background: white;
+  text-align: left;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.checkbox-dropdown-button:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.checkbox-dropdown-button .badge {
+  background: var(--primary);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.checkbox-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 520px;
+  max-width: 90vw;
+  margin-top: 0.75rem;
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.15);
+  max-height: 520px;
+  z-index: 1000;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.checkbox-dropdown-menu.show {
+  display: flex;
+}
+
+.checkbox-dropdown-search {
+  padding: 1rem;
+  border-bottom: 2px solid var(--border-light);
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  flex-shrink: 0;
+}
+
+.checkbox-dropdown-search input {
+  width: 100%;
+  border: 2px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.checkbox-dropdown-search input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.checkbox-dropdown-search input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.checkbox-dropdown-options {
+  overflow-y: auto;
+  max-height: 350px;
+  padding: 0.75rem;
+  flex: 1;
+}
+
+/* Scrollbar styling */
+.checkbox-dropdown-options::-webkit-scrollbar {
+  width: 8px;
+}
+
+.checkbox-dropdown-options::-webkit-scrollbar-track {
+  background: var(--bg-light);
+  border-radius: 4px;
+}
+
+.checkbox-dropdown-options::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 4px;
+}
+
+.checkbox-dropdown-options::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+.checkbox-dropdown-option {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 0.75rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 0.25rem;
+}
+
+.checkbox-dropdown-option:hover {
+  background: linear-gradient(90deg, #dbeafe 0%, #f0f9ff 100%);
+  border-left: 4px solid var(--primary);
+  padding-left: calc(0.75rem - 4px);
+}
+
+.checkbox-dropdown-option.search-filtered {
+  /* ไม่ใช้ display: none เพื่อให้ JS จัดการ visibility */
+}
+
+.checkbox-dropdown-option input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-right: 1rem;
+  cursor: pointer;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+  border-radius: 0.375rem;
+}
+
+.checkbox-dropdown-option label {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  margin: 0;
+  text-transform: none;
+  letter-spacing: normal;
+  word-break: normal;
+  line-height: 1.4;
+  white-space: normal;
+  display: inline;
+}
+
+/* Hierarchical indentation - override base styles */
+.checkbox-dropdown-option[data-level] {
+  padding: 0.65rem 0.75rem;
+  transition: background 0.2s ease, display 0.15s ease;
+  position: relative;
+  pointer-events: auto;
+  border-left: 3px solid transparent;
+}
+
+/* Root level (0) */
+.checkbox-dropdown-option[data-level="0"] {
+  padding-left: 0.75rem;
+  background: #ffffff;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.checkbox-dropdown-option[data-level="0"]:hover {
+  background: linear-gradient(90deg, #f8fafc 0%, #ffffff 100%);
+}
+
+/* First level children (1) */
+.checkbox-dropdown-option[data-level="1"] {
+  padding-left: 2.5rem;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.03) 0%, transparent 100%);
+  border-left: 3px solid rgba(59, 130, 246, 0.15);
+  margin-left: 1rem;
+}
+
+.checkbox-dropdown-option[data-level="1"]:hover {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.08) 0%, #f0f9ff 100%);
+  border-left-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Second level children (2) */
+.checkbox-dropdown-option[data-level="2"] {
+  padding-left: 3.5rem;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.06) 0%, transparent 100%);
+  border-left: 3px solid rgba(59, 130, 246, 0.25);
+  margin-left: 1.5rem;
+}
+
+.checkbox-dropdown-option[data-level="2"]:hover {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.12) 0%, #dbeafe 100%);
+  border-left-color: rgba(59, 130, 246, 0.4);
+}
+
+/* Third level children (3) */
+.checkbox-dropdown-option[data-level="3"] {
+  padding-left: 4.5rem;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.09) 0%, transparent 100%);
+  border-left: 3px solid rgba(59, 130, 246, 0.35);
+  margin-left: 2rem;
+}
+
+.checkbox-dropdown-option[data-level="3"]:hover {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, #bfdbfe 100%);
+  border-left-color: rgba(59, 130, 246, 0.5);
+}
+
+/* Parent item styling */
+.checkbox-dropdown-option.is-parent {
+  font-weight: 600;
+}
+
+.checkbox-dropdown-option.is-parent label {
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+
+/* Add subtle separator after parents */
+.checkbox-dropdown-option.is-parent.collapsed {
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  margin-bottom: 0.25rem;
+}
+
+/* Expand/Collapse All buttons */
+/* Section headers in dropdown */
+.checkbox-dropdown-section-header {
+  padding: 1rem 1rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-top: 2px solid var(--border);
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.checkbox-dropdown-section-header:first-child {
+  margin-top: 0;
+  border-top: none;
+}
+
+.checkbox-dropdown-section-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.checkbox-dropdown-section-header i {
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+}
+
+/* Operational group - Green */
+.checkbox-dropdown-section-header:has(i.bi-power) {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.05) 100%);
+  color: var(--success);
+}
+
+.checkbox-dropdown-section-header:has(i.bi-power)::before {
+  background: linear-gradient(180deg, var(--success) 0%, #059669 100%);
+}
+
+/* Maintenance group - Blue/Purple */
+.checkbox-dropdown-section-header:has(i.bi-wrench-adjustable) {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(139, 92, 246, 0.05) 100%);
+  color: #6366f1;
+}
+
+.checkbox-dropdown-section-header:has(i.bi-wrench-adjustable)::before {
+  background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+/* Warranty group - Cyan */
+.checkbox-dropdown-section-header:has(i.bi-shield-fill-check) {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(14, 116, 144, 0.05) 100%);
+  color: var(--info);
+}
+
+.checkbox-dropdown-section-header:has(i.bi-shield-fill-check)::before {
+  background: linear-gradient(180deg, var(--info) 0%, #0891b2 100%);
+}
+
+.checkbox-dropdown-actions {
+  border-top: 2px solid var(--border-light);
+  padding: 1rem;
+  display: flex;
+  gap: 0.75rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  flex-shrink: 0;
+}
+
+.checkbox-dropdown-actions button {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.checkbox-dropdown-actions .select-all {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+}
+
+.checkbox-dropdown-actions .clear-all {
+  background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+  color: white;
+}
+
+.checkbox-dropdown-actions button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  opacity: 0.95;
+}
+
+/* === Equipment Table === */
+.equipment-table-wrapper {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+}
+
+.equipment-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+}
+
+/* -- Header -- */
+.equipment-table thead th {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  padding: 0.8rem 0.75rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.82);
+  border-bottom: none;
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+/* -- Body cells -- */
+.equipment-table tbody td,
+.equipment-table tbody th {
+  padding: 0.7rem 0.75rem;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+  font-size: 0.875rem;
+  transition: background 0.12s;
+}
+
+/* -- Zebra -- */
+.equipment-table tbody tr:nth-child(even) td,
+.equipment-table tbody tr:nth-child(even) th {
+  background-color: #fafbfd;
+}
+
+/* -- Row hover -- */
+.equipment-table tbody tr {
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.equipment-table tbody tr:hover td,
+.equipment-table tbody tr:hover th {
+  background: linear-gradient(90deg, rgba(99,102,241,.07) 0%, rgba(99,102,241,.02) 100%) !important;
+}
+
+.equipment-table tbody tr:hover td:first-child,
+.equipment-table tbody tr:hover th:first-child {
+  box-shadow: inset 3px 0 0 #6366f1;
+}
+
+/* -- Row number circle -- */
+.eq-row-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #f1f5f9; color: #64748b;
+  font-size: 0.72rem; font-weight: 700;
+}
+
+/* -- Equipment code badge -- */
+.eq-code-badge {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  background: linear-gradient(135deg,rgba(99,102,241,.1) 0%,rgba(139,92,246,.07) 100%);
+  border: 1px solid rgba(99,102,241,.28);
+  border-radius: 6px; padding: 0.28rem 0.6rem;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.78rem; font-weight: 700; color: #4338ca;
+  white-space: nowrap; text-decoration: none;
+}
+.eq-code-badge i { font-size: 0.68rem; opacity: 0.65; }
+
+/* -- Stacked name cell -- */
+.eq-name-primary {
+  font-weight: 700; font-size: 0.875rem; color: var(--text-primary);
+  line-height: 1.3; margin-bottom: 0.12rem;
+}
+.eq-name-secondary {
+  font-size: 0.75rem; color: var(--text-secondary); line-height: 1.3; margin-bottom: 0.2rem;
+}
+.eq-name-meta { display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; }
+.eq-name-tag {
+  display: inline-flex; align-items: center; gap: 0.2rem;
+  background: #f1f5f9; border: 1px solid #e2e8f0;
+  border-radius: 4px; padding: 0.05rem 0.38rem;
+  font-size: 0.68rem; font-weight: 600; color: #64748b;
+}
+.eq-name-tag i { font-size: 0.6rem; }
+
+/* -- S/N + Gov stacked cell -- */
+.eq-sn-primary {
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 0.78rem; font-weight: 600; color: var(--text-primary);
+}
+.eq-sn-secondary {
+  font-size: 0.7rem; color: var(--text-muted); margin-top: 0.1rem;
+}
+.eq-empty { color: #cbd5e1; font-size: 0.78rem; }
+
+/* === Action Buttons === */
+.btn-modern {
+  border-radius: var(--radius);
+  font-weight: 600;
+  padding: 0.625rem 1.25rem;
+  transition: all 0.15s ease;
+  border: none;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.btn-modern:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-modern:active {
+  transform: translateY(0);
+}
+
+.btn-primary-modern {
+  background: var(--primary-gradient);
+  color: white;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+}
+
+.btn-primary-modern:hover {
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  color: white;
+}
+
+.btn-success-modern {
+  background: var(--success-gradient);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+}
+
+.btn-success-modern:hover {
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+  color: white;
+}
+
+.btn-warning-modern {
+  background: var(--warning-gradient);
+  color: white;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+}
+
+.btn-warning-modern:hover {
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+  color: white;
+}
+
+.btn-outline-modern {
+  background: white;
+  color: var(--text-primary);
+  border: 1.5px solid var(--border);
+}
+
+.btn-outline-modern:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .card-body-modern {
+    padding: 1.5rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card-header-modern {
+    padding: 1.5rem 1.75rem;
+  }
+
+  .card-header-modern h3 {
+    font-size: 1.35rem;
+  }
+}
+
+/* === Equipment Detail Modal === */
+.modal-modern .modal-content {
+  border-radius: var(--radius-xl);
+  border: none;
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+}
+
+.modal-modern .modal-dialog {
+  max-width: 1180px;
+}
+
+.modal-modern .modal-header {
+  background: linear-gradient(135deg, #0f172a 0%, #312e81 52%, #4338ca 100%);
+  color: white;
+  border: none;
+  padding: 1rem 1.5rem;
+  position: relative;
+}
+
+.modal-modern .modal-header::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255,255,255,0.08), transparent 55%);
+  pointer-events: none;
+}
+
+.modal-modern .modal-title {
+  font-weight: 600;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-modern .btn-close {
+  filter: brightness(0) invert(1);
+  opacity: 0.8;
+}
+
+.modal-modern .btn-close:hover {
+  opacity: 1;
+}
+
+.modal-modern .modal-body {
+  padding: 0;
+  background:
+    radial-gradient(circle at top left, rgba(99,102,241,0.08), transparent 28%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+}
+
+.detail-section {
+  margin-bottom: 2rem;
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.detail-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.detail-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.detail-value {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
+.detail-value code {
+  background: var(--bg-light);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.detail-value.empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.detail-value.hierarchy {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border-left: 3px solid var(--primary);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+.detail-value.hierarchy .hierarchy-icon {
+  color: var(--primary);
+  margin-right: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.detail-value.hierarchy .hierarchy-path {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.detail-value.hierarchy .hierarchy-arrow {
+  color: var(--text-secondary);
+  margin: 0 0.5rem;
+  font-weight: 400;
+}
+
+.detail-value.hierarchy .hierarchy-current {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.modal-modern .modal-footer {
+  border: none;
+  padding: 1.5rem 2rem;
+  background: var(--bg-light);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+/* === Modal Critical Status === */
+.detail-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.detail-kpi-item {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 14px 30px -24px rgba(15, 23, 42, 0.45);
+}
+
+.detail-kpi-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+}
+
+.detail-kpi-value {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.kpi-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.kpi-state.ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.kpi-state.warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.kpi-state.danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.kpi-state.muted {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+@media (max-width: 576px) {
+  .detail-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* === Row Hover Effect for Click === (consolidated in Equipment Table block above) */
+
+/* === Action Button Group === */
+.action-btn-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* === Status Display (3 Sections) === */
+.status-display-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.375rem;
+  align-items: center;
+  justify-content: center;
+  min-width: auto;
+  max-width: 120px;
+  overflow: visible;
+}
+
+.status-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  border: 2px solid transparent;
+}
+
+.status-section:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.status-section i {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.status-section .status-label,
+.status-section .status-days {
+  display: none;
+}
+
+/* Tooltip on hover */
+.status-section::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: rgba(15, 23, 42, 0.95);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  z-index: 1000;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.status-section::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(2px);
+  border: 6px solid transparent;
+  border-top-color: rgba(15, 23, 42, 0.95);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  z-index: 9999;
+}
+
+.status-section:hover::after,
+.status-section:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+  z-index: 1000;
+}
+
+.status-section:hover::before {
+  transform: translateX(-50%) translateY(0px);
+  z-index: 1000;
+}
+
+/* Color variations for operational status */
+.status-section.operational.ready {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border-color: #047857;
+}
+
+.status-section.operational.not-ready {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border-color: #991b1b;
+}
+
+.status-section.operational.under-repair {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border-color: #92400e;
+}
+
+/* Color variations for maintenance status */
+.status-section.maintenance.ok {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border-color: #1e40af;
+}
+
+.status-section.maintenance.warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border-color: #92400e;
+}
+
+.status-section.maintenance.danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border-color: #991b1b;
+}
+
+/* Color variations for warranty status */
+.status-section.warranty.ok {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border-color: #6d28d9;
+}
+
+.status-section.warranty.expiring {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  color: white;
+  border-color: #0e7490;
+}
+
+.status-section.warranty.expired {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+  color: white;
+  border-color: #334155;
+}
+
+/* === Print === */
+
+/* === Row Quick Actions === */
+.row-action-col { width: 110px; white-space: nowrap; }
+.row-actions { display: flex; gap: 0.3rem; align-items: center; justify-content: flex-end; opacity: 0; transition: opacity 0.15s; }
+.equipment-table tbody tr:hover .row-actions { opacity: 1; }
+.row-action-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 7px; border: 1.5px solid transparent;
+  cursor: pointer; font-size: 0.88rem; transition: all 0.15s; text-decoration: none;
+  background: transparent;
+}
+.row-action-btn.ra-repair { color: #d97706; border-color: #fde68a; background: #fffbeb; }
+.row-action-btn.ra-repair:hover { background: #f59e0b; color: #fff; border-color: #f59e0b; box-shadow: 0 2px 8px rgba(245,158,11,.3); }
+.row-action-btn.ra-history { color: #0891b2; border-color: #a5f3fc; background: #ecfeff; }
+.row-action-btn.ra-history:hover { background: #06b6d4; color: #fff; border-color: #06b6d4; box-shadow: 0 2px 8px rgba(6,182,212,.3); }
+.row-action-btn.ra-edit { color: #4338ca; border-color: #c7d2fe; background: #eef2ff; }
+.row-action-btn.ra-edit:hover { background: #6366f1; color: #fff; border-color: #6366f1; box-shadow: 0 2px 8px rgba(99,102,241,.3); }
+
+/* === Modal Equipment Hero === */
+.modal-eq-hero {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 42%, #3730a3 100%);
+  padding: 1.75rem 1.75rem 1.35rem;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.modal-eq-hero::before {
+  content: '';
+  position: absolute;
+  right: -3rem;
+  top: -2rem;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.06);
+  pointer-events: none;
+}
+.modal-eq-hero::after {
+  content: '';
+  position: absolute;
+  left: -2.5rem;
+  bottom: -3.5rem;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.05);
+  pointer-events: none;
+}
+.modal-eq-hero-inner { position: relative; z-index: 1; }
+.modal-eq-hero-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 360px);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+.modal-eq-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+}
+.modal-eq-code-badge {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: rgba(255,255,255,.12); border-radius: 999px;
+  padding: 0.32rem 0.78rem; font-size: 0.73rem; font-weight: 800;
+  letter-spacing: 0.06em; margin-bottom: 0.2rem; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,.1);
+}
+.modal-eq-hero-intro {
+  max-width: 720px;
+}
+.modal-eq-qr-panel {
+  background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,.09));
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 1.1rem;
+  padding: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 250px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 24px 48px rgba(15, 23, 42, .22);
+}
+.modal-eq-qr-panel img {
+  width: 152px;
+  height: 152px;
+  border-radius: 0.9rem;
+  background: #ffffff;
+  object-fit: contain;
+  align-self: center;
+  border: 1px solid rgba(99,102,241,.18);
+  box-shadow: 0 12px 24px rgba(15,23,42,.18);
+}
+.modal-eq-qr-caption-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+.modal-eq-qr-caption-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.modal-eq-qr-caption {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.95;
+}
+.modal-eq-qr-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(15,23,42,.18);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 0.22rem 0.6rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.modal-eq-qr-toggle:hover {
+  background: rgba(255,255,255,.16);
+  color: #ffffff;
+}
+.modal-eq-qr-toggle-icon {
+  transition: transform 0.2s ease;
+}
+.modal-eq-qr-panel.is-collapsed .modal-eq-qr-toggle-icon {
+  transform: rotate(-180deg);
+}
+.modal-eq-qr-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.modal-eq-qr-meta {
+  width: 100%;
+  max-height: 420px;
+  opacity: 1;
+  overflow: hidden;
+  transition: max-height 0.28s ease, opacity 0.22s ease, margin-top 0.22s ease;
+}
+.modal-eq-qr-panel.is-collapsed .modal-eq-qr-meta {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  pointer-events: none;
+}
+.modal-eq-qr-prefix-row {
+  margin-top: 0.7rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem;
+}
+.modal-eq-qr-label {
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(226,232,240,.88);
+  margin-top: 0.85rem;
+}
+.modal-eq-qr-prefix-save {
+  border-radius: 0.7rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 0.22rem 0.75rem;
+}
+.modal-eq-qr-prefix-preview {
+  margin-top: 0.4rem;
+  font-size: 0.65rem;
+  line-height: 1.4;
+  color: rgba(226,232,240,.9);
+  word-break: break-all;
+  min-height: 1.85rem;
+}
+.modal-eq-qr-prefix-preview a {
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: rgba(255,255,255,.45);
+}
+.modal-eq-qr-prefix-preview a:hover {
+  color: #bfdbfe;
+}
+.modal-eq-qr-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid transparent;
+}
+.modal-eq-qr-state.is-locked {
+  background: rgba(148,163,184,.25);
+  color: #e2e8f0;
+  border-color: rgba(148,163,184,.35);
+}
+.modal-eq-qr-state.is-editing {
+  background: rgba(250,204,21,.2);
+  color: #fef08a;
+  border-color: rgba(250,204,21,.45);
+}
+.modal-eq-qr-state.is-saved {
+  background: rgba(52,211,153,.2);
+  color: #bbf7d0;
+  border-color: rgba(52,211,153,.45);
+}
+.modal-eq-qr-input {
+  margin-top: 0.25rem;
+  border: 1px solid rgba(255,255,255,.3);
+  background: rgba(15,23,42,.28);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 0.8rem;
+  padding: 0.65rem 0.8rem;
+}
+.modal-eq-qr-input:focus {
+  border-color: rgba(129,140,248,.9);
+  box-shadow: 0 0 0 0.2rem rgba(129,140,248,.22);
+  background: rgba(15,23,42,.35);
+  color: #fff;
+}
+.modal-eq-qr-input:disabled {
+  opacity: 0.78;
+  background: rgba(15,23,42,.18);
+}
+.modal-eq-qr-input::placeholder {
+  color: rgba(226,232,240,.65);
+}
+.modal-eq-qr-help {
+  margin-top: 0.42rem;
+  font-size: 0.65rem;
+  line-height: 1.45;
+  color: rgba(226,232,240,.82);
+}
+.modal-eq-qr-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.45rem;
+  margin-top: 0.7rem;
+}
+.modal-eq-qr-btn {
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border-radius: 0.75rem;
+  padding: 0.38rem 0.5rem;
+}
+.modal-eq-qr-download {
+  margin-top: 0rem;
+  width: 100%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid rgba(255,255,255,.5);
+  background: rgba(255,255,255,.15);
+  color: #ffffff;
+  border-radius: 0.8rem;
+  padding: 0.5rem 0.75rem;
+  line-height: 1.35;
+  cursor: pointer;
+}
+.modal-eq-qr-download:hover {
+  background: rgba(255,255,255,.28);
+}
+.modal-eq-qr-download:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.modal-eq-hero-name {
+  font-size: 1.7rem; font-weight: 800; margin: 0 0 0.2rem; line-height: 1.2;
+  min-height: 1.5rem;
+}
+.modal-eq-hero-name-en {
+  font-size: 0.92rem; opacity: 0.72; margin-bottom: 0; min-height: 1rem;
+}
+.modal-eq-hero-subtitle {
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: rgba(226,232,240,.88);
+  max-width: 650px;
+}
+
+.modal-eq-hero-status-card {
+  background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 1rem;
+  padding: 0.95rem 1rem;
+}
+
+.modal-section-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(226,232,240,.72);
+  margin-bottom: 0.55rem;
+}
+
+.modal-eq-hero-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.modal-shell {
+  padding: 0;
+}
+
+.modal-body-inner {
+  padding: 1.5rem;
+}
+
+.modal-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
+  gap: 1.15rem;
+}
+
+.modal-main-column,
+.modal-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal-section-card {
+  background: rgba(255,255,255,.88);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 1.2rem;
+  padding: 1.15rem 1.15rem 1rem;
+  box-shadow: 0 18px 40px -30px rgba(15, 23, 42, 0.45);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.modal-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.modal-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #312e81;
+}
+
+.modal-section-copy {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.modal-spec-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.modal-spec-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 1rem;
+  padding: 0.9rem 1rem;
+}
+
+.modal-spec-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+}
+
+.modal-spec-value {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.modal-ownership-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.modal-ownership-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 1rem;
+  padding: 0.95rem 1rem;
+}
+
+.modal-ownership-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 0.65rem;
+}
+
+.modal-ownership-label i {
+  color: #14b8a6;
+}
+
+/* === Modal Fields 2-col === */
+.detail-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;
+}
+.detail-grid .detail-row { padding: 0; border: none; }
+@media (max-width: 991px) {
+  .modal-main-grid,
+  .modal-eq-hero-top {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 767px) {
+  .modal-body-inner {
+    padding: 1rem;
+  }
+
+  .modal-eq-hero {
+    padding: 1.25rem 1rem 1rem;
+  }
+
+  .modal-eq-hero-name {
+    font-size: 1.32rem;
+  }
+
+  .modal-spec-grid,
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-eq-qr-panel img {
+    width: 136px;
+    height: 136px;
+  }
+}
+
+/* === Modal Footer Actions === */
+.modal-footer-actions-wrap {
+  width: 100%; background: linear-gradient(180deg, rgba(248,250,252,0.96) 0%, #ffffff 100%);
+  padding: 1rem 1.5rem 1.35rem; border-top: 1px solid rgba(226, 232, 240, 0.9);
+  display: flex; flex-direction: column; gap: 0.75rem;
+}
+.modal-footer-grid {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.55rem;
+}
+.modal-footer-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.3rem; padding: 0.75rem 0.55rem; border-radius: 14px; border: 1.5px solid;
+  cursor: pointer; font-size: 0.72rem; font-weight: 800; text-decoration: none;
+  transition: all 0.15s; letter-spacing: 0.01em; line-height: 1.3;
+}
+.modal-footer-btn i { font-size: 1.12rem; }
+.mfb-profile { background: #eef2ff; color: #3730a3; border-color: #c7d2fe; }
+.mfb-profile:hover { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+.mfb-history { background: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
+.mfb-history:hover { background: #06b6d4; color: #fff; border-color: #06b6d4; }
+.mfb-edit { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+.mfb-edit:hover { background: #6366f1; color: #fff; border-color: #6366f1; }
+.mfb-delete { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+.mfb-delete:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+.mfb-close { background: #f8fafc; color: #475569; border-color: #e2e8f0; }
+.mfb-close:hover { background: #334155; color: #fff; border-color: #334155; }
+
+@media (max-width: 767px) {
+  .modal-footer-actions-wrap {
+    padding: 1rem;
+  }
+
+  .modal-footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* === Bulk Edit Mode === */
+.bulk-edit-checkbox-col {
+  display: none;
+}
+
+body.bulk-edit-mode .bulk-edit-checkbox-col {
+  display: table-cell;
+}
+
+/* === Toggle Button Styles === */
+.master-node-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0.5rem 0 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.master-node-toggle:hover {
+  color: var(--primary-dark);
+  transform: scale(1.15);
+}
+
+.master-node-toggle:focus {
+  outline: none;
+}
+
+.toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  transition: transform 0.15s ease;
+  pointer-events: none;
+}
+
+/* Leaf node indicator (no children) */
+.leaf-node-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin: 0 0.5rem 0 0;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.65rem;
+  flex-shrink: 0;
+  visibility: hidden;
+}
+
+/* === Repair CTA Button === */
+@keyframes repair-glow {
+  0%, 100% { box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35); }
+  50%       { box-shadow: 0 4px 28px rgba(245, 158, 11, 0.65); }
+}
+
+.btn-repair-cta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%);
+  color: white;
+  border: none;
+  border-radius: 0.875rem;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  animation: repair-glow 2.8s ease-in-out infinite;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-repair-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.btn-repair-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.55) !important;
+  animation: none;
+  color: white;
+  text-decoration: none;
+}
+
+.btn-repair-cta:active {
+  transform: translateY(0);
+}
+
+.btn-repair-cta-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.btn-repair-cta-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-repair-cta-title {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+}
+
+.btn-repair-cta-sub {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  opacity: 0.88;
+  margin-top: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-repair-cta-arrow {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  opacity: 0.75;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-repair-cta:hover .btn-repair-cta-arrow {
+  transform: translateX(5px);
+  opacity: 1;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white;
+  }
+
+  .card-modern {
+    box-shadow: none;
+    border: 1px solid var(--border);
+  }
+}
+</style>
+
+<div class="container-fluid" style="max-width: 1800px; margin: 0 auto;">
+  
+  <!-- Header -->
+  <div class="card-modern no-print">
+    <div class="card-header-modern">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+          <h3>
+            <i class="bi bi-clipboard-data me-2"></i>ทะเบียนเครื่องมือแพทย์
+          </h3>
+          <p>จัดการและติดตามเครื่องมือแพทย์ทั้งหมด</p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">         
+          <a href="{% url 'add_equipment' %}" class="btn-modern btn-success-modern no-print">
+            <i class="bi bi-plus-lg"></i> เพิ่มทะเบียน
+          </a>
+          <a href="{% url 'export_equipment_list' %}?{{ request.GET.urlencode }}" class="btn-modern btn-outline-modern no-print">
+            <i class="bi bi-file-earmark-excel"></i> Export
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics -->
+  <div class="stats-grid">
+    <div class="stat-card primary">
+      <div class="stat-icon primary">
+        <i class="bi bi-clipboard-data"></i>
+      </div>
+      <div class="stat-value">{{ all_equipment|length }}</div>
+      <div class="stat-label">ทะเบียนทั้งหมด</div>
+    </div>
+    
+    <div class="stat-card success">
+      <div class="stat-icon success">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <div class="stat-value" id="active-count">-</div>
+      <div class="stat-label">เครื่องมือใช้งาน</div>
+    </div>
+    
+    <div class="stat-card purple">
+      <div class="stat-icon purple">
+        <i class="bi bi-tools"></i>
+      </div>
+      <div class="stat-value" id="maintenance-count">-</div>
+      <div class="stat-label">รอบำรุงรักษา</div>
+    </div>
+    
+    <div class="stat-card info">
+      <div class="stat-icon info">
+        <i class="bi bi-building"></i>
+      </div>
+      <div class="stat-value" id="department-count">-</div>
+      <div class="stat-label">แผนก/หน่วยงาน</div>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar no-print mb-2">
+    <form method="get" id="filter-form">
+      <div class="row g-3 align-items-end">
+        
+        <!-- Quick Search -->
+        <div class="col-md-7">
+          <div class="form-group-modern">
+            <label for="search-filter">
+              <i class="bi bi-search me-1"></i>ค้นหาด่วน
+              <span class="text-muted small">(ค้นพบ <strong id="totalItemsInFilter">{{ all_equipment|length }}</strong> รายการ)</span>
+            </label>
+            <input 
+              type="text" 
+              name="q" 
+              id="search-filter"
+              class="form-control-modern" 
+              placeholder="รหัส, ชื่อเครื่อง, ยี่ห้อ, รุ่น, อื่นๆ..."
+              value="{{ request.GET.q }}">
+          </div>
+        </div>
+
+        <!-- Advanced Filters Toggle -->
+        <div class="col-md">
+          <button 
+            type="button" 
+            class="btn-modern btn-outline-modern" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#collapse-content" 
+            aria-expanded="false" 
+            aria-controls="collapse-content">
+            <i class="bi bi-funnel"></i> ตัวกรองขั้นสูง
+          </button>
+        </div>
+
+
+        <!-- Submit Buttons -->
+        <div class="col-md">
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn-modern btn-primary-modern flex-fill align-items-center d-flex justify-content-center">
+              <i class="bi bi-search"></i> ค้นหา
+            </button>
+            <a href="{% url 'equipment_list' %}" class="btn-modern btn-outline-modern flex-fill align-items-center d-flex justify-content-center">
+              <i class="bi bi-arrow-clockwise"></i> ล้าง
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Advanced Filters Collapse -->
+      <div id="collapse-content" class="collapse mt-4">
+        <div class="card-modern">
+          <div class="card-body-modern" style="padding: 1.5rem;">
+            <h5 class="mb-4">
+              <i class="bi bi-sliders me-2"></i>ตัวกรองขั้นสูง
+            </h5>
+            <div class="row g-3">
+              
+              <!-- ชื่อเครื่อง (Eng) -->
+              <div class="col-md-3">
+                <div class="form-group-modern">
+                  <label>ชื่อเครื่อง (Eng)</label>
+                  <div class="checkbox-dropdown" data-name="equipment_name_EN">
+                    <button type="button" class="checkbox-dropdown-button">
+                      <span class="selected-text">เลือก...</span>
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="checkbox-dropdown-menu">
+                      <div class="checkbox-dropdown-search">
+                        <input type="text" placeholder="🔍 ค้นหา..." class="search-input">
+                      </div>
+                      <div class="checkbox-dropdown-options">
+                        {% for equipment_name_EN in equipment_name_ENs %}
+                          <div class="checkbox-dropdown-option">
+                            <input type="checkbox" 
+                                   name="equipment_name_EN" 
+                                   value="{{ equipment_name_EN }}" 
+                                   id="name_en_{{ forloop.counter }}"
+                                   {% if equipment_name_EN in equipment_name_ENs_selected %}checked{% endif %}>
+                            <label for="name_en_{{ forloop.counter }}">{{ equipment_name_EN }}</label>
+                          </div>
+                        {% endfor %}
+                      </div>
+                      <div class="checkbox-dropdown-actions">
+                        <button type="button" class="collapse-all-hierarchy"><i class="bi bi-chevron-bar-up"></i> ย่อทั้งหมด</button>
+                        <button type="button" class="select-all"><i class="bi bi-check-all"></i> เลือกทั้งหมด</button>
+                        <button type="button" class="clear-all"><i class="bi bi-x-circle"></i> ล้าง</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- ชื่อเครื่อง (ไทย) -->
+              <div class="col-md-3">
+                <div class="form-group-modern">
+                  <label>ชื่อเครื่อง (ไทย)</label>
+                  <div class="checkbox-dropdown" data-name="equipment_name_TH">
+                    <button type="button" class="checkbox-dropdown-button">
+                      <span class="selected-text">เลือก...</span>
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="checkbox-dropdown-menu">
+                      <div class="checkbox-dropdown-search">
+                        <input type="text" placeholder="🔍 ค้นหา..." class="search-input">
+                      </div>
+                      <div class="checkbox-dropdown-options">
+                        {% for equipment_name_TH in equipment_name_THs %}
+                          <div class="checkbox-dropdown-option">
+                            <input type="checkbox" 
+                                   name="equipment_name_TH" 
+                                   value="{{ equipment_name_TH }}" 
+                                   id="name_th_{{ forloop.counter }}"
+                                   {% if equipment_name_TH in equipment_name_THs_selected %}checked{% endif %}>
+                            <label for="name_th_{{ forloop.counter }}">{{ equipment_name_TH }}</label>
+                          </div>
+                        {% endfor %}
+                      </div>
+                      <div class="checkbox-dropdown-actions">
+                        <button type="button" class="collapse-all-hierarchy"><i class="bi bi-chevron-bar-up"></i> ยุบทั้งหมด</button>
+                        <button type="button" class="select-all"><i class="bi bi-check-all"></i> เลือกทั้งหมด</button>
+                        <button type="button" class="clear-all"><i class="bi bi-x-circle"></i> ล้าง</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- ยี่ห้อ และ รุ่น (Hierarchical) -->
+              <div class="col-md-3">
+                <div class="form-group-modern">
+                  <label>ยี่ห้อ / รุ่น</label>
+                  <div class="checkbox-dropdown" data-name="equipment_brand_model">
+                    <button type="button" class="checkbox-dropdown-button">
+                      <span class="selected-text">เลือก...</span>
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="checkbox-dropdown-menu">
+                      <div class="checkbox-dropdown-search">
+                        <input type="text" placeholder="🔍 ค้นหา..." class="search-input">
+                      </div>
+                      <div class="checkbox-dropdown-options">
+                        {% for brand in equipment_brands_hierarchy %}
+                          <div class="checkbox-dropdown-option" data-ancestors="">
+                            <input type="checkbox" 
+                                   name="equipment_brand" 
+                                   value="{{ brand.label }}" 
+                                   id="brand_{{ forloop.counter }}"
+                                   {% if brand.label in equipment_brands_selected %}checked{% endif %}>
+                            <label for="brand_{{ forloop.counter }}">{{ brand.label }}</label>
+                          </div>
+                          {% for model in equipment_models_hierarchy %}
+                            {% if model.parent == brand.label %}
+                              <div class="checkbox-dropdown-option" data-ancestors="{{ model.ancestors }}">
+                                <input type="checkbox" 
+                                       name="equipment_model" 
+                                       value="{{ model.label }}" 
+                                       id="model_{{ brand.label|slugify }}_{{ forloop.counter }}"
+                                       {% if model.label in equipment_models_selected %}checked{% endif %}>
+                                <label for="model_{{ brand.label|slugify }}_{{ forloop.counter }}">{{ model.label }}</label>
+                              </div>
+                            {% endif %}
+                          {% endfor %}
+                        {% endfor %}
+                      </div>
+                      <div class="checkbox-dropdown-actions">
+                        <button type="button" class="collapse-all-hierarchy"><i class="bi bi-chevron-bar-up"></i> ยุบทั้งหมด</button>
+                        <button type="button" class="select-all"><i class="bi bi-check-all"></i> เลือกทั้งหมด</button>
+                        <button type="button" class="clear-all"><i class="bi bi-x-circle"></i> ล้าง</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- สถานที่ใช้งาน -->
+              <div class="col-md-3">
+                <div class="form-group-modern">
+                  <label>ผู้ใช้งาน</label>
+                  <div class="checkbox-dropdown" data-name="equipment_user_customer">
+                    <button type="button" class="checkbox-dropdown-button">
+                      <span class="selected-text">เลือก...</span>
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="checkbox-dropdown-menu">
+                      <div class="checkbox-dropdown-search">
+                        <input type="text" placeholder="🔍 ค้นหา..." class="search-input">
+                      </div>
+                      <div class="checkbox-dropdown-options">
+                        {% for u in equipment_user_units %}
+                          <div class="checkbox-dropdown-option" data-ancestors="{{ u.ancestors|default:''|escape }}">
+                            {% if u.label %}
+                              <input type="checkbox" 
+                                     name="equipment_user_customer" 
+                                     value="{{ u.label }}" 
+                                     id="unit_{{ forloop.counter }}"
+                                     {% if u.label in equipment_user_units_selected %}checked{% endif %}>
+                              <label for="unit_{{ forloop.counter }}">{{ u.label }}</label>
+                            {% else %}
+                              <input type="checkbox" 
+                                     name="equipment_user_customer" 
+                                     value="{{ u }}" 
+                                     id="unit_{{ forloop.counter }}"
+                                     {% if u in equipment_user_units_selected %}checked{% endif %}>
+                              <label for="unit_{{ forloop.counter }}">{{ u }}</label>
+                            {% endif %}
+                          </div>
+                        {% endfor %}
+                      </div>
+                      <div class="checkbox-dropdown-actions">
+                        <button type="button" class="collapse-all-hierarchy"><i class="bi bi-chevron-bar-up"></i> ยุบทั้งหมด</button>
+                        <button type="button" class="select-all"><i class="bi bi-check-all"></i> เลือกทั้งหมด</button>
+                        <button type="button" class="clear-all"><i class="bi bi-x-circle"></i> ล้าง</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- เจ้าของเครื่อง -->
+              <div class="col-md-3">
+                <div class="form-group-modern">
+                  <label>เจ้าของเครื่องมือ</label>
+                  <div class="checkbox-dropdown" data-name="equipment_owner_customer">
+                    <button type="button" class="checkbox-dropdown-button">
+                      <span class="selected-text">เลือก...</span>
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="checkbox-dropdown-menu">
+                      <div class="checkbox-dropdown-search">
+                        <input type="text" placeholder="🔍 ค้นหา..." class="search-input">
+                      </div>
+                      <div class="checkbox-dropdown-options">
+                        {% for o in equipment_owner_customers %}
+                          <div class="checkbox-dropdown-option" data-ancestors="{{ o.ancestors|default:''|escape }}">
+                            {% if o.label %}
+                              <input type="checkbox" 
+                                     name="equipment_owner_customer" 
+                                     value="{{ o.label }}" 
+                                     id="owner_{{ forloop.counter }}"
+                                     {% if o.label in equipment_owner_customers_selected %}checked{% endif %}>
+                              <label for="owner_{{ forloop.counter }}">{{ o.label }}</label>
+                            {% else %}
+                              <input type="checkbox" 
+                                     name="equipment_owner_customer" 
+                                     value="{{ o }}" 
+                                     id="owner_{{ forloop.counter }}"
+                                     {% if o in equipment_owner_customers_selected %}checked{% endif %}>
+                              <label for="owner_{{ forloop.counter }}">{{ o }}</label>
+                            {% endif %}
+                          </div>
+                        {% endfor %}
+                      </div>
+                      <div class="checkbox-dropdown-actions">
+                        <button type="button" class="collapse-all-hierarchy"><i class="bi bi-chevron-bar-up"></i> ยุบทั้งหมด</button>
+                        <button type="button" class="select-all"><i class="bi bi-check-all"></i> เลือกทั้งหมด</button>
+                        <button type="button" class="clear-all"><i class="bi bi-x-circle"></i> ล้าง</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- สถานะ -->
+              <div class="col-md-3">
+                <div class="form-group-modern">
+                  <label>สถานะเครื่องมือ</label>
+                  <div class="checkbox-dropdown" data-name="equipment_status">
+                    <button type="button" class="checkbox-dropdown-button">
+                      <span class="selected-text">เลือก...</span>
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="checkbox-dropdown-menu">
+                      <div class="checkbox-dropdown-search">
+                        <input type="text" placeholder="🔍 ค้นหา..." class="search-input">
+                      </div>
+                      <div class="checkbox-dropdown-options">
+                        {% regroup master_statuses by meta.group as status_groups %}
+                        {% for group in status_groups %}
+                          {% if group.grouper %}
+                            <div class="checkbox-dropdown-section-header">
+                              {% if group.grouper == 'operational' %}
+                                <i class="bi bi-power"></i> การใช้งาน
+                              {% elif group.grouper == 'maintenance' %}
+                                <i class="bi bi-wrench-adjustable"></i> บำรุงรักษา (PM & CAL)
+                              {% elif group.grouper == 'warranty' %}
+                                <i class="bi bi-shield-fill-check"></i> การรับประกัน
+                              {% else %}
+                                <i class="bi bi-tag-fill"></i> {{ group.grouper|title }}
+                              {% endif %}
+                            </div>
+                          {% endif %}
+                          {% for status in group.list %}
+                            {% if status.label %}
+                              <div class="checkbox-dropdown-option">
+                                <input type="checkbox" 
+                                       name="equipment_status" 
+                                       value="{{ status.label }}" 
+                                       id="status_{{ status.id }}"
+                                       {% if status.label in equipment_statuses_selected %}checked{% endif %}>
+                                <label for="status_{{ status.id }}">
+                                  <i class="bi bi-{{ status.meta.icon|default:'circle-fill' }}" style="margin-right: 0.5rem; color: var(--{{ status.meta.color|default:'secondary' }});"></i>
+                                  {{ status.label }}
+                                </label>
+                              </div>
+                            {% endif %}
+                          {% endfor %}
+                        {% endfor %}
+                      </div>
+                      <div class="checkbox-dropdown-actions">
+                        <button type="button" class="collapse-all-hierarchy"><i class="bi bi-chevron-bar-up"></i> ยุบทั้งหมด</button>
+                        <button type="button" class="select-all"><i class="bi bi-check-all"></i> เลือกทั้งหมด</button>
+                        <button type="button" class="clear-all"><i class="bi bi-x-circle"></i> ล้าง</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="col-md-3 d-flex align-items-end">
+                <a href="{% url 'equipment_list' %}" class="btn-modern btn-outline-modern w-100 d-flex align-items-center justify-content-center">
+                  <i class="bi bi-x-circle"></i> ล้างตัวกรองทั้งหมด
+                </a>
+              </div>
+              
+              <!-- Bulk Edit Toggle -->
+              <div class="col-md-3 d-flex align-items-end">
+                <button type="button" id="toggleBulkEditBtn" class="btn-modern btn-warning-modern w-100 d-flex align-items-center justify-content-center" onclick="toggleBulkEditMode()">
+                  <i class="bi bi-pencil-square"></i> แก้ไขแบบกลุ่ม
+                </button>
+              </div>
+              
+        </div>
+      </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Messages -->
+  {% if messages %}
+    <div class="mb-3">
+      {% for message in messages %}
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert" style="border-left: 5px solid var(--success); border-radius: var(--radius);">
+          <i class="bi bi-check-circle-fill me-2"></i>
+          <strong>{{ message }}</strong>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  
+  <!-- Bulk Edit Control Bar -->
+  <div id="bulkEditControlBar" class="mb-3" style="display: none;">
+    <div class="alert alert-warning d-flex justify-content-between align-items-center" style="border-left: 5px solid var(--warning); border-radius: var(--radius); background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%);">
+      <div class="d-flex align-items-center gap-3">
+        <i class="bi bi-pencil-square" style="font-size: 1.5rem; color: var(--warning);"></i>
+        <div>
+          <strong style="color: var(--warning);">โหมดแก้ไขแบบกลุ่ม</strong>
+          <span class="badge bg-warning ms-2" id="selectedCountBadge" style="font-size: 0.9rem;">
+            เลือก: <strong>0</strong> รายการ
+          </span>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn-modern btn-warning-modern" onclick="openBulkEditModal()" id="bulkEditButton" disabled>
+          <i class="bi bi-pencil-square"></i> แก้ไข
+        </button>
+        <button type="button" class="btn-modern btn-outline-modern" onclick="toggleBulkEditMode()">
+          <i class="bi bi-x-circle"></i> ยกเลิก
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Equipment Table -->
+  <div class="equipment-table-wrapper mt-3">
+    <table class="equipment-table">
+      <thead>
+        <tr>
+          <th scope="col" class="bulk-edit-checkbox-col" style="width:40px;">
+            <input type="checkbox" id="selectAll" class="form-check-input" style="cursor:pointer;" onchange="toggleSelectAll(this)">
+          </th>
+          <th scope="col" style="width:48px; text-align: center;">ลำดับ</th>
+          <th scope="col" style="width:80px; text-align: center;" >รหัสเครื่อง</th>
+          <th scope="col" style="width:200px; text-align: center;" >ชื่อเครื่องมือ · ยี่ห้อ · รุ่น</th>
+          <th scope="col" style="width:200px; text-align: center;">S/N · เลขครุภัณฑ์</th>
+          <th scope="col" style="width:200px; text-align: center;">ผู้ใช้งาน</th>
+          <th scope="col" style="width:40px; text-align: center;">สถานะ</th>
+          <th style="display: none;" scope="col" class="row-action-col no-print" style="width:110px;">จัดการ</th>
+        </tr>
+      </thead>
+      <tbody style="background-color: white;">
+        {% for equipment_list in all_equipment %}
+    <tr 
+      data-eq-id="{{ equipment_list.id }}"
+      data-eq-qr="{{ equipment_list.equipment_id|escape }}"
+      data-eq-name-en="{{ equipment_list.equipment_name_EN|escape }}"
+      data-eq-name-th="{{ equipment_list.equipment_name_TH|escape }}"
+      data-eq-brand="{{ equipment_list.equipment_brand|escape }}"
+      data-eq-model="{{ equipment_list.equipment_model|escape }}"
+      data-eq-sn="{{ equipment_list.equipment_sn|escape }}"
+      data-eq-gov="{{ equipment_list.equipment_gov|escape }}"
+      data-eq-owner="{{ equipment_list.equipment_owner_customer|escape }}"
+      data-eq-location="{{ equipment_list.equipment_user_customer|escape }}"
+      data-eq-requires-pm="{{ equipment_list.requires_pm|yesno:'true,false' }}"
+      data-eq-requires-cal="{{ equipment_list.requires_cal|yesno:'true,false' }}"
+      data-eq-pm-due="{{ equipment_list.equipment_pm_due|date:'Y-m-d'|default:'' }}"
+      data-eq-cal-due="{{ equipment_list.equipment_cal_due|date:'Y-m-d'|default:'' }}"
+      data-eq-warranty-due="{{ equipment_list.equipment_waranty_due|date:'Y-m-d'|default:'' }}">
+          <td class="text-center bulk-edit-checkbox-col">
+            <input type="checkbox" class="form-check-input row-select" style="cursor: pointer;" value="{{ equipment_list.id }}" onchange="updateSelectionUI()">
+          </td>
+          <th class="text-center" scope="row"><span class="eq-row-num">{{ forloop.counter }}</span></th>
+          <td class="text-nowrap">
+            <span class="eq-code-badge"><i class="bi bi-qr-code"></i>{{ equipment_list.equipment_id }}</span>
+          </td>
+          <td>
+            <div class="eq-name-primary">{{ equipment_list.equipment_name_TH|default:"—" }}</div>
+            {% if equipment_list.equipment_name_EN %}<div class="eq-name-secondary">{{ equipment_list.equipment_name_EN }}</div>{% endif %}
+            {% if equipment_list.equipment_brand or equipment_list.equipment_model %}
+            <div class="eq-name-meta">
+              {% if equipment_list.equipment_brand %}<span class="eq-name-tag"><i class="bi bi-building"></i>{{ equipment_list.equipment_brand }}</span>{% endif %}
+              {% if equipment_list.equipment_model %}<span class="eq-name-tag"><i class="bi bi-layers"></i>{{ equipment_list.equipment_model }}</span>{% endif %}
+            </div>
+            {% endif %}
+          </td>
+          <td>
+            {% if equipment_list.equipment_sn %}
+              <div class="eq-sn-primary">{{ equipment_list.equipment_sn }}</div>
+            {% else %}
+              <span class="eq-empty">—</span>
+            {% endif %}
+            {% if equipment_list.equipment_gov %}
+              <div class="eq-sn-secondary"><i class="bi bi-file-earmark-text me-1"></i>{{ equipment_list.equipment_gov }}</div>
+            {% endif %}
+          </td>
+          <td >{{ equipment_list.equipment_user_customer|default:"—" }}</td>
+          <td class="status-cell" data-equipment-id="{{ equipment_list.id }}"></td>
+          <td style="display: none;" class="row-action-col no-print" onclick="event.stopPropagation()">
+            <div class="row-actions">
+              <button class="row-action-btn ra-repair" title="แจ้งซ่อม"
+                data-eq-id="{{ equipment_list.id }}"
+                data-eq-qr="{{ equipment_list.equipment_id|escape }}"
+                data-eq-name-th="{{ equipment_list.equipment_name_TH|escape }}"
+                data-eq-name-en="{{ equipment_list.equipment_name_EN|escape }}"
+                data-eq-brand="{{ equipment_list.equipment_brand|escape }}"
+                data-eq-model="{{ equipment_list.equipment_model|escape }}"
+                data-eq-sn="{{ equipment_list.equipment_sn|escape }}"
+                data-eq-gov="{{ equipment_list.equipment_gov|escape }}"
+                data-eq-location="{{ equipment_list.equipment_user_customer|escape }}"
+                data-eq-owner="{{ equipment_list.equipment_owner_customer|escape }}"
+                onclick="quickRepair(this)">
+                <i class="bi bi-wrench-adjustable-circle-fill"></i>
+              </button>
+              <a class="row-action-btn ra-history" title="ประวัติ" href="{% url 'equipment_history' equipment_list.id %}">
+                <i class="bi bi-clock-history"></i>
+              </a>
+              <a class="row-action-btn ra-edit" title="แก้ไข" href="{% url 'edit_equipment' equipment_list.id %}">
+                <i class="bi bi-pencil-fill"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Equipment Detail Modal -->
+  <div class="modal fade modal-modern" id="equipmentDetailModal" tabindex="-1" aria-labelledby="equipmentDetailModalLabel" aria-hidden="true" data-current-equipment-id="" data-current-equipment-qr="" data-qr-profile-url-template="/equipment_profile/{code}/">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="equipmentDetailModalLabel">
+            <i class="bi bi-clipboard-check"></i>
+            <span>รายละเอียดเครื่องมือแพทย์</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+
+          <div class="modal-shell">
+            <div class="modal-eq-hero">
+              <div class="modal-eq-hero-inner">
+                <div class="modal-eq-hero-top">
+                  <div class="modal-eq-hero-copy">
+                    <div class="modal-eq-hero-intro">
+                      <div class="modal-eq-code-badge">
+                        <i class="bi bi-qr-code"></i>
+                        <span id="detail-id">—</span>
+                      </div>
+                      <div class="modal-eq-hero-name" id="detail-name-th">—</div>
+                      <div class="modal-eq-hero-name-en" id="detail-name-en">—</div>
+                      <div class="modal-eq-hero-subtitle">สรุปข้อมูลเครื่องมือ, สถานะบำรุงรักษา, และทางลัดไปยังทะเบียนเครื่องมือในหน้าต่างเดียว</div>
+                    </div>
+
+                    <div class="modal-eq-hero-status-card">
+                      <div class="modal-section-eyebrow">Operational Snapshot</div>
+                      <div class="modal-eq-hero-status-row" id="detail-status-display"></div>
+                    </div>
+                  </div>
+
+                  <div class="modal-eq-qr-panel">
+                    <div class="modal-eq-qr-caption-row">
+                      <div class="modal-eq-qr-caption">QR โปรไฟล์เครื่อง</div>
+                      <div class="modal-eq-qr-caption-actions">
+                        <button type="button" id="detail-qr-toggle-btn" class="btn modal-eq-qr-toggle" aria-expanded="true" aria-controls="detail-qr-body">
+                          <i id="detail-qr-toggle-icon" class="bi bi-chevron-up modal-eq-qr-toggle-icon"></i>
+                          <span id="detail-qr-toggle-text">ซ่อน</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div id="detail-qr-body" class="modal-eq-qr-body">
+                      <img id="detail-qr-img" alt="QR code" loading="lazy">
+
+                      <div class="modal-eq-qr-meta">
+                        <div class="modal-eq-qr-label">ปลายทาง QR ทั้งหมด</div>
+                        <div class="modal-eq-qr-prefix-row">
+                          <input
+                            type="text"
+                            id="detail-qr-prefix"
+                            class="form-control form-control-sm modal-eq-qr-input"
+                            placeholder="เช่น /equipment_profile/{code}/ หรือ URL เต็ม"
+                            autocomplete="off">
+                          <button type="button" id="detail-qr-prefix-save" class="btn btn-sm btn-outline-light modal-eq-qr-prefix-save">บันทึกค่า</button>
+                        </div>
+
+
+                      </div>
+                    </div>
+                        <div id="detail-qr-prefix-preview" class="modal-eq-qr-prefix-preview"></div>                    
+                        <button type="button" id="detail-qr-download" class="modal-eq-qr-download" disabled><i class="bi bi-download me-1"></i>ดาวน์โหลด PNG</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-body-inner">
+              <div class="modal-main-grid">
+                <div class="modal-main-column">
+                  <div class="modal-section-card">
+                    <div class="modal-section-header">
+                      <div>
+                        <div class="modal-section-title"><i class="bi bi-shield-check"></i> Maintenance &amp; Compliance</div>
+                        <div class="modal-section-copy">ดู requirement, due date และสถานะสำคัญของ PM, CAL และ warranty แบบแยกการ์ด</div>
+                      </div>
+                    </div>
+                    <div class="detail-kpi-grid">
+                      <div class="detail-kpi-item">
+                        <div class="detail-kpi-title">PM Required</div>
+                        <div class="detail-kpi-value" id="detail-pm-required">-</div>
+                        <div class="detail-kpi-title" style="margin-top: 0.85rem;">PM Due Date</div>
+                        <div class="detail-kpi-value" id="detail-pm-due">-</div>
+                        <div class="detail-kpi-value" id="detail-pm-state" style="margin-top: 0.8rem;">-</div>
+                      </div>
+                      <div class="detail-kpi-item">
+                        <div class="detail-kpi-title">CAL Required</div>
+                        <div class="detail-kpi-value" id="detail-cal-required">-</div>
+                        <div class="detail-kpi-title" style="margin-top: 0.85rem;">CAL Due Date</div>
+                        <div class="detail-kpi-value" id="detail-cal-due">-</div>
+                        <div class="detail-kpi-value" id="detail-cal-state" style="margin-top: 0.8rem;">-</div>
+                      </div>
+                      <div class="detail-kpi-item">
+                        <div class="detail-kpi-title">Warranty Due</div>
+                        <div class="detail-kpi-value" id="detail-warranty-due">-</div>
+                        <div class="detail-kpi-title" style="margin-top: 0.85rem;">Warranty Status</div>
+                        <div class="detail-kpi-value" id="detail-warranty-state">-</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="modal-section-card">
+                    <div class="modal-section-header">
+                      <div>
+                        <div class="modal-section-title"><i class="bi bi-cpu-fill"></i> Equipment Specifications</div>
+                        <div class="modal-section-copy">ข้อมูลระบุตัวเครื่องที่ใช้อ้างอิงหน้างานและตรวจสอบทะเบียน</div>
+                      </div>
+                    </div>
+                    <div class="modal-spec-grid">
+                      <div class="modal-spec-card">
+                        <div class="modal-spec-label">Brand</div>
+                        <div class="modal-spec-value detail-value" id="detail-brand">-</div>
+                      </div>
+                      <div class="modal-spec-card">
+                        <div class="modal-spec-label">Model</div>
+                        <div class="modal-spec-value detail-value" id="detail-model">-</div>
+                      </div>
+                      <div class="modal-spec-card">
+                        <div class="modal-spec-label">Serial Number</div>
+                        <div class="modal-spec-value detail-value" id="detail-sn">-</div>
+                      </div>
+                      <div class="modal-spec-card">
+                        <div class="modal-spec-label">Government Asset No.</div>
+                        <div class="modal-spec-value detail-value" id="detail-gov">-</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="modal-sidebar">
+                  <div class="modal-section-card">
+                    <div class="modal-section-header">
+                      <div>
+                        <div class="modal-section-title"><i class="bi bi-diagram-3-fill"></i> Ownership &amp; Location</div>
+                        <div class="modal-section-copy">แสดงเส้นทางหน่วยงานเจ้าของและจุดใช้งานปัจจุบันแบบ hierarchy</div>
+                      </div>
+                    </div>
+                    <div class="modal-ownership-stack">
+                      <div class="modal-ownership-card">
+                        <div class="modal-ownership-label"><i class="bi bi-people-fill"></i> หน่วยงานเจ้าของ</div>
+                        <div class="detail-value" id="detail-owner-hierarchy">-</div>
+                      </div>
+                      <div class="modal-ownership-card">
+                        <div class="modal-ownership-label"><i class="bi bi-geo-alt-fill"></i> สถานที่ใช้งาน</div>
+                        <div class="detail-value" id="detail-location-hierarchy">-</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="padding: 0; border: none; display: block;">
+          <div class="modal-footer-actions-wrap">
+            <!-- Primary CTA: แจ้งซ่อม -->
+            <button type="button" id="modal-repair-btn" class="btn-repair-cta">
+              <div class="btn-repair-cta-icon">
+                <i class="bi bi-wrench-adjustable-circle-fill"></i>
+              </div>
+              <div class="btn-repair-cta-body">
+                <span class="btn-repair-cta-title">แจ้งซ่อม / บริการ</span>
+                <span class="btn-repair-cta-sub" id="repair-btn-subtitle">สร้างใบแจ้งซ่อมสำหรับเครื่องมือนี้</span>
+              </div>
+              <div class="btn-repair-cta-arrow">
+                <i class="bi bi-arrow-right-circle-fill"></i>
+              </div>
+            </button>
+
+            <!-- Secondary Actions Grid -->
+            <div class="modal-footer-grid">
+              <a href="#" id="modal-profile-btn" class="modal-footer-btn mfb-profile">
+                <i class="bi bi-person-vcard-fill"></i><span>โปรไฟล์</span>
+              </a>
+              <a href="#" id="modal-history-btn" class="modal-footer-btn mfb-history">
+                <i class="bi bi-clock-history"></i><span>ประวัติ</span>
+              </a>
+              <a href="#" id="modal-edit-btn" class="modal-footer-btn mfb-edit">
+                <i class="bi bi-pencil-fill"></i><span>แก้ไข</span>
+              </a>
+              <a href="#" id="modal-delete-btn" class="modal-footer-btn mfb-delete">
+                <i class="bi bi-trash-fill"></i><span>ลบ</span>
+              </a>
+              <button type="button" class="modal-footer-btn mfb-close" data-bs-dismiss="modal">
+                <i class="bi bi-x-circle"></i><span>ปิด</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination Controls -->
+  <div class="d-flex justify-content-between align-items-center mt-4 flex-wrap gap-3" style="padding: 0 1rem;">
+    <!-- Left: Items per page selector -->
+    <div class="d-flex align-items-center gap-2">
+      <label class="text-muted small mb-0">แสดง:</label>
+      <select id="itemsPerPage" class="form-select form-select-sm" style="width: auto;">
+        <option value="10" selected>10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+        <option value="250">250</option>
+        <option value="all">ทั้งหมด</option>
+      </select>
+      <span class="text-muted small text-nowrap">รายการ/หน้า</span>
+    </div>
+    
+    <!-- Center: Page info -->
+    <div class="text-muted small">
+      <i class="bi bi-info-circle me-1"></i>
+      แสดง <strong id="showingFrom">1</strong> - <strong id="showingTo">10</strong> จาก <strong id="totalItems">{{ all_equipment|length }}</strong> รายการ
+    </div>
+    
+    <!-- Right: Page navigation with jump to page dropdown -->
+    <nav aria-label="Page navigation">
+      <div class="d-flex align-items-center gap-2">
+        <ul class="pagination pagination-sm mb-0" id="paginationNav">
+          <!-- Pagination buttons will be generated by JavaScript -->
+        </ul>
+        
+        <!-- Jump to page dropdown -->
+        <div class="d-flex align-items-center gap-2" style="margin-left: 0.5rem;">
+          <label class="text-muted small mb-0" style="white-space: nowrap;">หน้าที่:</label>
+          <select 
+            id="jumpToPage" 
+            class="form-select form-select-sm" 
+            style="width: auto; min-width: 70px;"
+            title="เลือกหน้าที่ต้องการไป">
+            <option value="1">1</option>
+          </select>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+</div>
+
+
+<script>
+// Master status data from backend
+var masterStatuses = [
+  {% for status in master_statuses %}
+    {
+      code: '{{ status.code|escapejs }}',
+      label: '{{ status.label|escapejs }}',
+      meta: {
+        color: '{{ status.meta.color|default:"secondary"|escapejs }}',
+        icon: '{{ status.meta.icon|default:"circle-fill"|escapejs }}',
+        priority: {{ status.meta.priority|default:0 }},
+        group: '{{ status.meta.group|default:""|escapejs }}'
+      }
+    }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
+
+document.addEventListener('DOMContentLoaded', function(){
+    // === Pagination System ===
+    var currentPage = 1;
+    var itemsPerPage = 10;
+    var allRows = [];
+    var filteredRows = [];
+    
+    function initPagination(){
+        var tbody = document.querySelector('.equipment-table tbody');
+        if(!tbody) return;
+        
+        allRows = Array.from(tbody.querySelectorAll('tr'));
+        filteredRows = allRows.slice();
+        
+        var itemsPerPageSelect = document.getElementById('itemsPerPage');
+        if(itemsPerPageSelect){
+            itemsPerPageSelect.addEventListener('change', function(){
+                var value = this.value;
+                itemsPerPage = value === 'all' ? filteredRows.length : parseInt(value);
+                currentPage = 1;
+                renderPage();
+            });
+        }
+        
+        renderPage();
+    }
+    
+    function renderPage(){
+        var start = (currentPage - 1) * itemsPerPage;
+        var end = itemsPerPage === filteredRows.length ? filteredRows.length : start + itemsPerPage;
+        
+        // Hide all rows first
+        allRows.forEach(function(row){ row.style.display = 'none'; });
+        
+        // Show only current page rows and update row numbers
+        for(var i = start; i < end && i < filteredRows.length; i++){
+            filteredRows[i].style.display = '';
+            // Update row number (ลำดับ) based on filtered position
+            var rowNumberCell = filteredRows[i].querySelector('th[scope="row"]');
+            if(rowNumberCell){
+                rowNumberCell.textContent = i + 1;
+            }
+        }
+        
+        // Update info text
+        var showingFrom = document.getElementById('showingFrom');
+        var showingTo = document.getElementById('showingTo');
+        var totalItems = document.getElementById('totalItems');
+        var totalItemsInFilter = document.getElementById('totalItemsInFilter');
+        
+        if(showingFrom) showingFrom.textContent = filteredRows.length > 0 ? start + 1 : 0;
+        if(showingTo) showingTo.textContent = Math.min(end, filteredRows.length);
+        if(totalItems) totalItems.textContent = filteredRows.length;
+        if(totalItemsInFilter) totalItemsInFilter.textContent = filteredRows.length;
+        
+        // Render pagination buttons
+        renderPaginationButtons();
+        
+        // Update jump to page dropdown
+        updateJumpToPageDropdown();
+    }
+    
+    function renderPaginationButtons(){
+        var paginationNav = document.getElementById('paginationNav');
+        if(!paginationNav) return;
+        
+        var totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        paginationNav.innerHTML = '';
+        
+        // Previous button
+        var prevLi = document.createElement('li');
+        prevLi.className = 'page-item' + (currentPage === 1 ? ' disabled' : '');
+        prevLi.innerHTML = '<a class="page-link" href="#" style="border-radius: 0.5rem 0 0 0.5rem;"><i class="bi bi-chevron-left"></i> ก่อนหน้า</a>';
+        if(currentPage > 1){
+            prevLi.querySelector('a').addEventListener('click', function(e){
+                e.preventDefault();
+                currentPage--;
+                renderPage();
+            });
+        }
+        paginationNav.appendChild(prevLi);
+        
+        // Page numbers (show max 5 pages)
+        var startPage = Math.max(1, currentPage - 2);
+        var endPage = Math.min(totalPages, startPage + 4);
+        startPage = Math.max(1, endPage - 4);
+        
+        for(var i = startPage; i <= endPage; i++){
+            var pageLi = document.createElement('li');
+            pageLi.className = 'page-item' + (i === currentPage ? ' active' : '');
+            var pageLink = document.createElement('a');
+            pageLink.className = 'page-link';
+            pageLink.href = '#';
+            pageLink.textContent = i;
+            if(i === currentPage){
+                pageLink.style.background = 'var(--primary)';
+                pageLink.style.borderColor = 'var(--primary)';
+            }
+            
+            (function(pageNum){
+                pageLink.addEventListener('click', function(e){
+                    e.preventDefault();
+                    currentPage = pageNum;
+                    renderPage();
+                });
+            })(i);
+            
+            pageLi.appendChild(pageLink);
+            paginationNav.appendChild(pageLi);
+        }
+        
+        // Next button
+        var nextLi = document.createElement('li');
+        nextLi.className = 'page-item' + (currentPage === totalPages ? ' disabled' : '');
+        nextLi.innerHTML = '<a class="page-link" href="#" style="border-radius: 0 0.5rem 0.5rem 0;">ถัดไป <i class="bi bi-chevron-right"></i></a>';
+        if(currentPage < totalPages){
+            nextLi.querySelector('a').addEventListener('click', function(e){
+                e.preventDefault();
+                currentPage++;
+                renderPage();
+            });
+        }
+        paginationNav.appendChild(nextLi);
+    }
+    
+    // Initialize pagination after a short delay to ensure DOM is ready
+    setTimeout(function(){
+        initPagination();
+    }, 100);
+    
+    // === Jump to Page Dropdown Handler ===
+    function updateJumpToPageDropdown(){
+        var jumpToPageSelect = document.getElementById('jumpToPage');
+        if(!jumpToPageSelect) return;
+        
+        var totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        
+        // Clear existing options
+        jumpToPageSelect.innerHTML = '';
+        
+        // Generate options for all pages
+        for(var i = 1; i <= totalPages; i++){
+            var option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            if(i === currentPage){
+                option.selected = true;
+            }
+            jumpToPageSelect.appendChild(option);
+        }
+    }
+    
+    // Jump to page dropdown change
+    var jumpToPageSelect = document.getElementById('jumpToPage');
+    if(jumpToPageSelect){
+        jumpToPageSelect.addEventListener('change', function(){
+            var pageNum = parseInt(this.value);
+            if(!isNaN(pageNum) && pageNum >= 1){
+                currentPage = pageNum;
+                renderPage();
+            }
+        });
+    }
+    
+    // === Row Quick Repair Action ===
+    window.quickRepair = function(btn) {
+        var d = btn.dataset;
+        var prefill = {
+            equipment_id: d.eqId,
+            equipment_code: d.eqQr,
+            equipment_name: d.eqNameTh || d.eqNameEn,
+            equipment_name_en: d.eqNameEn,
+            equipment_brand: d.eqBrand,
+            equipment_model: d.eqModel,
+            equipment_sn: d.eqSn,
+            equipment_gov: d.eqGov,
+            equipment_user_customer: d.eqLocation,
+            equipment_owner_customer: d.eqOwner,
+            source: 'equipment_list',
+            source_url: window.location.href
+        };
+        try { sessionStorage.setItem('prefill_service_request', JSON.stringify(prefill)); } catch(e) {}
+        window.location.href = '{% url "service_request_create" %}';
+    };
+
+    // === Bulk Edit Mode Toggle ===
+    window.toggleBulkEditMode = function() {        var body = document.body;
+        var controlBar = document.getElementById('bulkEditControlBar');
+        var toggleBtn = document.getElementById('toggleBulkEditBtn');
+        
+        if (body.classList.contains('bulk-edit-mode')) {
+            // Exit bulk edit mode
+            body.classList.remove('bulk-edit-mode');
+            controlBar.style.display = 'none';
+            toggleBtn.innerHTML = '<i class="bi bi-pencil-square"></i> แก้ไขแบบกลุ่ม';
+            
+            // Clear all selections
+            document.querySelectorAll('.row-select').forEach(function(checkbox) {
+                checkbox.checked = false;
+            });
+            document.getElementById('selectAll').checked = false;
+            updateSelectionUI();
+        } else {
+            // Enter bulk edit mode
+            body.classList.add('bulk-edit-mode');
+            controlBar.style.display = 'block';
+            toggleBtn.innerHTML = '<i class="bi bi-x-circle"></i> ออกจากโหมดแก้ไข';
+        }
+    };
+    
+    window.toggleSelectAll = function(checkbox) {
+        // Only select checkboxes from visible (filtered) rows
+        filteredRows.forEach(function(row) {
+            var cb = row.querySelector('.row-select');
+            if (cb) {
+                cb.checked = checkbox.checked;
+            }
+        });
+        updateSelectionUI();
+    };
+    
+    window.updateSelectionUI = function() {
+        var selectedCheckboxes = document.querySelectorAll('.row-select:checked');
+        var count = selectedCheckboxes.length;
+        var countBadge = document.getElementById('selectedCountBadge');
+        var bulkEditButton = document.getElementById('bulkEditButton');
+        
+        if (countBadge) {
+            countBadge.innerHTML = 'เลือก: <strong>' + count + '</strong> รายการ';
+        }
+        
+        if (bulkEditButton) {
+            bulkEditButton.disabled = count === 0;
+        }
+        
+        // Update select all checkbox state based on visible (filtered) rows only
+        var selectAllCheckbox = document.getElementById('selectAll');
+        if (selectAllCheckbox && filteredRows.length > 0) {
+            var visibleCheckedCount = 0;
+            filteredRows.forEach(function(row) {
+                var cb = row.querySelector('.row-select');
+                if (cb && cb.checked) {
+                    visibleCheckedCount++;
+                }
+            });
+            selectAllCheckbox.checked = visibleCheckedCount === filteredRows.length && visibleCheckedCount > 0;
+            selectAllCheckbox.indeterminate = visibleCheckedCount > 0 && visibleCheckedCount < filteredRows.length;
+        }
+    };
+    
+    window.clearSelection = function() {
+        document.querySelectorAll('.row-select').forEach(function(checkbox) {
+            checkbox.checked = false;
+        });
+        document.getElementById('selectAll').checked = false;
+        updateSelectionUI();
+    };
+    
+    // === Quick Search Filter ===
+    var quickSearchInput = document.getElementById('search-filter');
+    if (quickSearchInput) {
+        quickSearchInput.addEventListener('input', function() {
+            var searchTerm = this.value.toLowerCase().trim();
+            
+            if (searchTerm === '') {
+                // Show all rows if search is empty
+                filteredRows = allRows.slice();
+            } else {
+                // Filter rows based on search term
+                filteredRows = allRows.filter(function(row) {
+                    // Get all searchable data from row attributes
+                    var searchableText = [
+                        row.getAttribute('data-eq-qr') || '',
+                        row.getAttribute('data-eq-name-en') || '',
+                        row.getAttribute('data-eq-name-th') || '',
+                        row.getAttribute('data-eq-brand') || '',
+                        row.getAttribute('data-eq-model') || '',
+                        row.getAttribute('data-eq-sn') || '',
+                        row.getAttribute('data-eq-gov') || '',
+                        row.getAttribute('data-eq-owner') || '',
+                        row.getAttribute('data-eq-location') || ''
+                    ].join(' ').toLowerCase();
+                    
+                    return searchableText.includes(searchTerm);
+                });
+            }
+            
+            // Reset to first page and render
+            currentPage = 1;
+            renderPage();
+        });
+    }
+    
+    // === Checkbox Dropdown Filter System ===
+    function initCheckboxDropdowns(){
+        document.querySelectorAll('.checkbox-dropdown').forEach(function(dropdown){
+            var button = dropdown.querySelector('.checkbox-dropdown-button');
+            var menu = dropdown.querySelector('.checkbox-dropdown-menu');
+            var searchInput = dropdown.querySelector('.search-input');
+            var options = dropdown.querySelectorAll('.checkbox-dropdown-option');
+            var optionsContainer = dropdown.querySelector('.checkbox-dropdown-options');
+            var checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+            var selectAllBtn = dropdown.querySelector('.select-all');
+            var clearAllBtn = dropdown.querySelector('.clear-all');
+            var selectedText = button.querySelector('.selected-text');
+            
+            // Setup hierarchy structure and handlers
+            function setupHierarchy(){
+                var optionsArray = Array.from(options);
+                
+                // Step 1: Calculate levels and full paths
+                optionsArray.forEach(function(option){
+                    var ancestors = (option.getAttribute('data-ancestors') || '').trim();
+                    var level = 0;
+                    if(ancestors){
+                        // Count by splitting, not by > characters
+                        var ancestorParts = ancestors.split(' > ').filter(function(s){ return s.trim(); });
+                        level = ancestorParts.length;
+                    }
+                    option.setAttribute('data-level', level);
+                    
+                    // Build full path for sorting
+                    var label = option.querySelector('label').textContent.trim();
+                    var fullPath = ancestors ? ancestors + ' > ' + label : label;
+                    option.setAttribute('data-full-path', fullPath);
+                });
+                
+                // Step 2: Sort by hierarchy path
+                optionsArray.sort(function(a, b){
+                    var pathA = a.getAttribute('data-full-path') || '';
+                    var pathB = b.getAttribute('data-full-path') || '';
+                    
+                    var partsA = pathA.split(' > ').map(function(s){ return s.trim(); });
+                    var partsB = pathB.split(' > ').map(function(s){ return s.trim(); });
+                    
+                    // Compare level by level
+                    var minLength = Math.min(partsA.length, partsB.length);
+                    for(var i = 0; i < minLength; i++){
+                        if(partsA[i] !== partsB[i]){
+                            return partsA[i].localeCompare(partsB[i], 'th');
+                        }
+                    }
+                    
+                    // Shorter path (parent) comes first
+                    return partsA.length - partsB.length;
+                });
+                
+                // Re-append in sorted order
+                optionsArray.forEach(function(option){
+                    optionsContainer.appendChild(option);
+                });
+                
+                // Step 3: Identify parents and attach toggle buttons or leaf indicators
+                optionsArray.forEach(function(option){
+                    var level = parseInt(option.getAttribute('data-level') || 0);
+                    var label = option.querySelector('label').textContent.trim();
+                    
+                    // Check if this has direct children (level + 1)
+                    var hasChildren = optionsArray.some(function(other){
+                        var otherLevel = parseInt(other.getAttribute('data-level') || 0);
+                        var otherAncestors = (other.getAttribute('data-ancestors') || '').trim();
+                        
+                        if(otherLevel !== level + 1) return false;
+                        if(!otherAncestors) return false;
+                        
+                        // Split and check exact match on last part
+                        var ancestorParts = otherAncestors.split(' > ').map(function(s){ return s.trim(); });
+                        return ancestorParts[ancestorParts.length - 1] === label;
+                    });
+                    
+                    if(hasChildren){
+                        option.classList.add('is-parent', 'has-children');
+                        option.setAttribute('data-parent-label', label);
+                        
+                        // Create toggle button
+                        var toggleBtn = document.createElement('button');
+                        toggleBtn.className = 'master-node-toggle';
+                        toggleBtn.type = 'button';
+                        toggleBtn.innerHTML = '<i class="bi bi-caret-right-fill toggle-icon"></i>';
+                        toggleBtn.addEventListener('click', function(e){
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleNode(option);
+                        });
+                        
+                        // Insert at the beginning (before checkbox)
+                        option.insertBefore(toggleBtn, option.firstChild);
+                    } else {
+                        // Add leaf node indicator for non-parent items
+                        var leafIndicator = document.createElement('span');
+                        leafIndicator.className = 'leaf-node-indicator';
+                        leafIndicator.innerHTML = '<i class="bi bi-circle-fill"></i>';
+                        
+                        // Insert at the beginning (before checkbox)
+                        option.insertBefore(leafIndicator, option.firstChild);
+                    }
+                });
+                
+                // Step 4: Collapse all by default
+                optionsArray.forEach(function(option){
+                    var level = parseInt(option.getAttribute('data-level') || 0);
+                    if(level > 0){
+                        option.style.display = 'none';
+                    }
+                    if(option.classList.contains('is-parent')){
+                        option.classList.add('collapsed');
+                    }
+                });
+            }
+            
+            // Simple toggle function
+            function toggleNode(option){
+                var isCollapsed = option.classList.contains('collapsed');
+                var level = parseInt(option.getAttribute('data-level') || 0);
+                var label = option.getAttribute('data-parent-label');
+                
+                // Toggle collapsed state
+                option.classList.toggle('collapsed');
+                var nowCollapsed = option.classList.contains('collapsed');
+                
+                // Update icon
+                var icon = option.querySelector('.toggle-icon');
+                if(icon){
+                    if(nowCollapsed){
+                        icon.className = 'bi bi-caret-right-fill toggle-icon';
+                    } else {
+                        icon.className = 'bi bi-caret-down-fill toggle-icon';
+                    }
+                }
+                
+                // Show/hide direct children
+                var optionsArray = Array.from(options);
+                optionsArray.forEach(function(child){
+                    var childLevel = parseInt(child.getAttribute('data-level') || 0);
+                    var childAncestors = (child.getAttribute('data-ancestors') || '').trim();
+                    
+                    // Is this a direct child of this parent?
+                    if(childLevel === level + 1 && childAncestors){
+                        var ancestorParts = childAncestors.split(' > ').map(function(s){ return s.trim(); });
+                        var isDirectChild = ancestorParts[ancestorParts.length - 1] === label;
+                        
+                        if(isDirectChild){
+                            if(nowCollapsed){
+                                child.style.display = 'none';
+                                // Also collapse child parents
+                                if(child.classList.contains('is-parent')){
+                                    child.classList.add('collapsed');
+                                    var childIcon = child.querySelector('.toggle-icon');
+                                    if(childIcon){
+                                        childIcon.className = 'bi bi-caret-right-fill toggle-icon';
+                                    }
+                                }
+                            } else {
+                                // เมื่อ expand: แสดงโดยไม่สนใจ search filter
+                                // เพราะถ้า parent แสดงอยู่ แสดงว่าผ่าน search filter หรือไม่มีการค้นหา
+                                child.style.display = 'block';
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Prevent checking hidden items
+            checkboxes.forEach(function(checkbox){
+                checkbox.addEventListener('change', function(e){
+                    var option = this.closest('.checkbox-dropdown-option');
+                    if(option && option.style.display === 'none'){
+                        this.checked = false;
+                        return;
+                    }
+                });
+            });
+            
+            // Initialize hierarchy on load
+            setupHierarchy();
+            
+            // Toggle dropdown
+            button.addEventListener('click', function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Close other dropdowns
+                document.querySelectorAll('.checkbox-dropdown-menu.show').forEach(function(m){
+                    if(m !== menu) m.classList.remove('show');
+                });
+                
+                menu.classList.toggle('show');
+                if(menu.classList.contains('show')){
+                    searchInput.focus();
+                }
+            });
+            
+            // Update button text
+            function updateButtonText(){
+                var checked = Array.from(checkboxes).filter(function(cb){ return cb.checked; });
+                if(checked.length === 0){
+                    selectedText.innerHTML = 'เลือก...';
+                } else if(checked.length === 1){
+                    selectedText.innerHTML = checked[0].nextElementSibling.textContent;
+                } else {
+                    selectedText.innerHTML = 'เลือกแล้ว <span class="badge">' + checked.length + '</span>';
+                }
+            }
+            
+            // Search filter with auto-expand
+            searchInput.addEventListener('input', function(){
+                var query = this.value.toLowerCase().trim();
+                
+                if(!query){
+                    // No search query - restore original collapsed state
+                    options.forEach(function(option){
+                        option.classList.remove('search-filtered');
+                        // Restore collapsed state for children
+                        var level = parseInt(option.getAttribute('data-level') || 0);
+                        if(level > 0){
+                            var parentLabel = option.getAttribute('data-parent-label');
+                            if(parentLabel){
+                                // Find parent option
+                                var parentOption = Array.from(options).find(function(opt){
+                                    return opt.classList.contains('is-parent') && 
+                                           opt.getAttribute('data-parent-label') === parentLabel;
+                                });
+                                // If parent is collapsed, hide this child
+                                if(parentOption && parentOption.classList.contains('collapsed')){
+                                    option.style.display = 'none';
+                                } else {
+                                    option.style.display = '';
+                                }
+                            }
+                        }
+                    });
+                    return;
+                }
+                
+                // Search mode - show matching items and their parents
+                var matchingOptions = [];
+                options.forEach(function(option){
+                    var label = option.querySelector('label').textContent.toLowerCase();
+                    if(label.includes(query)){
+                        matchingOptions.push(option);
+                        option.classList.remove('search-filtered');
+                        option.style.display = ''; // Force show
+                    } else {
+                        option.classList.add('search-filtered');
+                        option.style.display = 'none'; // ซ่อนรายการที่ไม่ตรงคำค้น
+                    }
+                });
+                
+                // Auto-expand parents of matching items
+                matchingOptions.forEach(function(option){
+                    var ancestors = (option.getAttribute('data-ancestors') || '').trim();
+                    if(ancestors){
+                        // Find and expand all parent nodes
+                        var ancestorParts = ancestors.split(' > ');
+                        ancestorParts.forEach(function(ancestorLabel){
+                            var parentOption = Array.from(options).find(function(opt){
+                                var optLabel = opt.querySelector('label').textContent.trim();
+                                return opt.classList.contains('is-parent') && optLabel === ancestorLabel.trim();
+                            });
+                            if(parentOption){
+                                // Show parent and mark as temporarily expanded
+                                parentOption.classList.remove('search-filtered');
+                                parentOption.style.display = '';
+                                // Don't change collapsed class during search - just force display
+                            }
+                        });
+                    }
+                });
+            });
+            
+            // Select all
+            selectAllBtn.addEventListener('click', function(){
+                var visibleCheckboxes = Array.from(options)
+                    .filter(function(opt){ return !opt.classList.contains('search-filtered') && opt.style.display !== 'none'; })
+                    .map(function(opt){ return opt.querySelector('input[type="checkbox"]'); });
+                
+                visibleCheckboxes.forEach(function(cb){ cb.checked = true; });
+                updateButtonText();
+            });
+            
+            // Clear all
+            clearAllBtn.addEventListener('click', function(){
+                checkboxes.forEach(function(cb){ cb.checked = false; });
+                updateButtonText();
+            });
+            
+            // Collapse all hierarchy
+            var collapseAllBtn = dropdown.querySelector('.collapse-all-hierarchy');
+            if(collapseAllBtn){
+                collapseAllBtn.addEventListener('click', function(){
+                    var optionsArray = Array.from(options);
+                    
+                    // Collapse all parents
+                    optionsArray.forEach(function(option){
+                        if(option.classList.contains('is-parent')){
+                            option.classList.add('collapsed');
+                            var icon = option.querySelector('.toggle-icon');
+                            if(icon){
+                                icon.className = 'bi bi-caret-right-fill toggle-icon';
+                            }
+                        }
+                    });
+                    
+                    // Hide all non-root items
+                    optionsArray.forEach(function(option){
+                        var level = parseInt(option.getAttribute('data-level') || 0);
+                        if(level > 0){
+                            option.style.display = 'none';
+                        }
+                    });
+                });
+            }
+            
+            // Update on checkbox change
+            checkboxes.forEach(function(cb){
+                cb.addEventListener('change', function(){
+                    updateButtonText();
+                    
+                    // If checkbox is checked, also check children that have this item as ancestor
+                    if(this.checked){
+                        var optionDiv = this.closest('.checkbox-dropdown-option');
+                        var label = optionDiv ? optionDiv.querySelector('label').textContent.trim() : '';
+                        
+                        if(label){
+                            // Find all options that have this label in their ancestors
+                            checkboxes.forEach(function(otherCb){
+                                var otherOptionDiv = otherCb.closest('.checkbox-dropdown-option');
+                                var otherAncestors = otherOptionDiv ? otherOptionDiv.getAttribute('data-ancestors') || '' : '';
+                                
+                                // Check if label is in ancestors (parent-child relationship)
+                                if(otherAncestors.includes(label)){
+                                    otherCb.checked = true;
+                                }
+                            });
+                        }
+                    } else {
+                        // If unchecking, also uncheck children
+                        var optionDiv = this.closest('.checkbox-dropdown-option');
+                        var label = optionDiv ? optionDiv.querySelector('label').textContent.trim() : '';
+                        
+                        if(label){
+                            checkboxes.forEach(function(otherCb){
+                                var otherOptionDiv = otherCb.closest('.checkbox-dropdown-option');
+                                var otherAncestors = otherOptionDiv ? otherOptionDiv.getAttribute('data-ancestors') || '' : '';
+                                
+                                if(otherAncestors.includes(label)){
+                                    otherCb.checked = false;
+                                }
+                            });
+                        }
+                    }
+                    updateButtonText();
+                });
+            });
+            
+            // Initial update
+            updateButtonText();
+            
+            // Prevent menu close on click inside
+            menu.addEventListener('click', function(e){
+                e.stopPropagation();
+            });
+        });
+        
+        // Close dropdowns on outside click
+        document.addEventListener('click', function(){
+            document.querySelectorAll('.checkbox-dropdown-menu.show').forEach(function(menu){
+                menu.classList.remove('show');
+            });
+        });
+    }
+    
+    initCheckboxDropdowns();
+
+    // === Equipment Status System (3 Groups) ===
+    // Helper to find master status by code
+    function getMasterStatus(code){
+        return masterStatuses.find(function(s){ return s.code === code; });
+    }
+    
+    // Helper to get status group
+    function getStatusGroup(status){
+        if(!status || !status.meta) return null;
+        var meta = status.meta;
+        return meta.group || null;
+    }
+    
+    function calculateEquipmentStatus(row){
+      function parseBoolLike(v){
+        if(v === true || v === false) return v;
+        if(v === null || v === undefined) return false;
+        var s = String(v).trim().toLowerCase();
+        return s === 'true' || s === '1' || s === 'yes' || s === 'y' || s === 'on';
+      }
+
+      var requiresPM = parseBoolLike(row.dataset.eqRequiresPm);
+      var requiresCAL = parseBoolLike(row.dataset.eqRequiresCal);
+        var pmDue = row.dataset.eqPmDue;
+        var calDue = row.dataset.eqCalDue;
+        var warrantyDue = row.dataset.eqWarrantyDue;
+
+      // Fallback: if due date exists but boolean flag is stale, treat as required.
+      if(!requiresPM && pmDue){
+        requiresPM = true;
+      }
+      if(!requiresCAL && calDue){
+        requiresCAL = true;
+      }
+        
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        var statusByGroup = {
+            operational: null,
+            maintenance: [],
+            warranty: null
+        };
+        
+        // === Group 1: Operational Status (สถานะการใช้งาน) ===
+        // Default to ready unless there's an issue
+        var operationalStatus = getMasterStatus('ready');
+        if(operationalStatus){
+            statusByGroup.operational = {
+                code: operationalStatus.code,
+                label: operationalStatus.label,
+                icon: operationalStatus.meta.icon,
+                group: 'operational',
+                colorClass: 'ready'
+            };
+        }
+        
+        // === Group 2: Maintenance Status (สถานะการบำรุงรักษา) ===
+        // Check PM status
+        if(requiresPM){
+            if(pmDue){
+                var pmDate = new Date(pmDue);
+                var daysDiff = Math.floor((pmDate - today) / (1000 * 60 * 60 * 24));
+                var pmStatus = null;
+                
+                if(daysDiff < 0){
+                    pmStatus = getMasterStatus('pm_overdue');
+                    if(pmStatus){
+                        statusByGroup.maintenance.push({
+                            code: pmStatus.code,
+                            label: pmStatus.label,
+                            icon: pmStatus.meta.icon,
+                            group: 'maintenance',
+                            colorClass: 'danger',
+                            days: Math.abs(daysDiff),
+                            priority: pmStatus.meta.priority || 10
+                        });
+                    }
+                } else if(daysDiff <= 7){
+                    pmStatus = getMasterStatus('pm_due_soon');
+                    if(pmStatus){
+                        statusByGroup.maintenance.push({
+                            code: pmStatus.code,
+                            label: pmStatus.label,
+                            icon: pmStatus.meta.icon,
+                            group: 'maintenance',
+                            colorClass: 'warning',
+                            days: daysDiff,
+                            priority: pmStatus.meta.priority || 5
+                        });
+                    }
+                } else {
+                    pmStatus = getMasterStatus('pm_ok');
+                    if(pmStatus){
+                        statusByGroup.maintenance.push({
+                            code: pmStatus.code,
+                            label: pmStatus.label,
+                            icon: pmStatus.meta.icon,
+                            group: 'maintenance',
+                            colorClass: 'ok',
+                            priority: pmStatus.meta.priority || 0
+                        });
+                    }
+                }
+            }
+        }
+        
+        // Check CAL status
+        if(requiresCAL){
+            if(calDue){
+                var calDate = new Date(calDue);
+                var daysDiff = Math.floor((calDate - today) / (1000 * 60 * 60 * 24));
+                var calStatus = null;
+                
+                if(daysDiff < 0){
+                    calStatus = getMasterStatus('cal_overdue');
+                    if(calStatus){
+                        statusByGroup.maintenance.push({
+                            code: calStatus.code,
+                            label: calStatus.label,
+                            icon: calStatus.meta.icon,
+                            group: 'maintenance',
+                            colorClass: 'danger',
+                            days: Math.abs(daysDiff),
+                            priority: calStatus.meta.priority || 10
+                        });
+                    }
+                } else if(daysDiff <= 14){
+                    calStatus = getMasterStatus('cal_due_soon');
+                    if(calStatus){
+                        statusByGroup.maintenance.push({
+                            code: calStatus.code,
+                            label: calStatus.label,
+                            icon: calStatus.meta.icon,
+                            group: 'maintenance',
+                            colorClass: 'warning',
+                            days: daysDiff,
+                            priority: calStatus.meta.priority || 5
+                        });
+                    }
+                } else {
+                    calStatus = getMasterStatus('cal_ok');
+                    if(calStatus){
+                        statusByGroup.maintenance.push({
+                            code: calStatus.code,
+                            label: calStatus.label,
+                            icon: calStatus.meta.icon,
+                            group: 'maintenance',
+                            colorClass: 'ok',
+                            priority: calStatus.meta.priority || 0
+                        });
+                    }
+                }
+            }
+        }
+        
+        // Sort maintenance statuses by priority
+        statusByGroup.maintenance.sort(function(a, b){ return b.priority - a.priority; });
+        
+        // === Group 3: Warranty Status (สถานะการรับประกัน) ===
+        if(warrantyDue){
+            var warrantyDate = new Date(warrantyDue);
+            var daysDiff = Math.floor((warrantyDate - today) / (1000 * 60 * 60 * 24));
+            var warrantyStatus = null;
+            
+            if(daysDiff < 0){
+                warrantyStatus = getMasterStatus('warranty_expired');
+                if(warrantyStatus){
+                    statusByGroup.warranty = {
+                        code: warrantyStatus.code,
+                        label: warrantyStatus.label,
+                        icon: warrantyStatus.meta.icon,
+                        group: 'warranty',
+                        colorClass: 'expired'
+                    };
+                }
+            } else if(daysDiff <= 30){
+                warrantyStatus = getMasterStatus('warranty_expiring');
+                if(warrantyStatus){
+                    statusByGroup.warranty = {
+                        code: warrantyStatus.code,
+                        label: warrantyStatus.label,
+                        icon: warrantyStatus.meta.icon,
+                        group: 'warranty',
+                        colorClass: 'expiring'
+                    };
+                }
+            } else {
+                warrantyStatus = getMasterStatus('warranty_ok');
+                if(warrantyStatus){
+                    statusByGroup.warranty = {
+                        code: warrantyStatus.code,
+                        label: warrantyStatus.label,
+                        icon: warrantyStatus.meta.icon,
+                        group: 'warranty',
+                        colorClass: 'ok'
+                    };
+                }
+            }
+        }
+        
+        return statusByGroup;
+    }
+    
+    function renderStatusSection(status){
+        if(!status) return '';
+        
+        // Build tooltip text
+        var tooltip = status.label;
+        if(status.days !== undefined){
+            tooltip += ' (' + status.days + ' วัน)';
+        }
+        
+        var html = '<div class="status-section ' + status.group + ' ' + status.colorClass + '" data-tooltip="' + tooltip + '">';
+        html += '<i class="bi bi-' + status.icon + '"></i>';
+        html += '</div>';
+        return html;
+    }
+    
+    function renderStatusDisplay(statusByGroup){
+        var html = '<div class="status-display-container">';
+        
+        // Collect all statuses with their priorities
+        var allStatuses = [];
+        
+        // Check if there are any maintenance issues (priority > 0)
+        var hasMaintenanceIssues = false;
+        if(statusByGroup.maintenance && statusByGroup.maintenance.length > 0){
+            hasMaintenanceIssues = statusByGroup.maintenance.some(function(s){ 
+                return s.priority > 0; 
+            });
+        }
+        
+        // Section 1: Operational Status
+        // Only show "ready" if there are NO maintenance issues
+        if(statusByGroup.operational && !hasMaintenanceIssues){
+            allStatuses.push({
+                status: statusByGroup.operational,
+                priority: statusByGroup.operational.priority || 0,
+                group: 'operational'
+            });
+        }
+        
+        // Section 2: Maintenance Status
+        // Filter: Show only statuses with priority > 0 (issues that need attention)
+        if(statusByGroup.maintenance && statusByGroup.maintenance.length > 0){
+            statusByGroup.maintenance.forEach(function(status){
+                // Only show if it's a warning or danger (priority > 0)
+                if(status.priority > 0){
+                    allStatuses.push({
+                        status: status,
+                        priority: status.priority || 0,
+                        group: 'maintenance'
+                    });
+                }
+            });
+        }
+        
+        // Section 3: Warranty Status
+        // Only show warranty if it's expiring (NOT expired, NOT ok)
+        if(statusByGroup.warranty){
+            var showWarranty = statusByGroup.warranty.colorClass === 'expiring';
+            if(showWarranty){
+                allStatuses.push({
+                    status: statusByGroup.warranty,
+                    priority: statusByGroup.warranty.priority || 0,
+                    group: 'warranty'
+                });
+            }
+        }
+        
+        // Sort by priority (highest first)
+        allStatuses.sort(function(a, b){ return b.priority - a.priority; });
+        
+        // Render all statuses (grid จะจัด layout เป็น 2 คอลัมน์อัตโนมัติ)
+        allStatuses.forEach(function(item){
+            html += renderStatusSection(item.status);
+        });
+        
+        html += '</div>';
+        return html;
+    }
+    
+    // Populate status cells with 3-section display
+    document.querySelectorAll('.equipment-table tbody tr').forEach(function(row){
+        var statusByGroup = calculateEquipmentStatus(row);
+        var statusCell = row.querySelector('.status-cell');
+        
+        if(statusCell){
+            statusCell.innerHTML = renderStatusDisplay(statusByGroup);
+            
+            // Store for filtering - keep both codes and labels
+            var allCodes = [];
+            var allLabels = [];
+            
+            if(statusByGroup.operational){
+                allCodes.push(statusByGroup.operational.code);
+                allLabels.push(statusByGroup.operational.label);
+            }
+            if(statusByGroup.maintenance){
+                statusByGroup.maintenance.forEach(function(s){
+                    allCodes.push(s.code);
+                    allLabels.push(s.label);
+                });
+            }
+            if(statusByGroup.warranty){
+                allCodes.push(statusByGroup.warranty.code);
+                allLabels.push(statusByGroup.warranty.label);
+            }
+            
+            statusCell.dataset.statusCodes = allCodes.join(',');
+            statusCell.dataset.statusLabels = allLabels.join(',');
+        }
+    });
+    
+    // === Status Filter Handler ===
+    function applyStatusFilter(){
+        var selectedStatuses = [];
+        var statusCheckboxes = document.querySelectorAll('input[name="equipment_status"]:checked');
+        statusCheckboxes.forEach(function(cb){
+            selectedStatuses.push(cb.value);
+        });
+        
+        var allRows = document.querySelectorAll('.equipment-table tbody tr');
+        var visibleCount = 0;
+        
+        // If no status selected, don't filter (pagination will handle display)
+        if(selectedStatuses.length === 0){
+            // Don't change display here - let pagination handle it
+            updateVisibleCount(allRows.length);
+            return;
+        }
+        
+        // Filter rows based on selected statuses
+        allRows.forEach(function(row){
+            var statusCell = row.querySelector('.status-cell');
+            if(!statusCell){
+                row.style.display = 'none';
+                return;
+            }
+            
+            var statusLabels = (statusCell.dataset.statusLabels || '').split(',').filter(function(s){ return s.trim(); });
+            var hasMatch = selectedStatuses.some(function(selected){
+                return statusLabels.includes(selected);
+            });
+            
+            if(hasMatch){
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        updateVisibleCount(visibleCount);
+    }
+    
+    // Update visible row count in stats
+    function updateVisibleCount(count){
+        var activeCountEl = document.getElementById('active-count');
+        if(activeCountEl){
+            activeCountEl.textContent = count;
+        }
+    }
+    
+    // Attach status filter to checkboxes (client-side filtering for better UX)
+    document.querySelectorAll('input[name="equipment_status"]').forEach(function(cb){
+        cb.addEventListener('change', function(){
+            // Client-side filter for instant feedback
+            applyStatusFilter();
+            
+            // Also update the button text in dropdown
+            var dropdown = cb.closest('.checkbox-dropdown');
+            if(dropdown){
+                updateButtonText(dropdown);
+            }
+        });
+    });
+    
+    // Helper to update dropdown button text
+    function updateButtonText(dropdown){
+        var button = dropdown.querySelector('.checkbox-dropdown-button');
+        var selectedText = button ? button.querySelector('.selected-text') : null;
+        if(!selectedText) return;
+        
+        var checkboxes = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+        var count = checkboxes.length;
+        
+        if(count === 0){
+            selectedText.innerHTML = 'เลือก...';
+        } else if(count === 1){
+            selectedText.textContent = checkboxes[0].nextElementSibling.textContent.trim();
+        } else {
+            selectedText.innerHTML = 'เลือกแล้ว <span class="badge">' + count + '</span>';
+        }
+    }
+    
+    // Apply initial filter if statuses are pre-selected from URL
+    setTimeout(function(){
+        applyStatusFilter();
+    }, 100);
+
+    // Calculate and display statistics
+    function updateStatistics(){
+        var total = {{ all_equipment|length }};
+        document.getElementById('active-count').textContent = total;
+        document.getElementById('maintenance-count').textContent = Math.floor(total * 0.15);
+        
+    var departments = new Set();
+    {% for eq in all_equipment %}
+      {% if eq.equipment_user_customer %}
+        departments.add('{{ eq.equipment_user_customer|escapejs }}');
+      {% endif %}
+    {% endfor %}
+        document.getElementById('department-count').textContent = departments.size;
+    }
+    updateStatistics();
+
+    // Confirm delete with modern modal-like alert
+  document.querySelectorAll('.delete-btn').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      // prefer PK in data-eqid but fall back to equipment code in data-eq-qr
+      var eqid = this.getAttribute('data-eqid') || this.getAttribute('data-eq-qr');
+      var eqname = this.getAttribute('data-eqname');
+            var msg = 'คุณต้องการลบทะเบียนนี้หรือไม่?\n\n' +
+                      'รหัส: ' + eqid + '\n' +
+                      'ชื่อ: ' + eqname + '\n\n' +
+                      'การดำเนินการนี้ไม่สามารถย้อนกลับได้';
+            if(!confirm(msg)){
+                e.preventDefault();
+            }
+        });
+    });
+
+    // Show equipment detail in modal
+    window.showEquipmentDetail = function(row){
+        if(!row || !row.dataset) return;
+        
+        var data = row.dataset;
+
+        function buildQrPayloadByCode(code){
+          var trimmed = (code || '').trim();
+          if(!trimmed) return '';
+          var modalEl = document.getElementById('equipmentDetailModal');
+          var qrSettingInput = document.getElementById('detail-qr-prefix');
+          var rawSetting = (
+            (qrSettingInput ? qrSettingInput.value : '') ||
+            window.CMMS_QR_PROFILE_URL_TEMPLATE ||
+            (modalEl ? modalEl.getAttribute('data-qr-profile-url-template') : '') ||
+            '/equipment_profile/{code}/'
+          ).trim();
+
+          if(!rawSetting) return trimmed;
+
+          if(rawSetting.indexOf('{code}') !== -1){
+            rawSetting = rawSetting.replace(/\{code\}/g, encodeURIComponent(trimmed));
+          } else if(/[=?]$/.test(rawSetting)) {
+            rawSetting = rawSetting + encodeURIComponent(trimmed);
+          } else if(/^https?:\/\//i.test(rawSetting) || rawSetting.charAt(0) === '/') {
+            rawSetting = rawSetting.replace(/\/?$/, '/') + encodeURIComponent(trimmed) + '/';
+          } else {
+            rawSetting = rawSetting + trimmed;
+          }
+
+          if(rawSetting.charAt(0) === '/') return window.location.origin + rawSetting;
+          return rawSetting;
+        }
+        
+        // Helper function to display value or show "ไม่ระบุ"
+        function setValue(elementId, value){
+            var el = document.getElementById(elementId);
+            if(!el) return;
+            if(value && value.trim() !== ''){
+                el.textContent = value;
+                el.classList.remove('empty');
+            } else {
+                el.textContent = 'ไม่ระบุ';
+                el.classList.add('empty');
+            }
+        }
+
+        // Helper for QR code display
+        function setQRValue(elementId, value){
+          var img = document.getElementById('detail-qr-img');
+          var downloadBtn = document.getElementById('detail-qr-download');
+          var previewEl = document.getElementById('detail-qr-prefix-preview');
+          if(!img) return;
+
+          if(value && value.trim() !== ''){
+            var code = value.trim();
+            var payload = buildQrPayloadByCode(code) || code;
+            var apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=' + encodeURIComponent(payload);
+            img.src = apiUrl;
+            img.alt = 'QR code for ' + payload;
+            img.style.display = 'block';
+            if(downloadBtn){
+              downloadBtn.disabled = false;
+              downloadBtn.dataset.qrUrl = apiUrl;
+              downloadBtn.dataset.qrCode = payload;
+            }
+            if(previewEl){
+              previewEl.replaceChildren();
+              previewEl.appendChild(document.createTextNode('URL: '));
+              if(/^https?:\/\//i.test(payload)){
+                var payloadLink = document.createElement('a');
+                payloadLink.href = payload;
+                payloadLink.target = '_blank';
+                payloadLink.rel = 'noopener noreferrer';
+                payloadLink.textContent = payload;
+                previewEl.appendChild(payloadLink);
+              } else {
+                previewEl.appendChild(document.createTextNode(payload));
+              }
+            }
+            img.onerror = function(){
+                this.style.display = 'none';
+                if(downloadBtn){
+                    downloadBtn.disabled = true;
+                }
+            };
+          } else {
+            img.removeAttribute('src');
+            img.alt = 'ไม่มีรหัสเครื่อง';
+            img.style.display = 'none';
+                if(downloadBtn){
+                  downloadBtn.disabled = true;
+                  delete downloadBtn.dataset.qrUrl;
+                  delete downloadBtn.dataset.qrCode;
+                }
+                if(previewEl){
+                  previewEl.textContent = '';
+                }
+            }
+        }
+
+        // Helper for hierarchical display (owner/location)
+        function setHierarchyDisplay(elementId, value, masterDataKey){
+            var el = document.getElementById(elementId);
+            if(!el) return;
+            
+            if(!value || value.trim() === ''){
+                el.textContent = 'ไม่ระบุ';
+                el.classList.add('empty');
+                el.classList.remove('hierarchy');
+                return;
+            }
+            
+            // Find data in master to get ancestors
+            var itemData = null;
+            
+            // Search in equipment_user_customers (used for both owner and location)
+            {% for c in equipment_user_customers %}
+                {% if c.label %}
+                    if('{{ c.label|escapejs }}' === value){
+                        itemData = {
+                            label: '{{ c.label|escapejs }}',
+                            ancestors: '{{ c.ancestors|escapejs }}'
+                        };
+                    }
+                {% endif %}
+            {% endfor %}
+            
+            // Search in equipment_user_units if not found
+            {% for u in equipment_user_units %}
+                {% if u.label %}
+                    if('{{ u.label|escapejs }}' === value && !itemData){
+                        itemData = {
+                            label: '{{ u.label|escapejs }}',
+                            ancestors: '{{ u.ancestors|escapejs }}'
+                        };
+                    }
+                {% endif %}
+            {% endfor %}
+            
+            if(itemData && itemData.ancestors && itemData.ancestors.trim()){
+                // Show full hierarchy
+                var hierarchyParts = itemData.ancestors.split('>').map(function(p){ return p.trim(); }).filter(Boolean);
+                var html = '<span class="hierarchy-icon"><i class="bi bi-diagram-3-fill"></i></span>';
+                
+                if(hierarchyParts.length > 0){
+                    html += '<span class="hierarchy-path">';
+                    hierarchyParts.forEach(function(part, index){
+                        if(index > 0) html += '<span class="hierarchy-arrow">→</span>';
+                        html += '<span>' + part + '</span>';
+                    });
+                    html += '<span class="hierarchy-arrow">→</span>';
+                    html += '</span>';
+                }
+                
+                html += '<span class="hierarchy-current">' + itemData.label + '</span>';
+                
+                el.innerHTML = html;
+                el.classList.remove('empty');
+                el.classList.add('hierarchy');
+            } else {
+                // No hierarchy, just show the value
+                el.textContent = value;
+                el.classList.remove('empty', 'hierarchy');
+            }
+        }
+
+  // Populate modal with data (use equipment code for ID field)
+  setValue('detail-id', data.eqQr);
+        var qrInput = document.getElementById('detail-qr-input');
+        var qrPrefixInput = document.getElementById('detail-qr-prefix');
+        var qrPrefixSaveBtn = document.getElementById('detail-qr-prefix-save');
+        var qrEditBtn = document.getElementById('detail-qr-edit-btn');
+        var qrSaveBtn = document.getElementById('detail-qr-save-btn');
+        var qrCancelBtn = document.getElementById('detail-qr-cancel-btn');
+        var qrStateEl = document.getElementById('detail-qr-state');
+      var qrPanelEl = document.querySelector('.modal-eq-qr-panel');
+      var qrToggleBtn = document.getElementById('detail-qr-toggle-btn');
+      var qrToggleText = document.getElementById('detail-qr-toggle-text');
+        var currentQrValue = (data.eqQr || '').trim();
+        var qrPrefixStorageKey = 'cmms_qr_target_setting';
+      var qrPanelCollapsedStorageKey = 'cmms_qr_panel_collapsed';
+
+        function loadQrPrefix(){
+          try {
+            return localStorage.getItem(qrPrefixStorageKey) || '';
+          } catch(err){
+            return '';
+          }
+        }
+
+        function saveQrPrefix(v){
+          try {
+            localStorage.setItem(qrPrefixStorageKey, v || '');
+          } catch(err) {}
+        }
+
+        function loadQrPanelCollapsed(){
+          try {
+            return localStorage.getItem(qrPanelCollapsedStorageKey) === 'true';
+          } catch(err){
+            return false;
+          }
+        }
+
+        function saveQrPanelCollapsed(isCollapsed){
+          try {
+            localStorage.setItem(qrPanelCollapsedStorageKey, isCollapsed ? 'true' : 'false');
+          } catch(err) {}
+        }
+
+        function setQrPanelCollapsed(isCollapsed){
+          if(qrPanelEl){
+            qrPanelEl.classList.toggle('is-collapsed', !!isCollapsed);
+          }
+          if(qrToggleBtn){
+            qrToggleBtn.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+            qrToggleBtn.title = isCollapsed ? 'แสดงส่วน QR โปรไฟล์เครื่อง' : 'ซ่อนส่วน QR โปรไฟล์เครื่อง';
+          }
+          if(qrToggleText){
+            qrToggleText.textContent = isCollapsed ? 'แก้ไข' : 'ซ่อน';
+          }
+        }
+
+        if(qrPrefixInput){
+          qrPrefixInput.value = (
+            loadQrPrefix() ||
+            window.CMMS_QR_PROFILE_URL_TEMPLATE ||
+            ((document.getElementById('equipmentDetailModal') || {}).getAttribute ? document.getElementById('equipmentDetailModal').getAttribute('data-qr-profile-url-template') : '') ||
+            '/equipment_profile/{code}/'
+          );
+        }
+
+        if(qrPrefixSaveBtn){
+          qrPrefixSaveBtn.onclick = function(){
+            var prefixVal = qrPrefixInput ? (qrPrefixInput.value || '') : '';
+            saveQrPrefix(prefixVal);
+            setQRValue('detail-qr', currentQrValue);
+          };
+        }
+
+        setQrPanelCollapsed(loadQrPanelCollapsed());
+
+        if(qrToggleBtn){
+          qrToggleBtn.onclick = function(){
+            var nextCollapsed = !(qrPanelEl && qrPanelEl.classList.contains('is-collapsed'));
+            setQrPanelCollapsed(nextCollapsed);
+            saveQrPanelCollapsed(nextCollapsed);
+          };
+        }
+
+        function setQrEditorState(mode){
+          var isEditing = mode === 'editing';
+          var isSaved = mode === 'saved';
+          if(qrInput) qrInput.disabled = !isEditing;
+          if(qrEditBtn) qrEditBtn.disabled = isEditing;
+          if(qrSaveBtn) qrSaveBtn.disabled = !isEditing;
+          if(qrCancelBtn) qrCancelBtn.disabled = !isEditing;
+          if(qrStateEl){
+            qrStateEl.classList.remove('is-locked', 'is-editing', 'is-saved');
+            if(isEditing){
+              qrStateEl.classList.add('is-editing');
+              qrStateEl.textContent = 'กำลังแก้ไข';
+            } else if(isSaved){
+              qrStateEl.classList.add('is-saved');
+              qrStateEl.textContent = 'บันทึกแล้ว';
+            } else {
+              qrStateEl.classList.add('is-locked');
+              qrStateEl.textContent = 'ล็อก';
+            }
+          }
+        }
+
+        if(qrInput){
+          qrInput.value = currentQrValue;
+          qrInput.onkeydown = function(e){
+            if(e.key === 'Enter' && qrSaveBtn && !qrSaveBtn.disabled){
+              e.preventDefault();
+              qrSaveBtn.click();
+            }
+          };
+        }
+
+        setQrEditorState('locked');
+
+        if(qrEditBtn){
+          qrEditBtn.onclick = function(){
+            if(!qrInput) return;
+            setQrEditorState('editing');
+            qrInput.focus();
+            qrInput.select();
+          };
+        }
+
+        if(qrCancelBtn){
+          qrCancelBtn.onclick = function(){
+            if(!qrInput) return;
+            qrInput.value = currentQrValue;
+            setQrEditorState('locked');
+          };
+        }
+
+        if(qrSaveBtn){
+          qrSaveBtn.onclick = function(){
+            if(!qrInput) return;
+            currentQrValue = (qrInput.value || '').trim();
+            qrInput.value = currentQrValue;
+            setValue('detail-id', currentQrValue);
+            setQRValue('detail-qr', currentQrValue);
+            if(editBtn){
+              editBtn.href = currentQrValue ? ('/edit_equipment_by_code/' + encodeURIComponent(currentQrValue) + '/') : '#';
+            }
+            if(deleteBtn){
+              deleteBtn.href = currentQrValue ? ('/delete_equipment_by_code/' + encodeURIComponent(currentQrValue) + '/') : '#';
+            }
+            if(profileBtn){
+              profileBtn.href = currentQrValue ? ('/equipment_profile/' + encodeURIComponent(currentQrValue) + '/') : '#';
+            }
+            data.eqQr = currentQrValue;
+            setQrEditorState('saved');
+            setTimeout(function(){
+              if(qrStateEl && qrStateEl.classList.contains('is-saved')){
+                setQrEditorState('locked');
+              }
+            }, 1000);
+          };
+        }
+
+        setQRValue('detail-qr', currentQrValue);
+        setValue('detail-name-en', data.eqNameEn);
+        setValue('detail-name-th', data.eqNameTh);
+        setValue('detail-brand', data.eqBrand);
+        setValue('detail-model', data.eqModel);
+        setValue('detail-sn', data.eqSn);
+        setValue('detail-gov', data.eqGov);
+        setHierarchyDisplay('detail-owner-hierarchy', data.eqOwner, 'owner');
+        setHierarchyDisplay('detail-location-hierarchy', data.eqLocation, 'location');
+
+        // Critical status details (PM/CAL/Warranty)
+        function parseYmd(ymd){
+          if(!ymd || typeof ymd !== 'string') return null;
+          var parts = ymd.split('-');
+          if(parts.length !== 3) return null;
+          var y = parseInt(parts[0], 10);
+          var m = parseInt(parts[1], 10);
+          var d = parseInt(parts[2], 10);
+          if(isNaN(y) || isNaN(m) || isNaN(d)) return null;
+          return new Date(y, m - 1, d);
+        }
+
+        function dayDiffFromToday(ymd){
+          var due = parseYmd(ymd);
+          if(!due) return null;
+          var now = new Date();
+          var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          return Math.floor((due - today) / (1000 * 60 * 60 * 24));
+        }
+
+        function formatThaiDate(ymd){
+          var d = parseYmd(ymd);
+          if(!d) return 'ไม่ระบุ';
+          return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function setHtmlValue(elementId, html){
+          var el = document.getElementById(elementId);
+          if(!el) return;
+          el.innerHTML = html;
+        }
+
+        function boolText(v){
+          return v ? 'ใช่' : 'ไม่ใช่';
+        }
+
+        function buildDueState(kind, required, dueDate, warningDays){
+          if(!required && kind !== 'warranty'){
+            return '<span class="kpi-state muted"><i class="bi bi-dash-circle"></i>ไม่ต้อง' + (kind === 'pm' ? ' PM' : ' CAL') + '</span>';
+          }
+
+          if(!dueDate){
+            return '<span class="kpi-state muted"><i class="bi bi-question-circle"></i>ยังไม่ระบุวัน</span>';
+          }
+
+          var diff = dayDiffFromToday(dueDate);
+          if(diff === null){
+            return '<span class="kpi-state muted"><i class="bi bi-question-circle"></i>รูปแบบวันไม่ถูกต้อง</span>';
+          }
+
+          if(diff < 0){
+            return '<span class="kpi-state danger"><i class="bi bi-exclamation-triangle-fill"></i>เกินกำหนด ' + Math.abs(diff) + ' วัน</span>';
+          }
+          if(diff <= warningDays){
+            return '<span class="kpi-state warn"><i class="bi bi-clock-fill"></i>ใกล้ครบกำหนด (' + diff + ' วัน)</span>';
+          }
+          return '<span class="kpi-state ok"><i class="bi bi-check-circle-fill"></i>ปกติ (เหลือ ' + diff + ' วัน)</span>';
+        }
+
+        function parseBoolLike(v){
+          if(v === true || v === false) return v;
+          if(v === null || v === undefined) return false;
+          var s = String(v).trim().toLowerCase();
+          return s === 'true' || s === '1' || s === 'yes' || s === 'y' || s === 'on';
+        }
+
+        var requiresPm = parseBoolLike(data.eqRequiresPm);
+        var requiresCal = parseBoolLike(data.eqRequiresCal);
+        var pmDue = data.eqPmDue || '';
+        var calDue = data.eqCalDue || '';
+        var warrantyDue = data.eqWarrantyDue || '';
+
+        // Fallback for legacy rows: infer required flag from due date availability.
+        if(!requiresPm && pmDue){
+          requiresPm = true;
+        }
+        if(!requiresCal && calDue){
+          requiresCal = true;
+        }
+
+        setValue('detail-pm-required', boolText(requiresPm));
+        setValue('detail-cal-required', boolText(requiresCal));
+        setValue('detail-pm-due', pmDue ? formatThaiDate(pmDue) : 'ไม่ระบุ');
+        setValue('detail-cal-due', calDue ? formatThaiDate(calDue) : 'ไม่ระบุ');
+        setValue('detail-warranty-due', warrantyDue ? formatThaiDate(warrantyDue) : 'ไม่ระบุ');
+
+        setHtmlValue('detail-pm-state', buildDueState('pm', requiresPm, pmDue, 7));
+        setHtmlValue('detail-cal-state', buildDueState('cal', requiresCal, calDue, 14));
+        setHtmlValue('detail-warranty-state', buildDueState('warranty', true, warrantyDue, 30));
+
+        // Populate status section with compact design
+        var statusDisplayEl = document.getElementById('detail-status-display');
+        if(statusDisplayEl){
+            var statusCell = row.querySelector('.status-cell');
+            if(statusCell && statusCell.innerHTML){
+                var statusCodes = statusCell.dataset.statusCodes ? statusCell.dataset.statusCodes.split(',') : [];
+                var statusLabels = statusCell.dataset.statusLabels ? statusCell.dataset.statusLabels.split(',') : [];
+                
+                if(statusLabels.length > 0){
+                    var html = '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">';
+                    
+                    statusLabels.forEach(function(label, index){
+                        if(!label || !label.trim()) return;
+                        var code = statusCodes[index] || '';
+                        
+                        var bgColor = '#64748b';
+                        var iconClass = 'circle-fill';
+                        
+                        // Color and icon based on status type
+                        if(code.includes('ready')){
+                            bgColor = '#10b981';
+                            iconClass = 'check-circle-fill';
+                        } else if(code.includes('not_ready')){
+                            bgColor = '#ef4444';
+                            iconClass = 'x-circle-fill';
+                        } else if(code.includes('under_repair')){
+                            bgColor = '#f59e0b';
+                            iconClass = 'tools';
+                        } else if(code.includes('pm_') || code.includes('cal_')){
+                            if(code.includes('overdue') || code.includes('failed')){
+                                bgColor = '#ef4444';
+                                iconClass = 'exclamation-triangle-fill';
+                            } else if(code.includes('due_soon')){
+                                bgColor = '#f59e0b';
+                                iconClass = 'clock-fill';
+                            } else {
+                                bgColor = '#3b82f6';
+                                iconClass = 'wrench-adjustable';
+                            }
+                        } else if(code.includes('warranty')){
+                            if(code.includes('expired')){
+                                bgColor = '#64748b';
+                                iconClass = 'shield-x';
+                            } else if(code.includes('expiring')){
+                                bgColor = '#06b6d4';
+                                iconClass = 'shield-exclamation';
+                            } else {
+                                bgColor = '#8b5cf6';
+                                iconClass = 'shield-check';
+                            }
+                        }
+                        
+                        html += '<span class="badge d-inline-flex align-items-center gap-1" style="background: ' + bgColor + '; color: white; font-size: 0.85rem; font-weight: 500; padding: 0.35rem 0.65rem;">';
+                        html += '<i class="bi bi-' + iconClass + '" style="font-size: 0.9rem;"></i>';
+                        html += '<span>' + label.trim() + '</span>';
+                        html += '</span>';
+                    });
+                    
+                    html += '</div>';
+                    statusDisplayEl.innerHTML = html;
+                } else {
+                    statusDisplayEl.innerHTML = '<div style="text-align: center; padding: 1rem; color: #94a3b8;"><i class="bi bi-info-circle me-1"></i><span>ไม่มีข้อมูลสถานะ</span></div>';
+                }
+            } else {
+                statusDisplayEl.innerHTML = '<div style="text-align: center; padding: 1rem; color: #94a3b8;"><i class="bi bi-info-circle me-1"></i><span>ไม่มีข้อมูลสถานะ</span></div>';
+            }
+        }
+
+    // Repair button — store full prefill in sessionStorage then navigate
+    var repairBtn = document.getElementById('modal-repair-btn');
+    if (repairBtn) {
+        var subtitle = document.getElementById('repair-btn-subtitle');
+        if (subtitle) {
+            subtitle.textContent = 'เครื่อง: ' + (data.eqQr || data.eqNameTh || data.eqNameEn || '');
+        }
+        repairBtn.onclick = function(e) {
+            e.preventDefault();
+            var prefill = {
+                equipment_id: data.eqId,
+                equipment_code: data.eqQr,
+                equipment_name: data.eqNameTh || data.eqNameEn,
+                equipment_name_en: data.eqNameEn,
+                equipment_brand: data.eqBrand,
+                equipment_model: data.eqModel,
+                equipment_sn: data.eqSn,
+                equipment_gov: data.eqGov,
+                equipment_user_customer: data.eqLocation,
+                equipment_owner_customer: data.eqOwner,
+                source: 'equipment_list',
+                source_url: window.location.href
+            };
+            try { sessionStorage.setItem('prefill_service_request', JSON.stringify(prefill)); } catch(err) {}
+            window.location.href = '{% url "service_request_create" %}';
+        };
+    }
+
+    // Update action button links
+    var profileBtn = document.getElementById('modal-profile-btn');
+    var historyBtn = document.getElementById('modal-history-btn');
+    var editBtn = document.getElementById('modal-edit-btn');
+    var deleteBtn = document.getElementById('modal-delete-btn');
+    var qrDownloadBtn = document.getElementById('detail-qr-download');
+
+    function getCurrentQrCode(){
+      if(qrInput){
+        return (qrInput.value || '').trim();
+      }
+      return (data.eqQr || '').trim();
+    }
+
+    // Get equipment ID from row data attribute
+    var equipmentId = data.eqId;
+
+    if (historyBtn && equipmentId) {
+      historyBtn.href = '/equipment_history/' + equipmentId + '/';
+    }
+
+    var currentQrCode = getCurrentQrCode();
+
+    if (profileBtn && currentQrCode) {
+      profileBtn.href = '/equipment_profile/' + encodeURIComponent(currentQrCode) + '/';
+    }
+
+    if (editBtn && currentQrCode) {
+      // Use equipment_id (QR/code) redirect route. Encode to keep URL safe.
+      editBtn.href = '/edit_equipment_by_code/' + encodeURIComponent(currentQrCode) + '/';
+    }
+
+    if (deleteBtn && currentQrCode) {
+      // Use equipment_id (QR/code) redirect route for delete.
+      deleteBtn.href = '/delete_equipment_by_code/' + encodeURIComponent(currentQrCode) + '/';
+      deleteBtn.onclick = function (e) {
+        var qrCodeNow = getCurrentQrCode();
+        if(qrCodeNow){
+          deleteBtn.href = '/delete_equipment_by_code/' + encodeURIComponent(qrCodeNow) + '/';
+        }
+        var msg = 'คุณต้องการลบทะเบียนนี้หรือไม่?\n\n' +
+          'รหัส: ' + (qrCodeNow || 'ไม่ระบุ') + '\n' +
+          'ชื่อ: ' + data.eqNameEn + '\n\n' +
+          'การดำเนินการนี้ไม่สามารถย้อนกลับได้';
+        if (!confirm(msg)) {
+          e.preventDefault();
+          return false;
+        }
+      };
+    }
+
+    if (qrDownloadBtn) {
+      qrDownloadBtn.onclick = function() {
+        var liveQr = getCurrentQrCode();
+        if(liveQr){
+          setQRValue('detail-qr', liveQr);
+          if(editBtn){
+            editBtn.href = '/edit_equipment_by_code/' + encodeURIComponent(liveQr) + '/';
+          }
+          if(deleteBtn){
+            deleteBtn.href = '/delete_equipment_by_code/' + encodeURIComponent(liveQr) + '/';
+          }
+          if(profileBtn){
+            profileBtn.href = '/equipment_profile/' + encodeURIComponent(liveQr) + '/';
+          }
+        }
+        var qrUrl = this.dataset.qrUrl;
+        var qrCode = this.dataset.qrCode || 'equipment';
+        if (!qrUrl) return;
+
+        fetch(qrUrl)
+          .then(function(resp) {
+            if (!resp.ok) throw new Error('download failed');
+            return resp.blob();
+          })
+          .then(function(blob) {
+            var objectUrl = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = objectUrl;
+            a.download = 'qr-' + qrCode + '.png';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(objectUrl);
+          })
+          .catch(function() {
+            window.open(qrUrl, '_blank', 'noopener');
+          });
+      };
+    }
+
+        // Show modal
+        var modal = new bootstrap.Modal(document.getElementById('equipmentDetailModal'));
+        modal.show();
+    };
+
+    // === Row Click → Open Detail Modal ===
+    document.querySelector('.equipment-table tbody').addEventListener('click', function(e) {
+        // Skip if bulk-edit mode is active (checkbox clicks are handled separately)
+        if (document.body.classList.contains('bulk-edit-mode')) return;
+        // Skip clicks on action buttons / links / checkboxes
+        if (e.target.closest('.row-action-col, .bulk-edit-checkbox-col, a, button, input')) return;
+        var row = e.target.closest('tr[data-eq-id]');
+        if (row) window.showEquipmentDetail(row);
+    });
+
+    // === Bulk Edit Modal Functions ===
+    window.openBulkEditModal = function() {
+      var selected = document.querySelectorAll('.row-select:checked');
+      if (selected.length === 0) {
+        alert('กรุณาเลือกรายการที่ต้องการแก้ไข');
+        return;
+      }
+      
+      var modal = new bootstrap.Modal(document.getElementById('bulkEditModal'));
+      document.getElementById('bulkEditCount').textContent = selected.length;
+      modal.show();
+    };
+    
+    window.applyBulkEdit = function() {
+      var selected = Array.from(document.querySelectorAll('.row-select:checked')).map(function(cb) {
+        return cb.value;
+      });
+      
+      if (selected.length === 0) {
+        alert('กรุณาเลือกรายการที่ต้องการแก้ไข');
+        return;
+      }
+      
+      var formData = new FormData(document.getElementById('bulkEditForm'));
+      formData.append('equipment_ids', JSON.stringify(selected));
+      
+      // Show loading
+      var submitBtn = document.querySelector('#bulkEditModal .btn-primary');
+      var originalText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังบันทึก...';
+      
+      fetch('/bulk_edit_equipment', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+      })
+      .then(function(response) { return response.json(); })
+      .then(function(data) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        
+        if (data.success) {
+          alert('บันทึกข้อมูลสำเร็จ ' + data.updated_count + ' รายการ');
+          location.reload();
+        } else {
+          alert('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่สามารถบันทึกได้'));
+        }
+      })
+      .catch(function(error) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        alert('เกิดข้อผิดพลาด: ' + error);
+      });
+    };
+});
+</script>
+
+<!-- Bulk Edit Modal -->
+<div class="modal fade" id="bulkEditModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(135deg, var(--warning) 0%, #f97316 100%); color: white;">
+        <h5 class="modal-title">
+          <i class="bi bi-pencil-square me-2"></i>แก้ไขแบบกลุ่ม (<span id="bulkEditCount">0</span> รายการ)
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="bulkEditForm">
+          {% csrf_token %}
+          
+          <div class="alert alert-info d-flex align-items-start">
+            <i class="bi bi-info-circle-fill me-2 mt-1"></i>
+            <div>
+              <strong>คำแนะนำ:</strong> เลือกเฉพาะฟิลด์ที่ต้องการแก้ไข ฟิลด์ที่ไม่เลือกจะไม่มีการเปลี่ยนแปลง
+            </div>
+          </div>
+          
+          <div class="row g-3">
+            <!-- EML Code -->
+            <div class="col-md-12">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_code" name="edit_code">
+                <label class="form-check-label fw-bold" for="edit_code">
+                  แก้ไขรหัส EML
+                </label>
+              </div>
+              <div class="position-relative">
+                <input type="text" 
+                       class="form-control" 
+                       id="bulk_code_display" 
+                       placeholder="🔍 คลิกเพื่อเลือก EML" 
+                       readonly 
+                       style="cursor: pointer; padding-right: 8rem;"
+                       disabled>
+                <div style="position: absolute; top: 50%; right: 0.5rem; transform: translateY(-50%); display: flex; gap: 0.35rem;">
+                  <button type="button"
+                          id="bulk_code_browse"
+                          class="btn btn-sm btn-primary"
+                          data-bs-toggle="modal"
+                          data-bs-target="#bulkEmlModal"
+                          style="display: none;">
+                    <i class="bi bi-search"></i> เลือก
+                  </button>
+                  <button type="button"
+                          id="bulk_code_clear"
+                          class="btn btn-sm btn-danger"
+                          style="display: none;">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+                <input type="hidden" id="bulk_code" name="bulk_code">
+                
+                <!-- Hidden fields for auto-sync data -->
+                <input type="hidden" id="bulk_eml_name_en" value="">
+                <input type="hidden" id="bulk_eml_name_th" value="">
+                <input type="hidden" id="bulk_eml_type" value="">
+                <input type="hidden" id="bulk_eml_risk" value="">
+                <input type="hidden" id="bulk_eml_life" value="">
+                <input type="hidden" id="bulk_eml_pm_fq" value="">
+                <input type="hidden" id="bulk_eml_cal_fq" value="">
+              </div>
+              
+              <!-- Selected EML Info -->
+              <div id="bulk_eml_info" style="display: none; margin-top: 0.75rem; padding: 0.75rem; background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%); border-left: 3px solid var(--primary); border-radius: 0.5rem;">
+                <div class="row g-2" style="font-size: 0.85rem;">
+                  <div class="col-6"><strong>รหัส:</strong> <span id="bulk_eml_code_display">-</span></div>
+                  <div class="col-6"><strong>ชื่อ (EN):</strong> <span id="bulk_eml_name_en_display">-</span></div>
+                  <div class="col-6"><strong>ชื่อ (TH):</strong> <span id="bulk_eml_name_th_display">-</span></div>
+                  <div class="col-6"><strong>ประเภท:</strong> <span id="bulk_eml_type_display">-</span></div>
+                  <div class="col-6"><strong>ความเสี่ยง:</strong> <span id="bulk_eml_risk_display">-</span></div>
+                  <div class="col-6"><strong>อายุการใช้งาน:</strong> <span id="bulk_eml_life_display">-</span> ปี</div>
+                  <div class="col-4"><strong>ความถี่ PM:</strong> <span id="bulk_eml_pm_fq_display">-</span></div>
+                  <div class="col-4"><strong>ความถี่ CAL:</strong> <span id="bulk_eml_cal_fq_display">-</span></div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Equipment Name EN -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_name_en" name="edit_name_en">
+                <label class="form-check-label fw-bold" for="edit_name_en">
+                  แก้ไขชื่อเครื่อง (EN)
+                </label>
+              </div>
+              <input type="text" class="form-control" id="bulk_name_en" name="bulk_name_en" placeholder="Equipment Name (English)" disabled>
+            </div>
+            
+            <!-- Equipment Name TH -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_name_th" name="edit_name_th">
+                <label class="form-check-label fw-bold" for="edit_name_th">
+                  แก้ไขชื่อเครื่อง (TH)
+                </label>
+              </div>
+              <input type="text" class="form-control" id="bulk_name_th" name="bulk_name_th" placeholder="ชื่อเครื่องมือ (ไทย)" disabled>
+            </div>
+            
+            <!-- Serial Number -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_sn" name="edit_sn">
+                <label class="form-check-label fw-bold" for="edit_sn">
+                  แก้ไข Serial Number
+                </label>
+              </div>
+              <input type="text" class="form-control" id="bulk_sn" name="bulk_sn" placeholder="S/N" disabled>
+            </div>
+            
+            <!-- Gov Number -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_gov" name="edit_gov">
+                <label class="form-check-label fw-bold" for="edit_gov">
+                  แก้ไขเลขครุภัณฑ์
+                </label>
+              </div>
+              <input type="text" class="form-control" id="bulk_gov" name="bulk_gov" placeholder="รหัสครุภัณฑ์" disabled>
+            </div>
+            
+            <!-- Equipment Type -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_type" name="edit_type">
+                <label class="form-check-label fw-bold" for="edit_type">
+                  แก้ไขประเภทเครื่องมือ
+                </label>
+              </div>
+              <input type="text" class="form-control" id="bulk_type" name="bulk_type" placeholder="ประเภทเครื่องมือ" disabled>
+            </div>
+            
+            <!-- Risk -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_risk" name="edit_risk">
+                <label class="form-check-label fw-bold" for="edit_risk">
+                  แก้ไขความเสี่ยง
+                </label>
+              </div>
+              <input type="text" class="form-control" id="bulk_risk" name="bulk_risk" placeholder="ความเสี่ยง" disabled>
+            </div>
+            
+            <!-- Brand -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_brand" name="edit_brand">
+                <label class="form-check-label fw-bold" for="edit_brand">
+                  แก้ไขยี่ห้อ
+                </label>
+              </div>
+              <input type="text" class="form-control" id="bulk_brand" name="bulk_brand" placeholder="ยี่ห้อ" disabled>
+            </div>
+            
+            <!-- Model -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_model" name="edit_model">
+                <label class="form-check-label fw-bold" for="edit_model">
+                  แก้ไขรุ่น
+                </label>
+              </div>
+              <input type="text" class="form-control" id="bulk_model" name="bulk_model" placeholder="รุ่น" disabled>
+            </div>
+            
+            <!-- Equipment Life -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_life" name="edit_life">
+                <label class="form-check-label fw-bold" for="edit_life">
+                  แก้ไขอายุการใช้งาน (ปี)
+                </label>
+              </div>
+              <input type="number" class="form-control" id="bulk_life" name="bulk_life" placeholder="อายุการใช้งาน" min="0" disabled>
+            </div>
+            
+            <!-- Price -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_price" name="edit_price">
+                <label class="form-check-label fw-bold" for="edit_price">
+                  แก้ไขราคา (บาท)
+                </label>
+              </div>
+              <input type="number" class="form-control" id="bulk_price" name="bulk_price" placeholder="ราคา" min="0" step="0.01" disabled>
+            </div>
+            
+            <!-- Distributor Name -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_distributor_name" name="edit_distributor_name">
+                <label class="form-check-label fw-bold" for="edit_distributor_name">
+                  แก้ไขชื่อผู้จำหน่าย
+                </label>
+              </div>
+              <input type="text" class="form-control" id="bulk_distributor_name" name="bulk_distributor_name" placeholder="ชื่อผู้จำหน่าย" disabled>
+            </div>
+            
+            <!-- Distributor Tel -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_distributor_tel" name="edit_distributor_tel">
+                <label class="form-check-label fw-bold" for="edit_distributor_tel">
+                  แก้ไขเบอร์ผู้จำหน่าย
+                </label>
+              </div>
+              <input type="text" class="form-control" id="bulk_distributor_tel" name="bulk_distributor_tel" placeholder="เบอร์ติดต่อ" disabled>
+            </div>
+            
+            <!-- Owner -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_owner" name="edit_owner">
+                <label class="form-check-label fw-bold" for="edit_owner">
+                  แก้ไขผู้ถือครอง
+                </label>
+              </div>
+              <input type="text" class="form-control" id="bulk_owner" name="bulk_owner" placeholder="ผู้ถือครอง" disabled>
+            </div>
+            
+            <!-- User -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_user" name="edit_user">
+                <label class="form-check-label fw-bold" for="edit_user">
+                  แก้ไขผู้ใช้งาน
+                </label>
+              </div>
+              <input type="text" class="form-control" id="bulk_user" name="bulk_user" placeholder="ผู้ใช้งาน" disabled>
+            </div>
+            
+            <!-- Service Provider -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_service_provider" name="edit_service_provider">
+                <label class="form-check-label fw-bold" for="edit_service_provider">
+                  แก้ไขผู้ให้บริการ
+                </label>
+              </div>
+              <input type="text" class="form-control" id="bulk_service_provider" name="bulk_service_provider" placeholder="ผู้ให้บริการ" disabled>
+            </div>
+            
+            <div class="col-12"><hr class="my-2"></div>
+            <div class="col-12">
+              <h6 class="text-primary mb-3">
+                <i class="bi bi-wrench-adjustable me-2"></i>การบำรุงรักษา
+              </h6>
+            </div>
+            
+            <!-- PM Frequency -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_pm_fq" name="edit_pm_fq">
+                <label class="form-check-label fw-bold" for="edit_pm_fq">
+                  แก้ไขความถี่ PM (เดือน)
+                </label>
+              </div>
+              <select class="form-select" id="bulk_pm_fq" name="bulk_pm_fq" disabled>
+                <option value="">-- เลือกความถี่ --</option>
+                {% for f in master_frequency_pm %}
+                  <option value="{{ f.label }}">{{ f.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            
+            <!-- PM Due Date -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_pm_due" name="edit_pm_due">
+                <label class="form-check-label fw-bold" for="edit_pm_due">
+                  แก้ไขวันครบกำหนด PM
+                </label>
+              </div>
+              <input type="date" class="form-control" id="bulk_pm_due" name="bulk_pm_due" disabled>
+            </div>
+            
+            <!-- CAL Frequency -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_cal_fq" name="edit_cal_fq">
+                <label class="form-check-label fw-bold" for="edit_cal_fq">
+                  แก้ไขความถี่ CAL (เดือน)
+                </label>
+              </div>
+              <select class="form-select" id="bulk_cal_fq" name="bulk_cal_fq" disabled>
+                <option value="">-- เลือกความถี่ --</option>
+                {% for f in master_frequency_cal %}
+                  <option value="{{ f.label }}">{{ f.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            
+            <!-- CAL Due Date -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_cal_due" name="edit_cal_due">
+                <label class="form-check-label fw-bold" for="edit_cal_due">
+                  แก้ไขวันครบกำหนด CAL
+                </label>
+              </div>
+              <input type="date" class="form-control" id="bulk_cal_due" name="bulk_cal_due" disabled>
+            </div>
+            
+            <div class="col-12"><hr class="my-2"></div>
+            <div class="col-12">
+              <h6 class="text-success mb-3">
+                <i class="bi bi-shield-fill-check me-2"></i>การรับประกัน
+              </h6>
+            </div>
+            
+            <!-- Warranty Start Date -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_warranty_date" name="edit_warranty_date">
+                <label class="form-check-label fw-bold" for="edit_warranty_date">
+                  แก้ไขวันเริ่มประกัน
+                </label>
+              </div>
+              <input type="date" class="form-control" id="bulk_warranty_date" name="bulk_warranty_date" disabled>
+            </div>
+            
+            <!-- Warranty Due Date -->
+            <div class="col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_warranty_due" name="edit_warranty_due">
+                <label class="form-check-label fw-bold" for="edit_warranty_due">
+                  แก้ไขวันหมดประกัน
+                </label>
+              </div>
+              <input type="date" class="form-control" id="bulk_warranty_due" name="bulk_warranty_due" disabled>
+            </div>
+            
+            <div class="col-12"><hr class="my-2"></div>
+            
+            <!-- Note -->
+            <div class="col-12">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="edit_note" name="edit_note">
+                <label class="form-check-label fw-bold" for="edit_note">
+                  แก้ไขหมายเหตุ
+                </label>
+              </div>
+              <textarea class="form-control" id="bulk_note" name="bulk_note" rows="3" placeholder="หมายเหตุ" disabled></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> ยกเลิก
+        </button>
+        <button type="button" class="btn btn-primary" onclick="applyBulkEdit()">
+          <i class="bi bi-check-circle"></i> บันทึกการแก้ไข
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Enable/disable inputs based on checkbox
+document.querySelectorAll('#bulkEditForm .form-check-input[type="checkbox"]').forEach(function(checkbox) {
+  checkbox.addEventListener('change', function() {
+    var inputId = this.id.replace('edit_', 'bulk_');
+    var input = document.getElementById(inputId);
+    
+    // Special handling for EML code field
+    if (this.id === 'edit_code') {
+      var browseBtn = document.getElementById('bulk_code_browse');
+      var clearBtn = document.getElementById('bulk_code_clear');
+      var displayInput = document.getElementById('bulk_code_display');
+      
+      if (this.checked) {
+        if (displayInput) displayInput.disabled = false;
+        if (browseBtn) browseBtn.style.display = 'block';
+      } else {
+        if (displayInput) {
+          displayInput.disabled = true;
+          displayInput.value = '';
+        }
+        if (browseBtn) browseBtn.style.display = 'none';
+        if (clearBtn) clearBtn.style.display = 'none';
+        document.getElementById('bulk_code').value = '';
+        document.getElementById('bulk_eml_info').style.display = 'none';
+        
+        // Clear hidden sync fields
+        document.getElementById('bulk_eml_name_en').value = '';
+        document.getElementById('bulk_eml_name_th').value = '';
+        document.getElementById('bulk_eml_type').value = '';
+        document.getElementById('bulk_eml_life').value = '';
+      }
+    } else if (input) {
+      input.disabled = !this.checked;
+      if (!this.checked) {
+        input.value = '';
+      }
+    }
+  });
+});
+
+// Bulk EML Clear Button
+document.getElementById('bulk_code_clear')?.addEventListener('click', function() {
+  document.getElementById('bulk_code').value = '';
+  document.getElementById('bulk_code_display').value = '';
+  document.getElementById('bulk_eml_info').style.display = 'none';
+  this.style.display = 'none';
+  
+  // Clear hidden sync fields
+  document.getElementById('bulk_eml_name_en').value = '';
+  document.getElementById('bulk_eml_name_th').value = '';
+  document.getElementById('bulk_eml_type').value = '';
+  document.getElementById('bulk_eml_life').value = '';
+  document.getElementById('bulk_eml_pm_fq').value = '';
+  document.getElementById('bulk_eml_cal_fq').value = '';
+});
+
+// Auto-sync EML data to other fields when EML is selected
+function syncBulkEmlData() {
+  var emlNameEN = document.getElementById('bulk_eml_name_en').value;
+  var emlNameTH = document.getElementById('bulk_eml_name_th').value;
+  var emlType = document.getElementById('bulk_eml_type').value;
+  var emlRisk = document.getElementById('bulk_eml_risk').value;
+  var emlLife = document.getElementById('bulk_eml_life').value;
+  var emlPmFq = document.getElementById('bulk_eml_pm_fq').value;
+  var emlCalFq = document.getElementById('bulk_eml_cal_fq').value;
+  
+  // Auto-check and fill equipment name EN if EML has data
+  if (emlNameEN) {
+    var editNameEnCheckbox = document.getElementById('edit_name_en');
+    var bulkNameEnInput = document.getElementById('bulk_name_en');
+    if (editNameEnCheckbox && !editNameEnCheckbox.checked) {
+      editNameEnCheckbox.checked = true;
+      editNameEnCheckbox.dispatchEvent(new Event('change'));
+    }
+    if (bulkNameEnInput) {
+      bulkNameEnInput.value = emlNameEN;
+    }
+  }
+  
+  // Auto-check and fill equipment name TH if EML has data
+  if (emlNameTH) {
+    var editNameThCheckbox = document.getElementById('edit_name_th');
+    var bulkNameThInput = document.getElementById('bulk_name_th');
+    if (editNameThCheckbox && !editNameThCheckbox.checked) {
+      editNameThCheckbox.checked = true;
+      editNameThCheckbox.dispatchEvent(new Event('change'));
+    }
+    if (bulkNameThInput) {
+      bulkNameThInput.value = emlNameTH;
+    }
+  }
+  
+  // Auto-check and fill type if EML has data
+  if (emlType) {
+    var editTypeCheckbox = document.getElementById('edit_type');
+    var bulkTypeInput = document.getElementById('bulk_type');
+    if (editTypeCheckbox && !editTypeCheckbox.checked) {
+      editTypeCheckbox.checked = true;
+      editTypeCheckbox.dispatchEvent(new Event('change'));
+    }
+    if (bulkTypeInput) {
+      bulkTypeInput.value = emlType;
+    }
+  }
+  
+  // Auto-check and fill risk if EML has data
+  if (emlRisk) {
+    var editRiskCheckbox = document.getElementById('edit_risk');
+    var bulkRiskInput = document.getElementById('bulk_risk');
+    if (editRiskCheckbox && !editRiskCheckbox.checked) {
+      editRiskCheckbox.checked = true;
+      editRiskCheckbox.dispatchEvent(new Event('change'));
+    }
+    if (bulkRiskInput) {
+      bulkRiskInput.value = emlRisk;
+    }
+  }
+  
+  // Auto-check and fill life if EML has data
+  if (emlLife) {
+    var editLifeCheckbox = document.getElementById('edit_life');
+    var bulkLifeInput = document.getElementById('bulk_life');
+    if (editLifeCheckbox && !editLifeCheckbox.checked) {
+      editLifeCheckbox.checked = true;
+      editLifeCheckbox.dispatchEvent(new Event('change'));
+    }
+    if (bulkLifeInput) {
+      bulkLifeInput.value = parseInt(emlLife) || '';
+    }
+  }
+  
+  // Auto-check and fill PM frequency if EML has data
+  if (emlPmFq) {
+    var editPmFqCheckbox = document.getElementById('edit_pm_fq');
+    var bulkPmFqInput = document.getElementById('bulk_pm_fq');
+    if (editPmFqCheckbox && !editPmFqCheckbox.checked) {
+      editPmFqCheckbox.checked = true;
+      editPmFqCheckbox.dispatchEvent(new Event('change'));
+    }
+    if (bulkPmFqInput) {
+      bulkPmFqInput.value = emlPmFq;
+    }
+  }
+  
+  // Auto-check and fill CAL frequency if EML has data
+  if (emlCalFq) {
+    var editCalFqCheckbox = document.getElementById('edit_cal_fq');
+    var bulkCalFqInput = document.getElementById('bulk_cal_fq');
+    if (editCalFqCheckbox && !editCalFqCheckbox.checked) {
+      editCalFqCheckbox.checked = true;
+      editCalFqCheckbox.dispatchEvent(new Event('change'));
+    }
+    if (bulkCalFqInput) {
+      bulkCalFqInput.value = emlCalFq;
+    }
+  }
+}
+
+// Watch for changes in hidden EML fields
+['bulk_eml_name_en', 'bulk_eml_name_th', 'bulk_eml_type', 'bulk_eml_risk', 'bulk_eml_life', 'bulk_eml_pm_fq', 'bulk_eml_cal_fq'].forEach(function(fieldId) {
+  var field = document.getElementById(fieldId);
+  if (field) {
+    field.addEventListener('change', syncBulkEmlData);
+  }
+});
+</script>
+
+<!-- Bulk EML Selection Modal -->
+<div class="modal fade modal-modern" id="bulkEmlModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;">
+        <h5 class="modal-title">
+          <i class="bi bi-card-list me-2"></i>เลือก Equipment Master List (EML)
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding: 0;">
+        <!-- Search Bar -->
+        <div style="padding: 1.5rem 2rem; background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 2px solid #e2e8f0;">
+          <div class="input-group input-group-lg">
+            <span class="input-group-text" style="background: white; border: 2px solid var(--border); border-right: none;">
+              <i class="bi bi-search" style="color: var(--primary);"></i>
+            </span>
+            <input type="text" 
+                   id="bulkEmlModalSearch" 
+                   class="form-control" 
+                   placeholder="ค้นหาด้วยรหัส EML, ชื่อภาษาอังกฤษ-ไทย..."
+                   style="border: 2px solid var(--border); border-left: none;">
+          </div>
+        </div>
+        
+        <!-- Table -->
+        <div style="overflow-x: auto; max-height: 500px; overflow-y: auto;">
+          <table class="table table-hover mb-0" id="bulkEmlModalTable">
+            <thead style="position: sticky; top: 0; z-index: 10; background: white;">
+              <tr>
+                <th style="width: 50px; padding: 1rem; text-align: center;">ที่</th>
+                <th style="width: 150px; padding: 1rem;">รหัส EML</th>
+                <th style="padding: 1rem;">ชื่อเครื่อง (EN)</th>
+                <th style="padding: 1rem;">ชื่อเครื่อง (TH)</th>
+                <th style="width: 140px; padding: 1rem;">ประเภท</th>
+                <th style="width: 100px; padding: 1rem; text-align: center;">เลือก</th>
+              </tr>
+            </thead>
+            <tbody id="bulkEmlModalTableBody">
+              {% for eq in master_equipments %}
+              <tr class="bulk-eml-row" 
+                  data-code="{{ eq.code|escape }}"
+                  data-name-en="{{ eq.label|default:''|escape }}"
+                  data-name-th="{{ eq.name_th|default:''|escape }}"
+                  data-equipment-type="{{ eq.equipment_type|default:''|escape }}"
+                  data-equipment-type-label="{{ eq.equipment_type_label|default:''|escape }}"
+                  data-risk="{{ eq.risk|default:''|escape }}"
+                  data-risk-label="{{ eq.risk_label|default:''|escape }}"
+                  data-lifespan="{{ eq.lifespan|default:''|escape }}"
+                  data-pm-fq="{{ eq.pm_fq_label|default:eq.pm_fq|default:''|escape }}"
+                  data-cal-fq="{{ eq.cal_fq_label|default:eq.cal_fq|default:''|escape }}"
+                  style="cursor: pointer;">
+                <td style="padding: 1rem; text-align: center;">{{ forloop.counter }}</td>
+                <td style="padding: 1rem;"><span class="badge bg-primary">{{ eq.code }}</span></td>
+                <td style="padding: 1rem;">{{ eq.label|default:"-" }}</td>
+                <td style="padding: 1rem;">{{ eq.name_th|default:"-" }}</td>
+                <td style="padding: 1rem;">{% if eq.equipment_type_label %}{{ eq.equipment_type_label|escape }}{% elif eq.equipment_type %}{{ eq.equipment_type|escape }}{% else %}-{% endif %}</td>
+                <td style="padding: 1rem; text-align: center;">
+                  <button type="button" class="btn btn-sm btn-primary bulk-eml-select-btn">
+                    <i class="bi bi-check-circle"></i> เลือก
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> ปิด
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Bulk EML Modal Search
+document.addEventListener('DOMContentLoaded', function() {
+  var searchInput = document.getElementById('bulkEmlModalSearch');
+  if (!searchInput) return;
+  
+  searchInput.addEventListener('input', function() {
+    var query = this.value.toLowerCase().trim();
+    var tbody = document.getElementById('bulkEmlModalTableBody');
+    if (!tbody) return;
+    
+    var rows = tbody.querySelectorAll('.bulk-eml-row');
+    
+    rows.forEach(function(row) {
+      var code = (row.getAttribute('data-code') || '').toLowerCase();
+      var nameEn = (row.getAttribute('data-name-en') || '').toLowerCase();
+      var nameTh = (row.getAttribute('data-name-th') || '').toLowerCase();
+      var type = (row.getAttribute('data-equipment-type-label') || row.getAttribute('data-equipment-type') || '').toLowerCase();
+      
+      if (code.includes(query) || nameEn.includes(query) || nameTh.includes(query) || type.includes(query)) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  });
+});
+
+// Bulk EML Modal Selection (Event Delegation)
+document.addEventListener('DOMContentLoaded', function() {
+  var modalBody = document.getElementById('bulkEmlModal');
+  if (!modalBody) return;
+  
+  modalBody.addEventListener('click', function(e) {
+    var btn = e.target.closest('.bulk-eml-select-btn');
+    if (!btn) return;
+    
+    var row = btn.closest('tr');
+    if (!row) return;
+    
+    var code = row.getAttribute('data-code');
+    var nameEn = row.getAttribute('data-name-en') || '';
+    var nameTh = row.getAttribute('data-name-th') || '';
+    var type = row.getAttribute('data-equipment-type-label') || row.getAttribute('data-equipment-type') || '';
+    var risk = row.getAttribute('data-risk-label') || row.getAttribute('data-risk') || '';
+    var lifespan = row.getAttribute('data-lifespan') || '';
+    var pmFq = row.getAttribute('data-pm-fq') || '';
+    var calFq = row.getAttribute('data-cal-fq') || '';
+    
+    // Set main EML code
+    var bulkCodeInput = document.getElementById('bulk_code');
+    var bulkCodeDisplay = document.getElementById('bulk_code_display');
+    if (bulkCodeInput) bulkCodeInput.value = code;
+    if (bulkCodeDisplay) bulkCodeDisplay.value = code + ' - ' + nameEn;
+    
+    // Set hidden fields for auto-sync
+    var emlNameEn = document.getElementById('bulk_eml_name_en');
+    var emlNameTh = document.getElementById('bulk_eml_name_th');
+    var emlType = document.getElementById('bulk_eml_type');
+    var emlRisk = document.getElementById('bulk_eml_risk');
+    var emlLife = document.getElementById('bulk_eml_life');
+    var emlPmFq = document.getElementById('bulk_eml_pm_fq');
+    var emlCalFq = document.getElementById('bulk_eml_cal_fq');
+    
+    if (emlNameEn) emlNameEn.value = nameEn;
+    if (emlNameTh) emlNameTh.value = nameTh;
+    if (emlType) emlType.value = type;
+    if (emlRisk) emlRisk.value = risk;
+    if (emlLife) emlLife.value = parseInt(lifespan) || '';
+    if (emlPmFq) emlPmFq.value = pmFq;
+    if (emlCalFq) emlCalFq.value = calFq;
+    
+    // Trigger change events to sync all fields
+    if (emlNameEn) emlNameEn.dispatchEvent(new Event('change'));
+    if (emlNameTh) emlNameTh.dispatchEvent(new Event('change'));
+    if (emlType) emlType.dispatchEvent(new Event('change'));
+    if (emlRisk) emlRisk.dispatchEvent(new Event('change'));
+    if (emlLife) emlLife.dispatchEvent(new Event('change'));
+    if (emlPmFq) emlPmFq.dispatchEvent(new Event('change'));
+    if (emlCalFq) emlCalFq.dispatchEvent(new Event('change'));
+    
+    // Show info card
+    var codeDisplay = document.getElementById('bulk_eml_code_display');
+    var nameEnDisplay = document.getElementById('bulk_eml_name_en_display');
+    var nameThDisplay = document.getElementById('bulk_eml_name_th_display');
+    var typeDisplay = document.getElementById('bulk_eml_type_display');
+    var riskDisplay = document.getElementById('bulk_eml_risk_display');
+    var lifeDisplay = document.getElementById('bulk_eml_life_display');
+    var pmFqDisplay = document.getElementById('bulk_eml_pm_fq_display');
+    var calFqDisplay = document.getElementById('bulk_eml_cal_fq_display');
+    var infoCard = document.getElementById('bulk_eml_info');
+    var clearBtn = document.getElementById('bulk_code_clear');
+    
+    if (codeDisplay) codeDisplay.textContent = code;
+    if (nameEnDisplay) nameEnDisplay.textContent = nameEn || '-';
+    if (nameThDisplay) nameThDisplay.textContent = nameTh || '-';
+    if (typeDisplay) typeDisplay.textContent = type || '-';
+    if (riskDisplay) riskDisplay.textContent = risk || '-';
+    if (lifeDisplay) lifeDisplay.textContent = lifespan || '-';
+    if (pmFqDisplay) pmFqDisplay.textContent = pmFq || '-';
+    if (calFqDisplay) calFqDisplay.textContent = calFq || '-';
+    if (infoCard) infoCard.style.display = 'block';
+    if (clearBtn) clearBtn.style.display = 'block';
+    
+    // Close EML modal to return to Bulk Edit Modal
+    var emlModal = bootstrap.Modal.getInstance(document.getElementById('bulkEmlModal'));
+    if (emlModal) {
+      emlModal.hide();
+      // Ensure Bulk Edit Modal stays open
+      setTimeout(function() {
+        var bulkModal = document.getElementById('bulkEditModal');
+        if (bulkModal && !bulkModal.classList.contains('show')) {
+          var bulkModalInstance = new bootstrap.Modal(bulkModal);
+          bulkModalInstance.show();
+        }
+      }, 300);
+    }
+  });
+});
+
+// Also allow row click to select (Event Delegation)
+document.addEventListener('DOMContentLoaded', function() {
+  var modalBody = document.getElementById('bulkEmlModal');
+  if (!modalBody) return;
+  
+  modalBody.addEventListener('click', function(e) {
+    // If clicked on button, let button handler take care of it
+    if (e.target.closest('.bulk-eml-select-btn')) return;
+    
+    // Find the row that was clicked
+    var row = e.target.closest('.bulk-eml-row');
+    if (row) {
+      var btn = row.querySelector('.bulk-eml-select-btn');
+      if (btn) btn.click();
+    }
+  });
+});
+</script>
+
+{% endblock %}

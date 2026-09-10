@@ -1,0 +1,929 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}<title>{% if edit %}แก้ไขข้อมูลช่าง{% else %}เพิ่มช่างใหม่{% endif %}</title>{% endblock %}
+{% block content %}
+
+<style>
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --success-gradient: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+  --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  --card-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  --hover-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+.page-header {
+  background: var(--primary-gradient);
+  color: white;
+  padding: 2.5rem 0;
+  margin-bottom: 2rem;
+  border-radius: 0 0 30px 30px;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.page-header h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-header .subtitle {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin-top: 0.5rem;
+}
+
+.form-container {
+  background: white;
+  border-radius: 25px;
+  box-shadow: var(--card-shadow);
+  padding: 2.5rem;
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 3px solid #667eea;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.section-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--primary-gradient);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-label i {
+  color: #667eea;
+}
+
+.form-control, .form-select {
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  outline: none;
+}
+
+.form-check {
+  background: #f7fafc;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.form-check:hover {
+  border-color: #667eea;
+  background: #edf2f7;
+}
+
+.form-check-input {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid #cbd5e0;
+  cursor: pointer;
+}
+
+.form-check-input:checked {
+  background-color: #667eea;
+  border-color: #667eea;
+}
+
+.form-check-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+  cursor: pointer;
+  margin-left: 0.5rem;
+}
+
+/* Status Toggle Switch */
+.status-toggle-container {
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  padding: 2rem;
+  border-radius: 20px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.status-toggle-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Hide default checkbox */
+.status-toggle-wrapper input[type="checkbox"] {
+  display: none;
+}
+
+/* Toggle Label Container */
+.status-toggle-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 120px;
+  height: 60px;
+  background: #e53e3e;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  box-shadow: 0 4px 15px rgba(229, 62, 62, 0.3);
+  overflow: hidden;
+}
+
+/* Toggle Slider */
+.toggle-slider {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 50px;
+  height: 50px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Toggle Icons */
+.toggle-text {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  z-index: 1;
+}
+
+.toggle-icon {
+  font-size: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.active-icon {
+  color: white;
+  opacity: 0;
+}
+
+.inactive-icon {
+  color: white;
+  opacity: 1;
+}
+
+/* Checked State */
+.status-toggle-wrapper input[type="checkbox"]:checked + .status-toggle-label {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+}
+
+.status-toggle-wrapper input[type="checkbox"]:checked + .status-toggle-label .toggle-slider {
+  left: 65px;
+}
+
+.status-toggle-wrapper input[type="checkbox"]:checked + .status-toggle-label .active-icon {
+  opacity: 1;
+}
+
+.status-toggle-wrapper input[type="checkbox"]:checked + .status-toggle-label .inactive-icon {
+  opacity: 0;
+}
+
+/* Hover Effects */
+.status-toggle-label:hover {
+  transform: scale(1.05);
+}
+
+.status-toggle-label:active {
+  transform: scale(0.98);
+}
+
+/* Status Description */
+.status-description {
+  position: relative;
+  min-height: 80px;
+}
+
+.status-active-text,
+.status-inactive-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+
+.status-active-text {
+  color: #22543d;
+}
+
+.status-inactive-text {
+  color: #742a2a;
+}
+
+.status-toggle-wrapper input[type="checkbox"]:checked ~ .status-description .status-active-text {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.status-toggle-wrapper input[type="checkbox"]:not(:checked) ~ .status-description .status-inactive-text {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.status-description strong {
+  font-size: 1.1rem;
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.status-description p {
+  margin: 0;
+  font-size: 0.95rem;
+  opacity: 0.8;
+}
+
+.edit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0.8rem 1.5rem;
+  border-radius: 15px;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  border: 2px solid #fbbf24;
+}
+
+.btn-save {
+  background: var(--success-gradient);
+  color: white;
+  border: none;
+  padding: 0.9rem 2.5rem;
+  border-radius: 15px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(132, 250, 176, 0.4);
+}
+
+.btn-save:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(132, 250, 176, 0.6);
+  color: white;
+}
+
+.btn-cancel {
+  background: #718096;
+  color: white;
+  border: none;
+  padding: 0.9rem 2rem;
+  border-radius: 15px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-cancel:hover {
+  background: #4a5568;
+  transform: translateY(-2px);
+  color: white;
+}
+
+.btn-delete-form {
+  background: var(--danger-gradient);
+  color: white;
+  border: none;
+  padding: 0.9rem 2rem;
+  border-radius: 15px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(250, 112, 154, 0.4);
+}
+
+.btn-delete-form:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(250, 112, 154, 0.6);
+  color: white;
+}
+
+.skills-search-container {
+  position: relative;
+}
+
+.skills-search-container .input-group-text {
+  border-radius: 12px 0 0 12px;
+  border-right: 0;
+}
+
+.skills-search-container .form-control {
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+}
+
+.skills-search-container .btn {
+  border-radius: 0 12px 12px 0;
+}
+
+.skills-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.skills-checkbox-container {
+  background: #f7fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 15px;
+  padding: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 0.5rem;
+}
+
+.skill-checkbox-item {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.skill-checkbox-item:hover {
+  border-color: #667eea;
+  background: #edf2f7;
+  transform: translateX(3px);
+}
+
+.skill-checkbox-item.selected {
+  border-color: #667eea;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+}
+
+.skill-checkbox-item input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.skill-checkbox-item label {
+  margin: 0 0 0 0.6rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #2d3748;
+  flex: 1;
+}
+
+.skill-checkbox-item.hidden {
+  display: none;
+}
+
+.skills-count {
+  background: var(--primary-gradient);
+  color: #667eea;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-left: 0.5rem;
+}
+
+#filtered-count {
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .skills-checkbox-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+#customPrefixContainer {
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.text-danger {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  margin-top: 0.3rem;
+}
+
+.text-danger::before {
+  content: "⚠️";
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding-top: 2rem;
+  border-top: 2px solid #e2e8f0;
+}
+
+@media (max-width: 768px) {
+  .form-container {
+    padding: 1.5rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .action-buttons a,
+  .action-buttons button {
+    width: 100%;
+  }
+}
+</style>
+
+<div class="page-header">
+  <div class="container">
+    <h1>
+      <i class="bi bi-{% if edit %}pencil-square{% else %}person-plus{% endif %}"></i>
+      {% if edit %}แก้ไขข้อมูลช่างเทคนิค{% else %}เพิ่มช่างเทคนิคใหม่{% endif %}
+    </h1>
+    <div class="subtitle">
+      {% if edit %}ปรับปรุงข้อมูลและทักษะของช่าง{% else %}กรอกข้อมูลช่างเทคนิคเพื่อเพิ่มเข้าระบบ{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="form-container">
+    {% if edit and technician %}
+      <div class="edit-badge">
+        <i class="bi bi-info-circle-fill"></i>
+        <span><strong>กำลังแก้ไข:</strong> {{ technician.name }}</span>
+      </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      <!-- Section 1: ข้อมูลบัญชีผู้ใช้ -->
+      <div class="section-title">
+        <div class="section-icon">
+          <i class="bi bi-person-circle"></i>
+        </div>
+        <span>ข้อมูลบัญชีผู้ใช้</span>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <label for="{{ form.user.auto_id }}" class="form-label">
+            <i class="bi bi-person-badge"></i>
+            {{ form.user.label }}
+          </label>
+          {{ form.user }}
+          {% for e in form.user.errors %}<div class="text-danger">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <!-- Section 2: ข้อมูลส่วนตัว -->
+      <div class="section-title">
+        <div class="section-icon">
+          <i class="bi bi-person-vcard"></i>
+        </div>
+        <span>ข้อมูลส่วนตัว</span>
+      </div>
+
+      <div class="row">
+        <div class="col-md-3 mb-3">
+          <label for="{{ form.prefix_name.auto_id }}" class="form-label">
+            <i class="bi bi-award"></i>
+            {{ form.prefix_name.label }}
+          </label>
+          {{ form.prefix_name }}
+          {% for e in form.prefix_name.errors %}<div class="text-danger">{{ e }}</div>{% endfor %}
+        </div>
+
+        <div class="col-md-3 mb-3 d-none" id="customPrefixContainer">
+          <label for="{{ form.prefix_name_custom.auto_id }}" class="form-label">
+            <i class="bi bi-pencil"></i>
+            {{ form.prefix_name_custom.label }}
+          </label>
+          {{ form.prefix_name_custom }}
+          {% if form.prefix_name_custom.help_text %}
+            <small class="form-text text-muted">{{ form.prefix_name_custom.help_text }}</small>
+          {% endif %}
+          {% for e in form.prefix_name_custom.errors %}<div class="text-danger">{{ e }}</div>{% endfor %}
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <label for="{{ form.name.auto_id }}" class="form-label">
+            <i class="bi bi-person"></i>
+            {{ form.name.label }}
+          </label>
+          {{ form.name }}
+          {% for e in form.name.errors %}<div class="text-danger">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+          <label for="{{ form.phone.auto_id }}" class="form-label">
+            <i class="bi bi-telephone"></i>
+            {{ form.phone.label }}
+          </label>
+          {{ form.phone }}
+          {% for e in form.phone.errors %}<div class="text-danger">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="{{ form.per_day_capacity.auto_id }}" class="form-label">
+            <i class="bi bi-speedometer2"></i>
+            {{ form.per_day_capacity.label }}
+          </label>
+          {{ form.per_day_capacity }}
+          {% for e in form.per_day_capacity.errors %}<div class="text-danger">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <!-- Section 3: ทักษะและความสามารถ -->
+      <div class="section-title">
+        <div class="section-icon">
+          <i class="bi bi-tools"></i>
+        </div>
+        <span>ทักษะและความสามารถ</span>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-12">
+          <label class="form-label">
+            <i class="bi bi-gear-fill"></i>
+            {{ form.skills_m.label }}
+            <span id="skills-selected-count" class="skills-count">
+              {% if form.skills_m.value %}{{ form.skills_m.value|length }}{% else %}0{% endif %}
+            </span>
+          </label>
+          
+          <!-- Search Box -->
+          <div class="skills-search-container mb-3">
+            <div class="input-group">
+
+              <input type="text" 
+                     id="skills-search-input" 
+                     class="form-control border-start-0 mb-2" 
+                     placeholder="🔍 ค้นหาทักษะ / ประเภทอุปกรณ์..." 
+                     autocomplete="off">
+              <button type="button" class="btn btn-outline-secondary" id="clear-search-btn">
+                <i class="bi bi-x-circle"></i> ล้าง
+              </button>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="skills-actions mb-3">
+            <button type="button" class="btn btn-sm btn-outline-primary" id="select-all-btn">
+              <i class="bi bi-check-square"></i> เลือกทั้งหมด
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="deselect-all-btn">
+              <i class="bi bi-square"></i> ยกเลิกทั้งหมด
+            </button>
+            <span class="text-muted ms-3" id="filtered-count"></span>
+          </div>
+
+          <!-- Skills Checkboxes Container -->
+          <div class="skills-checkbox-container" id="skills-checkbox-list">
+            <!-- Will be populated by JavaScript -->
+          </div>
+          
+          <!-- Hidden select for form submission -->
+          <div class="d-none">
+            {{ form.skills_m }}
+          </div>
+          
+          {% for e in form.skills_m.errors %}<div class="text-danger">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <!-- Section 4: สถานะการทำงาน -->
+      <div class="section-title">
+        <div class="section-icon">
+          <i class="bi bi-toggles"></i>
+        </div>
+        <span>สถานะและความสามารถ</span>
+      </div>
+
+      <!-- สามารถขึ้นเวรได้ และ สถานะการทำงาน -->
+      <div class="row mb-4">
+        <!-- สามารถขึ้นเวรได้ -->
+        <div class="col-md-6">
+          <div class="status-toggle-container">
+            <div class="status-toggle-wrapper">
+              {{ form.can_work_shifts }}
+              <label class="status-toggle-label" for="{{ form.can_work_shifts.auto_id }}">
+                <span class="toggle-slider"></span>
+                <span class="toggle-text">
+                  <span class="toggle-icon active-icon">
+                    <i class="bi bi-calendar-check-fill"></i>
+                  </span>
+                  <span class="toggle-icon inactive-icon">
+                    <i class="bi bi-calendar-x-fill"></i>
+                  </span>
+                </span>
+              </label>
+              <div class="status-description">
+                <div class="status-active-text">
+                  <strong>{{ form.can_work_shifts.label }}</strong>
+                  <p>ช่างคนนี้สามารถจัดตารางขึ้นเวรได้ (เวรเช้า/เวรบ่าย)</p>
+                </div>
+                <div class="status-inactive-text">
+                  <strong>ไม่สามารถขึ้นเวรได้</strong>
+                  <p>ช่างคนนี้ไม่ปรากฏในระบบจัดตารางเวร</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% for e in form.can_work_shifts.errors %}<div class="text-danger">{{ e }}</div>{% endfor %}
+        </div>
+
+        <!-- สถานะการทำงาน -->
+        <div class="col-md-6">
+          <div class="status-toggle-container">
+            <div class="status-toggle-wrapper">
+              {{ form.active }}
+              <label class="status-toggle-label" for="{{ form.active.auto_id }}">
+                <span class="toggle-slider"></span>
+                <span class="toggle-text">
+                  <span class="toggle-icon active-icon">
+                    <i class="bi bi-check-circle-fill"></i>
+                  </span>
+                  <span class="toggle-icon inactive-icon">
+                    <i class="bi bi-x-circle-fill"></i>
+                  </span>
+                </span>
+              </label>
+              <div class="status-description">
+                <div class="status-active-text">
+                  <strong>{{ form.active.label }}</strong>
+                  <p>ช่างคนนี้พร้อมรับงานและแสดงในระบบ</p>
+                </div>
+                <div class="status-inactive-text">
+                  <strong>ไม่ทำงาน / พักงาน</strong>
+                  <p>ช่างคนนี้ไม่พร้อมรับงานและจะไม่แสดงในรายการมอบหมายงาน</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% for e in form.active.errors %}<div class="text-danger">{{ e }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        {% if edit and technician %}
+          <a href="{% url 'technician_delete' tech_id=technician.id %}" 
+             class="btn btn-delete-form" 
+             onclick="return confirm('⚠️ ยืนยันลบช่าง {{ technician.name }} ใช่หรือไม่?')">
+            <i class="bi bi-trash me-1"></i>ลบข้อมูล
+          </a>
+        {% endif %}
+        <a href="{% url 'technicians_list' %}" class="btn btn-cancel">
+          <i class="bi bi-x-circle me-1"></i>ยกเลิก
+        </a>
+        <button type="submit" class="btn btn-save" id="submit-btn">
+          <i class="bi bi-check-circle me-1"></i>บันทึกข้อมูล
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const prefixSelect = document.getElementById('id_prefix_name');
+  const customContainer = document.getElementById('customPrefixContainer');
+  const customInput = document.getElementById('id_prefix_name_custom');
+  const skillsSelect = document.getElementById('id_skills_select');
+  const skillsCountBadge = document.getElementById('skills-selected-count');
+  const skillsCheckboxList = document.getElementById('skills-checkbox-list');
+  const searchInput = document.getElementById('skills-search-input');
+  const clearSearchBtn = document.getElementById('clear-search-btn');
+  const selectAllBtn = document.getElementById('select-all-btn');
+  const deselectAllBtn = document.getElementById('deselect-all-btn');
+  const filteredCount = document.getElementById('filtered-count');
+
+  let allSkillsData = [];
+
+  // แสดง/ซ่อน textbox "คำนำหน้า (ระบุเอง)" ตามที่เลือก
+  function toggleCustomPrefix() {
+    if (prefixSelect && prefixSelect.value === 'other') {
+      customContainer.style.display = 'block';
+      if (customInput) {
+        customInput.required = true;
+        customInput.focus();
+      }
+    } else {
+      customContainer.style.display = 'none';
+      if (customInput) {
+        customInput.required = false;
+        customInput.value = '';
+      }
+    }
+  }
+
+  // สร้าง checkbox list จาก select options
+  function initializeSkillsCheckboxes() {
+    if (!skillsSelect || !skillsCheckboxList) return;
+
+    const options = Array.from(skillsSelect.options);
+    const selectedValues = Array.from(skillsSelect.selectedOptions).map(opt => opt.value);
+    
+    allSkillsData = options.map(option => ({
+      value: option.value,
+      label: option.text,
+      selected: selectedValues.includes(option.value)
+    }));
+
+    renderSkillsCheckboxes();
+    updateSkillsCount();
+  }
+
+  // แสดง checkboxes
+  function renderSkillsCheckboxes(filterText = '') {
+    if (!skillsCheckboxList) return;
+
+    skillsCheckboxList.innerHTML = '';
+    const filter = filterText.toLowerCase();
+    let visibleCount = 0;
+
+    allSkillsData.forEach((skill, index) => {
+      const matches = !filter || skill.label.toLowerCase().includes(filter);
+      
+      if (matches) {
+        visibleCount++;
+        const div = document.createElement('div');
+        div.className = 'skill-checkbox-item' + (skill.selected ? ' selected' : '');
+        div.dataset.index = index;
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `skill-cb-${skill.value}`;
+        checkbox.value = skill.value;
+        checkbox.checked = skill.selected;
+        checkbox.addEventListener('change', handleCheckboxChange);
+        
+        const label = document.createElement('label');
+        label.htmlFor = `skill-cb-${skill.value}`;
+        label.textContent = skill.label;
+        
+        div.appendChild(checkbox);
+        div.appendChild(label);
+        div.addEventListener('click', (e) => {
+          if (e.target !== checkbox) {
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
+          }
+        });
+        
+        skillsCheckboxList.appendChild(div);
+      }
+    });
+
+    // อัพเดทข้อความจำนวนที่กรอง
+    if (filter) {
+      filteredCount.textContent = `แสดง ${visibleCount} จาก ${allSkillsData.length} รายการ`;
+    } else {
+      filteredCount.textContent = `ทั้งหมด ${allSkillsData.length} รายการ`;
+    }
+  }
+
+  // จัดการเมื่อ checkbox เปลี่ยนแปลง
+  function handleCheckboxChange(e) {
+    const checkbox = e.target;
+    const index = parseInt(checkbox.closest('.skill-checkbox-item').dataset.index);
+    
+    allSkillsData[index].selected = checkbox.checked;
+    
+    // อัพเดท hidden select
+    const option = Array.from(skillsSelect.options).find(opt => opt.value === checkbox.value);
+    if (option) {
+      option.selected = checkbox.checked;
+    }
+    
+    // อัพเดท UI
+    checkbox.closest('.skill-checkbox-item').classList.toggle('selected', checkbox.checked);
+    updateSkillsCount();
+  }
+
+  // อัพเดทจำนวนทักษะที่เลือก
+  function updateSkillsCount() {
+    if (skillsCountBadge) {
+      const selectedCount = allSkillsData.filter(s => s.selected).length;
+      skillsCountBadge.textContent = selectedCount;
+    }
+  }
+
+  // ค้นหา
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      renderSkillsCheckboxes(e.target.value);
+    });
+  }
+
+  // ล้างการค้นหา
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      renderSkillsCheckboxes();
+      searchInput.focus();
+    });
+  }
+
+  // เลือกทั้งหมด (เฉพาะที่แสดงอยู่)
+  if (selectAllBtn) {
+    selectAllBtn.addEventListener('click', () => {
+      const visibleCheckboxes = skillsCheckboxList.querySelectorAll('input[type="checkbox"]:not(.hidden)');
+      visibleCheckboxes.forEach(cb => {
+        if (!cb.checked) {
+          cb.checked = true;
+          cb.dispatchEvent(new Event('change'));
+        }
+      });
+    });
+  }
+
+  // ยกเลิกทั้งหมด (เฉพาะที่แสดงอยู่)
+  if (deselectAllBtn) {
+    deselectAllBtn.addEventListener('click', () => {
+      const visibleCheckboxes = skillsCheckboxList.querySelectorAll('input[type="checkbox"]:not(.hidden)');
+      visibleCheckboxes.forEach(cb => {
+        if (cb.checked) {
+          cb.checked = false;
+          cb.dispatchEvent(new Event('change'));
+        }
+      });
+    });
+  }
+
+  // เริ่มต้น
+  if (prefixSelect) {
+    toggleCustomPrefix();
+    prefixSelect.addEventListener('change', toggleCustomPrefix);
+  }
+
+  if (skillsSelect) {
+    initializeSkillsCheckboxes();
+  }
+});
+</script>
+
+{% endblock %}

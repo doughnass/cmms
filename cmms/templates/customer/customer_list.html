@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}
+	<title>CMMS MedCMU : รายชื่อลูกค้า</title>
+{% endblock %}
+
+
+
+{% block content %}
+
+ 
+<div class="container-fluid ">
+	<nav class="navbar">   
+	<h2 class="mx-auto text-center">รายชื่อลูกค้า</h2>
+	<a href="{% url 'add_customer' %}" class="btn btn-success me-2">เพิ่มลูกค้าใหม่</a>
+	<a href="{% url 'customer_list_export' %}?{{ request.GET.urlencode }}" class="btn btn-info">Export Excel</a>
+	</nav>
+
+
+
+	<div>
+       
+	<form method="get" class="row g-2 mb-3 align-items-end">
+
+		<div class="col-md-3">
+			<input type="text" name="q" class="form-control" placeholder="ค้นหาชื่อลูกค้า ฯลฯ" value="{{ request.GET.q }}">
+		</div>
+
+		<div class="col-md-3">
+			<button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#collapse-content" aria-expanded="false" aria-controls="collapse-content">เพิ่มตัวกรอง</button>
+		</div>
+
+		<div class="col-12">
+			<div id="collapse-content" class="collapse">
+				<div class="card card-body">
+					<div class="row">
+						<div class="col-md-3">
+							<p>สถานที่ใช้งาน</p>
+							<select name="customer_units" class="select2" multiple size="5" aria-label="สถานที่ใช้งาน">
+								<option value=""></option>
+								{% for unit in customer_units %}
+									<option value="{{ unit }}" {% if unit in customer_units_selected %}selected{% endif %}>{{ unit }}</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="col-md-3"> 
+							<p>หน่วย/สาขา</p>
+							<select name="customer_section" class="select2" multiple size="5" aria-label="หน่วย/สาขา">
+								<option value=""></option>
+								{% for section in customer_sections %}
+									<option value="{{ section }}" {% if section in customer_sections_selected %}selected{% endif %}>{{ section }}</option>
+								{% endfor %}
+							</select>                   
+						</div>
+						<div class="col-md-3"> 
+							<p>งาน (ในฝ่าย)</p>
+							<select name="customer_semi_department" class="select2" multiple size="5" aria-label="งาน (ในฝ่าย)">
+								<option value=""></option>
+								{% for job in customer_semi_departments %}
+									<option value="{{ job }}" {% if job in customer_semi_departments_selected %}selected{% endif %}>{{ customer_semi_department }}</option>
+								{% endfor %}
+							</select>                   
+						</div>
+                                                
+						<div class="col-md-3">
+							<p>ภาควิชา/ฝ่าย/งาน</p>
+							<select name="customer_department" class="select2" multiple size="5" aria-label="ภาควิชา/ฝ่าย/งาน">
+								<option value=""></option>
+								{% for department in customer_departments %}
+									<option value="{{ department }}" {% if department in customer_departments_selected %}selected{% endif %}>{{ department }}</option>
+								{% endfor %}
+							</select>            
+						</div>
+						<div class="col-md-3">
+							<p>สังกัด</p>
+							<select name="customer_division" class="select2" multiple size="5" aria-label="สังกัด">
+								<option value=""></option>
+								{% for division in customer_divisions %}
+									<option value="{{ division }}" {% if division in customer_divisions_selected %}selected{% endif %}>{{ division }}</option>
+								{% endfor %}
+							</select>                    
+						</div>
+						<div class="col-md-3">
+							<p>ในกำกับ</p>
+							<select name="customer_customer" class="select2" multiple size="5" aria-label="ในกำกับ">
+								<option value=""></option>
+								{% for customer in customer_customers %}
+									<option value="{{ customer }}" {% if customer in customer_customers_selected %}selected{% endif %}>{{ customer }}</option>
+								{% endfor %}
+							</select>
+						</div>
+						<div class="col-md-3">
+							<p></p>
+							<a href="{% url 'customer_list' %}" class="btn btn-warning mt-2">ล้างตัวกรองทั้งหมด</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+
+			<div>
+				<button type="submit" class="btn btn-primary mt-0">ค้นหา</button>
+                
+			</div>
+
+	</form>
+	</div>
+
+
+
+		{% if messages %}
+			{% for message in messages %}
+				<div class="alert alert-success text-start" role="alert">
+					<Strong>{{message}}</Strong>
+				</div>
+			{% endfor %}
+		{% endif %}   
+
+
+	<table class="table table-hover border-primary table-bordered  table-sm  text-center table-sm-text">
+		<thead>
+			<tr class="text-nowrap bg-light">
+			<th scope="col">ลำดับ</th>
+			<th scope="col">รหัสลูกค้า</th>   
+			<th scope="col">สถานที่ใช้งาน</th>
+			<th scope="col">หน่วย/สาขา</th>
+			<th scope="col">งาน (ในฝ่าย)</th>
+			<th scope="col">ภาควิชา/ฝ่าย/งาน</th>
+			<th scope="col">สังกัด</th>
+			<th scope="col">กำกับ</th>
+			<th scope="col">ชื่อผู้ติดต่อ</th>
+			<th scope="col">เบอร์ติดต่อ</th>
+			<th scope="col">อีเมล</th>
+			<th scope="col">ที่อยู่</th>
+			<th scope="col">แก้ไข</th>
+			<th scope="col">ลบ</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for customer_list in all_customers %}
+			<tr>
+				<th scope="row">{{customer_list.id}}</th>
+				<td>{{customer_list.customer_id}}</td>
+				<td>{{customer_list.customer_units}}</td>
+				<td>{{customer_list.customer_section}}</td>
+				<td>{{customer_list.customer_department}}</td>
+				<td>{{customer_list.customer_division}}</td>
+				<td>{{customer_list.customer_customer}}</td>
+				<td>{{customer_list.customer_name}}</td>                
+				<td>{{customer_list.customer_tel}}</td>
+				<td>{{customer_list.customer_email}}</td>
+				<td>{{customer_list.customer_address}}</td>
+				<td><a href="{% url 'edit_customer' customer_list.id %}" class="btn btn-warning">แก้ไข</a></td>
+				<td>
+						  <a href="{% url 'delete_customer' customer_list.id %}"
+							  class="btn btn-danger delete-btn"
+							  data-eqid="{{ customer_list.customer_id|escape }}"
+							  data-eq-qr="{{ customer_list.customer_id|escape }}"
+							  data-eqname="{{ customer_list.customer_units|escape }}"
+						  >ลบ</a>
+				</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+</div>
+
+
+{% endblock %}
+

@@ -1,0 +1,5 @@
+category,code,label,description,active,order
+customers,cntu,คณะแพทยศาสตร์ มหาวิทยาลัยเชียงใหม่,Imported customer,true,10
+customers,cmu_hospital,โรงพยาบาลมหาวิทยาลัยเชียงใหม่,Imported customer,true,20
+workorder_type,repair,ซ่อม,Work order type,true,10
+workorder_type,maintenance,บำรุงรักษา,Work order type,true,20

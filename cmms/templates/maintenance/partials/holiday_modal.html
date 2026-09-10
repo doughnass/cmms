@@ -1,0 +1,1735 @@
+<!-- Holiday Modal - Modern Design -->
+{% csrf_token %}
+<style>
+.holiday-modal-content { border: none; border-radius: 16px; overflow: hidden; }
+.holiday-modal-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px 32px; border: none; }
+.holiday-modal-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+.holiday-modal-subtitle { margin: 0; opacity: 0.9; font-size: 0.875rem; }
+.holiday-modal-body { padding: 32px; background: #f8f9fa; }
+.holiday-filter-card { border: none; border-radius: 12px; }
+.holiday-filter-body { padding: 20px; }
+.holiday-filter-label { font-weight: 600; font-size: 0.875rem; }
+.holiday-filter-select { padding: 10px 16px; border-radius: 8px; border: 2px solid #e2e8f0; }
+.holiday-filter-input { padding: 10px 16px; border-radius: 8px; border: 2px solid #e2e8f0; }
+.holiday-clear-btn { padding: 10px 16px; border-radius: 8px; font-weight: 600; }
+.holiday-card-main { border: none; border-radius: 12px; }
+.holiday-card-body-main { padding: 24px; }
+.holiday-section-title { font-weight: 700; color: #667eea; }
+.holiday-import-btn { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 8px 16px; border-radius: 8px; font-weight: 600; border: none; }
+.holiday-add-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 24px; border-radius: 8px; font-weight: 600; border: none; }
+.holiday-count-badge { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 6px 12px; font-size: 0.813rem; }
+.holiday-empty-icon { font-size: 3rem; color: #cbd5e0; margin-bottom: 16px; display: block; }
+.holiday-empty-text { color: #94a3b8; font-size: 1rem; }
+.holiday-last-update { font-size: 0.75rem; }
+</style>
+<div class="modal fade" id="holidayModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content holiday-modal-content">
+      
+      <!-- Modal Header -->
+      <div class="modal-header holiday-modal-header">
+        <div>
+          <h5 class="modal-title holiday-modal-title">
+            <i class="bi bi-calendar-event"></i> จัดการวันหยุดราชการ
+          </h5>
+          <p class="holiday-modal-subtitle">กำหนดวันหยุดราชการประจำปี</p>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="modal-body holiday-modal-body">
+        
+        <!-- Filter Section -->
+        <div class="card shadow-sm mb-4 holiday-filter-card">
+          <div class="card-body holiday-filter-body">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-3">
+                <label for="filterYear" class="form-label holiday-filter-label">
+                  <i class="bi bi-funnel"></i> กรองตามปี
+                </label>
+                <select class="form-select holiday-filter-select" id="filterYear" onchange="filterHolidays()">
+                  <option value="">ทุกปี</option>
+                </select>
+              </div>
+              
+              <div class="col-md-3">
+                <label for="filterMonth" class="form-label holiday-filter-label">
+                  <i class="bi bi-calendar3"></i> กรองตามเดือน
+                </label>
+                <select class="form-select holiday-filter-select" id="filterMonth" onchange="filterHolidays()">
+                  <option value="">ทุกเดือน</option>
+                  <option value="1">มกราคม</option>
+                  <option value="2">กุมภาพันธ์</option>
+                  <option value="3">มีนาคม</option>
+                  <option value="4">เมษายน</option>
+                  <option value="5">พฤษภาคม</option>
+                  <option value="6">มิถุนายน</option>
+                  <option value="7">กรกฎาคม</option>
+                  <option value="8">สิงหาคม</option>
+                  <option value="9">กันยายน</option>
+                  <option value="10">ตุลาคม</option>
+                  <option value="11">พฤศจิกายน</option>
+                  <option value="12">ธันวาคม</option>
+                </select>
+              </div>
+              
+              <div class="col-md-4">
+                <label for="searchHoliday" class="form-label holiday-filter-label">
+                  <i class="bi bi-search"></i> ค้นหา
+                </label>
+                <input type="text" class="form-control holiday-filter-input" id="searchHoliday" placeholder="ค้นหาชื่อวันหยุด..." onkeyup="filterHolidays()">
+              </div>
+              
+              <div class="col-md-2">
+                <button type="button" class="btn btn-light w-100 holiday-clear-btn" onclick="clearFilters()">
+                  <i class="bi bi-x-circle"></i> ล้าง
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Add Holiday Section -->
+        <div class="card shadow-sm mb-4 holiday-card-main">
+          <div class="card-body holiday-card-body-main">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="mb-0 holiday-section-title">
+                <i class="bi bi-plus-circle"></i> เพิ่มวันหยุดใหม่
+              </h6>
+              <button type="button" class="btn btn-sm holiday-import-btn" onclick="showImportDialog()">
+                <i class="bi bi-cloud-download"></i> นำเข้าวันหยุดราชการ
+              </button>
+            </div>
+            
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label for="holidayDate" class="form-label holiday-filter-label">วันที่</label>
+                <input type="date" class="form-control holiday-filter-input" id="holidayDate">
+              </div>
+              
+              <div class="col-md-4">
+                <label for="holidayName" class="form-label holiday-filter-label">ชื่อวันหยุด</label>
+                <input type="text" class="form-control holiday-filter-input" id="holidayName" placeholder="เช่น วันขึ้นปีใหม่">
+              </div>
+              
+              <div class="col-md-3">
+                <label for="holidayDescription" class="form-label holiday-filter-label">รายละเอียด (ไม่บังคับ)</label>
+                <input type="text" class="form-control holiday-filter-input" id="holidayDescription" placeholder="เช่น หยุดทุกคน">
+              </div>
+              
+              <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn w-100 holiday-add-btn" onclick="addHoliday()">
+                  <i class="bi bi-plus-lg"></i> เพิ่ม
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Holidays List Section -->
+        <div class="card shadow-sm holiday-card-main">
+          <div class="card-body holiday-card-body-main">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h6 class="mb-0 holiday-section-title">
+                  <i class="bi bi-list-ul"></i> รายการวันหยุดราชการ
+                </h6>
+                <small class="text-muted holiday-last-update" id="lastUpdateTime">
+                  <i class="bi bi-clock"></i> <span id="lastUpdateText">ยังไม่ได้โหลดข้อมูล</span>
+                </small>
+              </div>
+              <span class="badge holiday-count-badge" id="holidayCount">0 วัน</span>
+            </div>
+            
+            <!-- Holidays List (1 row per day) -->
+            <div id="holidaysList">
+              <!-- Holiday rows will be inserted here -->
+              <div class="text-center py-5" id="emptyState">
+                <i class="bi bi-calendar-x holiday-empty-icon"></i>
+                <p class="holiday-empty-text">ยังไม่มีวันหยุดที่กำหนด</p>
+                <p class="holiday-empty-subtext">เพิ่มวันหยุดราชการเพื่อแสดงในปฏิทิน</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="modal-footer holiday-modal-footer">
+        <button type="button" class="btn btn-light holiday-close-btn" data-bs-dismiss="modal">
+          <i class="bi bi-x-lg"></i> ปิด
+        </button>
+        <button type="button" class="btn holiday-save-btn" onclick="saveHolidays()">
+          <i class="bi bi-check-lg"></i> บันทึกทั้งหมด
+        </button>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<!-- Holiday Modal Styles -->
+<style>
+/* Modal Animations */
+.modal.fade .modal-dialog {
+  transform: scale(0.9);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal.show .modal-dialog {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* Spin Animation for Refresh Button */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+/* Additional Holiday Modal Styles */
+.holiday-empty-subtext {
+  color: #cbd5e0;
+  font-size: 0.875rem;
+}
+
+.holiday-modal-footer {
+  background: white;
+  padding: 20px 32px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.holiday-close-btn {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.holiday-save-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  border: none;
+}
+
+.import-modal-content {
+  border-radius: 12px;
+}
+
+.import-modal-header {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.import-alert-info {
+  border-radius: 8px;
+}
+
+.import-divider {
+  border-top: 1px solid #e2e8f0;
+}
+
+.import-refresh-btn {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  border: none;
+}
+
+.import-success-alert {
+  border-radius: 8px;
+}
+
+.import-primary-btn {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  border: none;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 8px;
+}
+
+.status-new {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.status-updated {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+
+.status-unchanged {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+/* Holiday Card Styles - List View */
+.holiday-row {
+  background: white;
+  border-radius: 8px;
+  padding: 16px 20px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.holiday-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.holiday-row:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+  transform: translateX(4px);
+}
+
+.holiday-row-date {
+  flex-shrink: 0;
+  width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.holiday-row-day {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #667eea;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.holiday-row-month {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #667eea;
+  text-transform: uppercase;
+}
+
+.holiday-row-weekday {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.holiday-row-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.holiday-row-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 1rem;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.holiday-row-description {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.holiday-row-actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+}
+
+.holiday-row-actions button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.813rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-edit-holiday {
+  background: #f1f5f9;
+  color: #667eea;
+}
+
+.btn-edit-holiday:hover {
+  background: #e0e7ff;
+  transform: scale(1.05);
+}
+
+.btn-delete-holiday {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.btn-delete-holiday:hover {
+  background: #fee2e2;
+  transform: scale(1.05);
+}
+
+/* Responsive for list view */
+@media (max-width: 768px) {
+  .holiday-row {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  .holiday-row-date {
+    width: 100%;
+  }
+  
+  .holiday-row-actions {
+    width: 100%;
+  }
+  
+  .holiday-row-actions button {
+    flex: 1;
+  }
+}
+
+/* Old card styles - kept for backward compatibility */
+.holiday-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.holiday-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.holiday-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  transform: translateY(-2px);
+}
+
+.holiday-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #667eea;
+  margin-bottom: 8px;
+}
+
+.holiday-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.holiday-description {
+  font-size: 0.813rem;
+  color: #64748b;
+  margin-bottom: 8px;
+  font-style: italic;
+}
+
+.holiday-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.holiday-actions button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.813rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+/* Filter Section Styles */
+#holidayModal .form-select,
+#holidayModal .form-control {
+  transition: all 0.2s;
+}
+
+#holidayModal .form-select:focus,
+#holidayModal .form-control:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  outline: none;
+}
+
+#holidayModal button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+#holidayModal button:active {
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modal-xl {
+    margin: 0.5rem;
+  }
+  
+  .holiday-card {
+    padding: 12px;
+  }
+}
+</style>
+
+<!-- Holiday Modal Script -->
+<script>
+let holidays = [];
+let filteredHolidays = [];
+
+// Get CSRF token for API calls
+function getCSRFToken() {
+  // Try multiple sources
+  const token = document.querySelector('[name=csrfmiddlewaretoken]')?.value 
+    || document.querySelector('input[name="csrfmiddlewaretoken"]')?.value
+    || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+    || '';
+  
+  if (!token) {
+    console.warn('CSRF token not found!');
+  }
+  
+  return token;
+}
+
+// Show message notification
+function showMessage(type, message) {
+  const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+  const alertHtml = `
+    <div class="alert ${alertClass} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" 
+         style="z-index: 9999; min-width: 300px;" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+  
+  const alertDiv = document.createElement('div');
+  alertDiv.innerHTML = alertHtml;
+  document.body.appendChild(alertDiv);
+  
+  setTimeout(() => {
+    const alert = alertDiv.querySelector('.alert');
+    if (alert) {
+      const bsAlert = new bootstrap.Alert(alert);
+      bsAlert.close();
+    }
+  }, 3000);
+}
+
+// Load existing holidays from backend
+async function loadHolidays(showStatus = false) {
+  try {
+    const response = await fetch('/api/holidays/', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCSRFToken(),
+      },
+      credentials: 'same-origin'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      holidays = result.data;
+      
+      // Save to localStorage with BOTH keys for compatibility
+      localStorage.setItem('cmms_holidays', JSON.stringify(holidays));
+      localStorage.setItem('holidays', JSON.stringify(holidays)); // สำหรับ technician_availability_manage.html
+      
+      // 🔔 แจ้งเตือนหน้าอื่นว่าข้อมูลวันหยุดถูกอัปเดต
+      window.dispatchEvent(new CustomEvent('holidaysUpdated', { detail: { holidays } }));
+      
+      // Set default filter to current year
+      const currentYear = new Date().getFullYear();
+      const filterYearEl = document.getElementById('filterYear');
+      if (filterYearEl) {
+        filterYearEl.value = currentYear;
+      }
+      
+      populateYearFilter();
+      filterHolidays();
+      
+      // Update last update time
+      if (showStatus) {
+        updateLastUpdateTime();
+      }
+    } else {
+      throw new Error(result.error || 'Failed to load holidays');
+    }
+  } catch (error) {
+    console.error('Error loading holidays:', error);
+    
+    // Show error message
+    showMessage('danger', `⚠️ ไม่สามารถโหลดวันหยุดจาก API: ${error.message}`);
+    
+    // Fallback to localStorage if API fails
+    const stored = localStorage.getItem('cmms_holidays');
+    if (stored) {
+      console.log('Loading holidays from localStorage fallback');
+      holidays = JSON.parse(stored);
+      const currentYear = new Date().getFullYear();
+      const filterYearEl = document.getElementById('filterYear');
+      if (filterYearEl) {
+        filterYearEl.value = currentYear;
+      }
+      populateYearFilter();
+      filterHolidays();
+      showMessage('warning', 'โหลดข้อมูลจาก cache (อาจไม่ใหม่ล่าสุด)');
+    } else {
+      showMessage('danger', 'ไม่พบข้อมูลวันหยุด กรุณาลองใหม่อีกครั้ง');
+    }
+  }
+}
+
+// Update last update time display
+function updateLastUpdateTime() {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('th-TH', { 
+    hour: '2-digit', 
+    minute: '2-digit'
+  });
+  const dateStr = now.toLocaleDateString('th-TH', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+  
+  const lastUpdateElement = document.getElementById('lastUpdateText');
+  if (lastUpdateElement) {
+    lastUpdateElement.textContent = `อัปเดตล่าสุด: ${dateStr} ${timeStr}`;
+  }
+}
+
+// Quick refresh holidays with change detection
+async function quickRefreshHolidays() {
+  const currentYear = new Date().getFullYear();
+  const nextYear = currentYear + 1;
+  const refreshBtn = document.getElementById('refreshBtn');
+  
+  // Confirm action
+  if (!confirm(`ต้องการรีเฟรชข้อมูลวันหยุดราชการปี ${currentYear} และ ${nextYear} หรือไม่?\n\nระบบจะตรวจสอบและแสดงการเปลี่ยนแปลง`)) {
+    return;
+  }
+  
+  // Save current holidays for comparison
+  const oldHolidays = [...holidays];
+  
+  // Show loading
+  const originalHTML = refreshBtn.innerHTML;
+  refreshBtn.disabled = true;
+  refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> กำลังรีเฟรช...';
+  
+  try {
+    const formData = new FormData();
+    formData.append('year', `${currentYear},${nextYear}`);
+    formData.append('overwrite', 'true');
+    
+    const response = await fetch('/api/holidays/import-government/', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCSRFToken(),
+      },
+      body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // Reload holidays
+      await loadHolidays(false);
+      
+      // Detect changes
+      const changes = detectHolidayChanges(oldHolidays, holidays);
+      
+      // Mark holidays with status
+      holidays.forEach(holiday => {
+        const oldHoliday = oldHolidays.find(h => h.date === holiday.date);
+        if (!oldHoliday) {
+          holiday._status = 'new';
+        } else if (oldHoliday.name !== holiday.name || oldHoliday.description !== holiday.description) {
+          holiday._status = 'updated';
+        } else {
+          holiday._status = 'unchanged';
+        }
+      });
+      
+      // Refresh display
+      filterHolidays();
+      updateLastUpdateTime();
+      
+      // Show summary
+      showRefreshSummary(changes, result);
+      
+      // Reset button after delay
+      setTimeout(() => {
+        refreshBtn.innerHTML = originalHTML;
+        refreshBtn.disabled = false;
+        
+        // Clear status after 10 seconds
+        setTimeout(() => {
+          holidays.forEach(h => delete h._status);
+          filterHolidays();
+        }, 10000);
+      }, 1000);
+    } else {
+      throw new Error(result.error || 'เกิดข้อผิดพลาดในการอัปเดต');
+    }
+  } catch (error) {
+    console.error('Error refreshing holidays:', error);
+    alert(`เกิดข้อผิดพลาด: ${error.message}`);
+    refreshBtn.innerHTML = originalHTML;
+    refreshBtn.disabled = false;
+  }
+}
+
+// Detect changes between old and new holidays
+function detectHolidayChanges(oldHolidays, newHolidays) {
+  const changes = {
+    new: [],
+    updated: [],
+    unchanged: [],
+    removed: []
+  };
+  
+  // Check for new and updated holidays
+  newHolidays.forEach(newHol => {
+    const oldHol = oldHolidays.find(h => h.date === newHol.date);
+    if (!oldHol) {
+      changes.new.push(newHol);
+    } else if (oldHol.name !== newHol.name || oldHol.description !== newHol.description) {
+      changes.updated.push({ old: oldHol, new: newHol });
+    } else {
+      changes.unchanged.push(newHol);
+    }
+  });
+  
+  // Check for removed holidays
+  oldHolidays.forEach(oldHol => {
+    if (!newHolidays.find(h => h.date === oldHol.date)) {
+      changes.removed.push(oldHol);
+    }
+  });
+  
+  return changes;
+}
+
+// Show refresh summary
+function showRefreshSummary(changes, apiResult) {
+  const parts = [];
+  
+  if (changes.new.length > 0) {
+    parts.push(`<span class="status-badge status-new">เพิ่มใหม่ ${changes.new.length} วัน</span>`);
+  }
+  if (changes.updated.length > 0) {
+    parts.push(`<span class="status-badge status-updated">อัปเดต ${changes.updated.length} วัน</span>`);
+  }
+  if (changes.unchanged.length > 0) {
+    parts.push(`<span class="status-badge status-unchanged">ไม่เปลี่ยนแปลง ${changes.unchanged.length} วัน</span>`);
+  }
+  
+  let message = '<strong>✓ รีเฟรชข้อมูลเรียบร้อย!</strong><br>';
+  if (parts.length > 0) {
+    message += parts.join(' ');
+  } else {
+    message += 'ไม่พบการเปลี่ยนแปลง';
+  }
+  
+  if (apiResult.stats && apiResult.stats.errors && apiResult.stats.errors.length > 0) {
+    message += `<br><small class="text-warning">⚠ มีข้อผิดพลาดบางส่วน: ${apiResult.stats.errors.length} รายการ</small>`;
+  }
+  
+  // Show message with HTML
+  const alertDiv = document.createElement('div');
+  alertDiv.innerHTML = `
+    <div class="alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" 
+         style="z-index: 9999; min-width: 400px; max-width: 600px;" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  `;
+  document.body.appendChild(alertDiv);
+  
+  setTimeout(() => {
+    const alert = alertDiv.querySelector('.alert');
+    if (alert) {
+      const bsAlert = new bootstrap.Alert(alert);
+      bsAlert.close();
+    }
+  }, 8000);
+}
+
+// Sync from workalendar API and compare with JSON
+async function syncFromAPI() {
+  const currentYear = new Date().getFullYear();
+  const nextYear = currentYear + 1;
+  const syncBtn = document.getElementById('syncApiBtn');
+  
+  // Confirm action
+  if (!confirm(`ต้องการซิงค์ข้อมูลวันหยุดจาก workalendar API หรือไม่?\n\nระบบจะดึงข้อมูลปี ${currentYear} และ ${nextYear} มาเทียบกับไฟล์ JSON ปัจจุบัน`)) {
+    return;
+  }
+  
+  // Show loading
+  const originalHTML = syncBtn.innerHTML;
+  syncBtn.disabled = true;
+  syncBtn.innerHTML = '<i class="bi bi-cloud-arrow-down spin"></i> กำลังซิงค์จาก API...';
+  
+  try {
+    const response = await fetch('/api/holidays/sync-from-api/', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCSRFToken(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        years: [currentYear, nextYear],
+        update_json: false,  // Don't update JSON yet, just compare
+        import_to_db: false  // Don't import to DB yet, just compare
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // Show comparison dialog
+      showSyncComparisonDialog(result);
+    } else {
+      throw new Error(result.error || 'เกิดข้อผิดพลาดในการซิงค์');
+    }
+  } catch (error) {
+    console.error('Error syncing from API:', error);
+    alert(`เกิดข้อผิดพลาด: ${error.message}`);
+  } finally {
+    syncBtn.innerHTML = originalHTML;
+    syncBtn.disabled = false;
+  }
+}
+
+// Show sync comparison dialog
+function showSyncComparisonDialog(result) {
+  const { comparison, summary } = result;
+  
+  // Build comparison HTML
+  let html = `
+    <div class="modal fade" id="syncComparisonModal" tabindex="-1">
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
+            <h5 class="modal-title">
+              <i class="bi bi-cloud-arrow-down"></i> เปรียบเทียบข้อมูลจาก API
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <!-- Summary -->
+            <div class="alert alert-info" style="border-radius: 8px;">
+              <h6 class="mb-2"><i class="bi bi-info-circle"></i> สรุปการเปรียบเทียบ</h6>
+              <div class="d-flex gap-2 flex-wrap">
+                ${summary.new_count > 0 ? `<span class="badge bg-success">ใหม่ ${summary.new_count} วัน</span>` : ''}
+                ${summary.updated_count > 0 ? `<span class="badge bg-warning">เปลี่ยนแปลง ${summary.updated_count} วัน</span>` : ''}
+                ${summary.unchanged_count > 0 ? `<span class="badge bg-secondary">ไม่เปลี่ยนแปลง ${summary.unchanged_count} วัน</span>` : ''}
+                ${summary.removed_count > 0 ? `<span class="badge bg-danger">ถูกลบ ${summary.removed_count} วัน</span>` : ''}
+              </div>
+            </div>
+            
+            <!-- New Holidays -->
+            ${comparison.new.length > 0 ? `
+              <div class="mb-3">
+                <h6 class="text-success"><i class="bi bi-plus-circle"></i> วันหยุดใหม่ (${comparison.new.length})</h6>
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover">
+                    <thead>
+                      <tr>
+                        <th>วันที่</th>
+                        <th>ชื่อวันหยุด</th>
+                        <th>ปี</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${comparison.new.map(h => `
+                        <tr>
+                          <td>${h.date}</td>
+                          <td><strong>${h.name}</strong></td>
+                          <td>${h.year}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ` : ''}
+            
+            <!-- Updated Holidays -->
+            ${comparison.updated.length > 0 ? `
+              <div class="mb-3">
+                <h6 class="text-warning"><i class="bi bi-pencil-square"></i> วันหยุดที่เปลี่ยนแปลง (${comparison.updated.length})</h6>
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover">
+                    <thead>
+                      <tr>
+                        <th>วันที่</th>
+                        <th>ชื่อเดิม</th>
+                        <th>→</th>
+                        <th>ชื่อใหม่</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${comparison.updated.map(h => `
+                        <tr>
+                          <td>${h.date}</td>
+                          <td><del class="text-muted">${h.old_name}</del></td>
+                          <td>→</td>
+                          <td><strong>${h.new_name}</strong></td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ` : ''}
+            
+            <!-- Removed Holidays -->
+            ${comparison.removed.length > 0 ? `
+              <div class="mb-3">
+                <h6 class="text-danger"><i class="bi bi-trash"></i> วันหยุดที่ถูกลบออก (${comparison.removed.length})</h6>
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover">
+                    <thead>
+                      <tr>
+                        <th>วันที่</th>
+                        <th>ชื่อวันหยุด</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${comparison.removed.map(h => `
+                        <tr>
+                          <td>${h.date}</td>
+                          <td><del>${h.name}</del></td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ` : ''}
+            
+            <!-- No Changes -->
+            ${summary.new_count === 0 && summary.updated_count === 0 && summary.removed_count === 0 ? `
+              <div class="alert alert-success" style="border-radius: 8px;">
+                <i class="bi bi-check-circle"></i> <strong>ข้อมูลตรงกัน!</strong><br>
+                ไม่พบความแตกต่างระหว่างข้อมูลจาก API และไฟล์ JSON
+              </div>
+            ` : ''}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">ปิด</button>
+            ${summary.new_count > 0 || summary.updated_count > 0 ? `
+              <button type="button" class="btn btn-warning" onclick="applySyncChanges(false)">
+                <i class="bi bi-file-earmark-arrow-down"></i> อัปเดต JSON เท่านั้น
+              </button>
+              <button type="button" class="btn btn-success" onclick="applySyncChanges(true)">
+                <i class="bi bi-database-add"></i> อัปเดตทั้ง JSON + Database
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Remove old modal if exists
+  const oldModal = document.getElementById('syncComparisonModal');
+  if (oldModal) {
+    oldModal.remove();
+  }
+  
+  // Add modal to body
+  document.body.insertAdjacentHTML('beforeend', html);
+  
+  // Show modal
+  const modal = new bootstrap.Modal(document.getElementById('syncComparisonModal'));
+  modal.show();
+  
+  // Store comparison data for later use
+  window._syncComparisonData = result;
+}
+
+// Apply sync changes
+async function applySyncChanges(updateDB) {
+  const currentYear = new Date().getFullYear();
+  const nextYear = currentYear + 1;
+  
+  // Confirm
+  const action = updateDB ? 'อัปเดตทั้งไฟล์ JSON และ Database' : 'อัปเดตไฟล์ JSON เท่านั้น';
+  if (!confirm(`ต้องการ${action} หรือไม่?`)) {
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/holidays/sync-from-api/', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCSRFToken(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        years: [currentYear, nextYear],
+        update_json: true,
+        import_to_db: updateDB
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // Close comparison modal
+      const modal = bootstrap.Modal.getInstance(document.getElementById('syncComparisonModal'));
+      if (modal) modal.hide();
+      
+      // Show success message
+      alert(`✓ ${action}เรียบร้อยแล้ว!`);
+      
+      // Reload holidays if DB was updated
+      if (updateDB) {
+        await loadHolidays(true);
+      }
+    } else {
+      throw new Error(result.error || 'เกิดข้อผิดพลาด');
+    }
+  } catch (error) {
+    console.error('Error applying sync changes:', error);
+    alert(`เกิดข้อผิดพลาด: ${error.message}`);
+  }
+}
+
+// Populate year filter dropdown
+function populateYearFilter() {
+  const yearSelect = document.getElementById('filterYear');
+  
+  // Check if element exists
+  if (!yearSelect) {
+    console.warn('Year filter element not found');
+    return;
+  }
+  
+  const currentYear = new Date().getFullYear();
+  const years = [...new Set(holidays.map(h => new Date(h.date).getFullYear()))].sort((a, b) => b - a);
+  
+  // Add current year if not in list
+  if (!years.includes(currentYear)) {
+    years.unshift(currentYear);
+    years.sort((a, b) => b - a);
+  }
+  
+  // Save current selection
+  const currentSelection = yearSelect.value || currentYear;
+  
+  // Clear existing options except first
+  yearSelect.innerHTML = '<option value="">ทุกปี</option>';
+  
+  years.forEach(year => {
+    const option = document.createElement('option');
+    option.value = year;
+    option.textContent = year + 543; // Convert to Buddhist year
+    yearSelect.appendChild(option);
+  });
+  
+  // Restore selection or set to current year
+  yearSelect.value = currentSelection;
+}
+
+// Filter holidays
+function filterHolidays() {
+  const yearFilterEl = document.getElementById('filterYear');
+  const monthFilterEl = document.getElementById('filterMonth');
+  const searchEl = document.getElementById('searchHoliday');
+  
+  // Check if filter elements exist
+  if (!yearFilterEl || !monthFilterEl || !searchEl) {
+    console.warn('Filter elements not found, skipping filter');
+    return;
+  }
+  
+  const yearFilter = yearFilterEl.value;
+  const monthFilter = monthFilterEl.value;
+  const searchText = searchEl.value.toLowerCase().trim();
+  
+  filteredHolidays = holidays.filter(holiday => {
+    const date = new Date(holiday.date);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    
+    // Year filter
+    if (yearFilter && year !== parseInt(yearFilter)) {
+      return false;
+    }
+    
+    // Month filter
+    if (monthFilter && month !== parseInt(monthFilter)) {
+      return false;
+    }
+    
+    // Search filter
+    if (searchText && !holiday.name.toLowerCase().includes(searchText)) {
+      return false;
+    }
+    
+    return true;
+  });
+  
+  renderHolidays();
+}
+
+// Clear filters
+function clearFilters() {
+  const currentYear = new Date().getFullYear();
+  const yearFilterEl = document.getElementById('filterYear');
+  const monthFilterEl = document.getElementById('filterMonth');
+  const searchEl = document.getElementById('searchHoliday');
+  
+  if (yearFilterEl) yearFilterEl.value = currentYear;
+  if (monthFilterEl) monthFilterEl.value = '';
+  if (searchEl) searchEl.value = '';
+  
+  filterHolidays();
+}
+
+// Add new holiday
+async function addHoliday() {
+  const dateInput = document.getElementById('holidayDate');
+  const nameInput = document.getElementById('holidayName');
+  const descInput = document.getElementById('holidayDescription');
+  
+  const date = dateInput.value;
+  const name = nameInput.value.trim();
+  const description = descInput.value.trim();
+  
+  if (!date || !name) {
+    alert('กรุณากรอกวันที่และชื่อวันหยุด');
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/holidays/create/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCSRFToken(),
+      },
+      body: JSON.stringify({
+        date: date,
+        name: name,
+        description: description
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // Add to local array
+      holidays.push({
+        id: result.data.id,
+        date: result.data.date,
+        name: result.data.name,
+        description: result.data.description || '',
+        is_active: true
+      });
+      
+      // Clear inputs
+      dateInput.value = '';
+      nameInput.value = '';
+      descInput.value = '';
+      
+      // Save to localStorage with BOTH keys
+      localStorage.setItem('cmms_holidays', JSON.stringify(holidays));
+      localStorage.setItem('holidays', JSON.stringify(holidays));
+      
+      // 🔔 แจ้งเตือนปฏิทินว่ามีการเพิ่มวันหยุด
+      window.dispatchEvent(new CustomEvent('holidaysUpdated', { detail: { holidays } }));
+      
+      populateYearFilter();
+      filterHolidays();
+      
+      // Show success message
+      showMessage('success', result.message || 'เพิ่มวันหยุดเรียบร้อยแล้ว');
+    } else {
+      alert(result.error || 'เกิดข้อผิดพลาดในการเพิ่มวันหยุด');
+    }
+  } catch (error) {
+    console.error('Error adding holiday:', error);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+  }
+}
+
+// Edit holiday - Open modal dialog
+function editHoliday(id) {
+  const holiday = holidays.find(h => h.id === id);
+  if (!holiday) return;
+  
+  // Create edit modal
+  const editModal = `
+    <div class="modal fade" id="editHolidayModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 12px;">
+          <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <h5 class="modal-title"><i class="bi bi-pencil"></i> แก้ไขวันหยุด</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fw-bold">วันที่</label>
+              <input type="date" class="form-control" id="editDate" value="${holiday.date}" style="padding: 10px; border-radius: 8px;">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">ชื่อวันหยุด</label>
+              <input type="text" class="form-control" id="editName" value="${holiday.name}" style="padding: 10px; border-radius: 8px;">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">รายละเอียด</label>
+              <textarea class="form-control" id="editDescription" rows="3" style="padding: 10px; border-radius: 8px;">${holiday.description || ''}</textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="button" class="btn btn-primary" onclick="saveEditHoliday(${id})" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+              <i class="bi bi-check-lg"></i> บันทึก
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Remove existing edit modal if any
+  const existingModal = document.getElementById('editHolidayModal');
+  if (existingModal) existingModal.remove();
+  
+  // Add to body and show
+  document.body.insertAdjacentHTML('beforeend', editModal);
+  const modal = new bootstrap.Modal(document.getElementById('editHolidayModal'));
+  modal.show();
+  
+  // Remove modal from DOM when hidden
+  document.getElementById('editHolidayModal').addEventListener('hidden.bs.modal', function() {
+    this.remove();
+  });
+}
+
+// Save edited holiday
+async function saveEditHoliday(id) {
+  const holiday = holidays.find(h => h.id === id);
+  if (!holiday) return;
+  
+  const newDate = document.getElementById('editDate').value;
+  const newName = document.getElementById('editName').value.trim();
+  const newDescription = document.getElementById('editDescription').value.trim();
+  
+  if (!newDate || !newName) {
+    alert('กรุณากรอกวันที่และชื่อวันหยุด');
+    return;
+  }
+  
+  try {
+    const response = await fetch(`/api/holidays/${id}/update/`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCSRFToken(),
+      },
+      body: JSON.stringify({
+        date: newDate,
+        name: newName,
+        description: newDescription
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // Update local array
+      holiday.date = result.data.date;
+      holiday.name = result.data.name;
+      holiday.description = result.data.description || '';
+      holiday.is_active = result.data.is_active;
+      
+      // Save to localStorage with BOTH keys
+      localStorage.setItem('cmms_holidays', JSON.stringify(holidays));
+      localStorage.setItem('holidays', JSON.stringify(holidays));
+      
+      // 🔔 แจ้งเตือนปฏิทินว่ามีการแก้ไขวันหยุด
+      window.dispatchEvent(new CustomEvent('holidaysUpdated', { detail: { holidays } }));
+      
+      populateYearFilter();
+      filterHolidays();
+      
+      // Close edit modal
+      const modal = bootstrap.Modal.getInstance(document.getElementById('editHolidayModal'));
+      if (modal) modal.hide();
+      
+      // Show success message
+      showMessage('success', result.message || 'แก้ไขวันหยุดเรียบร้อยแล้ว');
+    } else {
+      alert(result.error || 'เกิดข้อผิดพลาดในการแก้ไขวันหยุด');
+    }
+  } catch (error) {
+    console.error('Error updating holiday:', error);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+  }
+}
+
+// Delete holiday
+async function deleteHoliday(id) {
+  const holiday = holidays.find(h => h.id === id);
+  if (!holiday) return;
+  
+  if (!confirm(`ต้องการลบวันหยุด "${holiday.name}" หรือไม่?`)) return;
+  
+  try {
+    const response = await fetch(`/api/holidays/${id}/delete/`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCSRFToken(),
+      }
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // Remove from local array
+      holidays = holidays.filter(h => h.id !== id);
+      
+      // Save to localStorage with BOTH keys
+      localStorage.setItem('cmms_holidays', JSON.stringify(holidays));
+      localStorage.setItem('holidays', JSON.stringify(holidays));
+      
+      // 🔔 แจ้งเตือนปฏิทินว่ามีการลบวันหยุด
+      window.dispatchEvent(new CustomEvent('holidaysUpdated', { detail: { holidays } }));
+      
+      populateYearFilter();
+      filterHolidays();
+      
+      // Show success message
+      showMessage('success', result.message || 'ลบวันหยุดเรียบร้อยแล้ว');
+    } else {
+      alert(result.error || 'เกิดข้อผิดพลาดในการลบวันหยุด');
+    }
+  } catch (error) {
+    console.error('Error deleting holiday:', error);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+  }
+}
+
+// Render holidays list (1 row per day)
+function renderHolidays() {
+  const container = document.getElementById('holidaysList');
+  const emptyState = document.getElementById('emptyState');
+  const countBadge = document.getElementById('holidayCount');
+  
+  // Check if elements exist
+  if (!container || !countBadge) {
+    console.warn('Holiday list elements not found');
+    return;
+  }
+  
+  // Update count
+  countBadge.textContent = `${filteredHolidays.length} วัน`;
+  
+  if (filteredHolidays.length === 0) {
+    if (emptyState) {
+      emptyState.style.display = 'block';
+      const emptyP = emptyState.querySelector('p');
+      if (emptyP) {
+        if (holidays.length > 0) {
+          emptyP.textContent = 'ไม่พบวันหยุดที่ตรงกับเงื่อนไขการกรอง';
+        } else {
+          emptyP.textContent = 'ยังไม่มีวันหยุดที่กำหนด';
+        }
+      }
+    }
+    return;
+  }
+  
+  if (emptyState) {
+    emptyState.style.display = 'none';
+  }
+  
+  // Sort by date
+  const sorted = [...filteredHolidays].sort((a, b) => new Date(a.date) - new Date(b.date));
+  
+  // Group by month for better organization
+  const groupedByMonth = {};
+  sorted.forEach(holiday => {
+    const date = new Date(holiday.date);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    if (!groupedByMonth[monthKey]) {
+      groupedByMonth[monthKey] = [];
+    }
+    groupedByMonth[monthKey].push(holiday);
+  });
+  
+  let html = '';
+  
+  Object.keys(groupedByMonth).forEach(monthKey => {
+    const [year, month] = monthKey.split('-');
+    const monthDate = new Date(year, parseInt(month) - 1, 1);
+    const monthName = monthDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+    
+    html += `
+      <div class="month-group mb-4">
+        <div style="font-size: 0.875rem; font-weight: 700; color: #667eea; margin-bottom: 12px; padding-left: 4px; border-left: 4px solid #667eea; padding: 8px 12px; background: #f8f9ff; border-radius: 4px;">
+          <i class="bi bi-calendar3"></i> ${monthName}
+        </div>
+    `;
+    
+    groupedByMonth[monthKey].forEach(holiday => {
+      const date = new Date(holiday.date);
+      const day = date.getDate();
+      const monthShort = date.toLocaleDateString('th-TH', { month: 'short' });
+      const dayName = date.toLocaleDateString('th-TH', { weekday: 'long' });
+      
+      html += `
+        <div class="holiday-row">
+          <div class="holiday-row-date">
+            <div class="holiday-row-day">${day}</div>
+            <div class="holiday-row-month">${monthShort}</div>
+            <div class="holiday-row-weekday">${dayName}</div>
+          </div>
+          
+          <div class="holiday-row-content">
+            <div class="holiday-row-name">
+              <i class="bi bi-star-fill" style="color: #fbbf24; font-size: 0.875rem;"></i>
+              ${holiday.name}
+              ${getStatusBadge(holiday)}
+            </div>
+            ${holiday.description ? `<p class="holiday-row-description">${holiday.description}</p>` : ''}
+          </div>
+          
+          <div class="holiday-row-actions">
+            <button class="btn-edit-holiday" onclick="editHoliday(${holiday.id})">
+              <i class="bi bi-pencil"></i> แก้ไข
+            </button>
+            <button class="btn-delete-holiday" onclick="deleteHoliday(${holiday.id})">
+              <i class="bi bi-trash"></i> ลบ
+            </button>
+          </div>
+        </div>
+      `;
+    });
+    
+    html += '</div>';
+  });
+  
+  container.innerHTML = html;
+}
+
+// Get status badge HTML based on holiday status
+function getStatusBadge(holiday) {
+  if (!holiday._status) return '';
+  
+  switch (holiday._status) {
+    case 'new':
+      return '<span class="status-badge status-new">ใหม่</span>';
+    case 'updated':
+      return '<span class="status-badge status-updated">อัปเดต</span>';
+    case 'unchanged':
+      return ''; // Don't show badge for unchanged
+    default:
+      return '';
+  }
+}
+
+// Save holidays (close modal and refresh calendar)
+function saveHolidays() {
+  // Close modal
+  const modal = bootstrap.Modal.getInstance(document.getElementById('holidayModal'));
+  if (modal) modal.hide();
+  
+  // Reload calendar if needed
+  if (typeof renderCalendar === 'function') {
+    renderCalendar();
+  }
+  
+  showMessage('success', 'ปิดหน้าต่างวันหยุดเรียบร้อยแล้ว');
+}
+
+// Load on modal show
+document.addEventListener('DOMContentLoaded', function() {
+  const modalElement = document.getElementById('holidayModal');
+  if (modalElement) {
+    modalElement.addEventListener('show.bs.modal', function() {
+      loadHolidays(true); // Show status when loading
+    });
+  }
+});
+
+// Export function to check if date is holiday
+function isHoliday(dateString) {
+  return holidays.some(h => h.date === dateString);
+}
+
+function getHolidayName(dateString) {
+  const holiday = holidays.find(h => h.date === dateString);
+  return holiday ? holiday.name : null;
+}
+
+function getHolidayInfo(dateString) {
+  return holidays.find(h => h.date === dateString) || null;
+}
+</script>
+
+<!-- Import Government Holidays Dialog -->
+<div class="modal fade" id="importHolidayModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content import-modal-content">
+      <div class="modal-header import-modal-header">
+        <h5 class="modal-title"><i class="bi bi-cloud-download"></i> นำเข้าวันหยุดราชการ</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info import-alert-info">
+          <i class="bi bi-info-circle"></i> 
+          ระบบจะนำเข้าวันหยุดราชการไทยจากข้อมูลอย่างเป็นทางการ
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label fw-bold">เลือกปีที่ต้องการนำเข้า</label>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="import2024" checked>
+            <label class="form-check-label" for="import2024">
+              <strong>ปี พ.ศ. 2567 (2024)</strong> - 19 วันหยุด
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="import2025" checked>
+            <label class="form-check-label" for="import2025">
+              <strong>ปี พ.ศ. 2568 (2025)</strong> - 19 วันหยุด
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="import2026">
+            <label class="form-check-label" for="import2026">
+              <strong>ปี พ.ศ. 2569 (2026)</strong> - 19 วันหยุด
+            </label>
+          </div>
+          
+          <!-- Quick Refresh Button -->
+          <div class="mt-3 pt-3 import-divider">
+            <button type="button" class="btn btn-sm w-100 import-refresh-btn" onclick="quickRefreshHolidays()" id="refreshBtn">
+              <i class="bi bi-arrow-clockwise"></i> รีเฟรชข้อมูลปีปัจจุบัน + ปีหน้า
+            </button>
+            <small class="text-muted d-block mt-2 text-center">
+              <i class="bi bi-info-circle"></i> กดเพื่ออัปเดตวันหยุดปี <span id="currentYearText"></span> และ <span id="nextYearText"></span> ทันที
+            </small>
+          </div>
+          
+          <!-- Sync from API Button (Disabled - workalendar doesn't support Thailand calendar) -->
+          <!--
+          <div class="mt-3 pt-3" style="border-top: 1px solid #e2e8f0; display: none;">
+            <button type="button" class="btn btn-sm w-100" onclick="syncFromAPI()" id="syncApiBtn" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 10px 16px; border-radius: 8px; font-weight: 600; border: none; box-shadow: 0 4px 12px rgba(250, 112, 154, 0.3);">
+              <i class="bi bi-cloud-arrow-down"></i> ซิงค์จาก API (เทียบข้อมูล)
+            </button>
+            <small class="text-muted d-block mt-2 text-center">
+              <i class="bi bi-info-circle"></i> ดึงข้อมูลวันหยุดจาก workalendar API และเทียบกับ JSON
+            </small>
+          </div>
+          -->
+        </div>
+        
+        <div class="mb-3">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="importOverwrite">
+            <label class="form-check-label" for="importOverwrite">
+              อัปเดตข้อมูลวันหยุดที่มีอยู่แล้ว
+            </label>
+          </div>
+          <small class="text-muted">
+            หากไม่เลือก จะข้ามวันหยุดที่มีวันที่ซ้ำกัน
+          </small>
+        </div>
+        
+        <div id="importStatus" class="d-none">
+          <div class="alert alert-success import-success-alert">
+            <div class="d-flex align-items-center">
+              <div class="spinner-border spinner-border-sm me-2" role="status" id="importSpinner">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <span id="importMessage">กำลังนำเข้าข้อมูล...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">ยกเลิก</button>
+        <button type="button" class="btn btn-primary import-primary-btn" onclick="importGovernmentHolidays()" id="importBtn">
+          <i class="bi bi-cloud-download"></i> นำเข้าทันที
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Update year text on page load
+document.addEventListener('DOMContentLoaded', function() {
+  const currentYear = new Date().getFullYear();
+  const currentYearEl = document.getElementById('currentYearText');
+  const nextYearEl = document.getElementById('nextYearText');
+  
+  if (currentYearEl) {
+    currentYearEl.textContent = currentYear;
+  }
+  if (nextYearEl) {
+    nextYearEl.textContent = currentYear + 1;
+  }
+});
+
+// Show import dialog
+function showImportDialog() {
+  const modal = new bootstrap.Modal(document.getElementById('importHolidayModal'));
+  modal.show();
+}
+
+// Import government holidays
+async function importGovernmentHolidays() {
+  // Get selected years
+  const years = [];
+  if (document.getElementById('import2024').checked) years.push('2024');
+  if (document.getElementById('import2025').checked) years.push('2025');
+  if (document.getElementById('import2026').checked) years.push('2026');
+  
+  if (years.length === 0) {
+    alert('กรุณาเลือกปีที่ต้องการนำเข้า');
+    return;
+  }
+  
+  const overwrite = document.getElementById('importOverwrite').checked;
+  
+  // Show loading
+  const importStatus = document.getElementById('importStatus');
+  const importBtn = document.getElementById('importBtn');
+  const importSpinner = document.getElementById('importSpinner');
+  const importMessage = document.getElementById('importMessage');
+  
+  importStatus.classList.remove('d-none');
+  importBtn.disabled = true;
+  importMessage.textContent = 'กำลังนำเข้าข้อมูล...';
+  
+  try {
+    const formData = new FormData();
+    formData.append('year', years.join(','));
+    formData.append('overwrite', overwrite);
+    
+    const response = await fetch('/api/holidays/import-government/', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCSRFToken(),
+      },
+      body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // Hide spinner, show success
+      importSpinner.classList.add('d-none');
+      importMessage.innerHTML = `
+        <strong>✓ สำเร็จ!</strong><br>
+        ${result.message}
+        ${result.stats.errors.length > 0 ? `<br><small class="text-warning">มีข้อผิดพลาด: ${result.stats.errors.join(', ')}</small>` : ''}
+      `;
+      
+      // Reload holidays after 2 seconds
+      setTimeout(async () => {
+        await loadHolidays(); // ตัวนี้จะ dispatch event เองอยู่แล้ว
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('importHolidayModal'));
+        modal.hide();
+        
+        // Reset form
+        importStatus.classList.add('d-none');
+        importSpinner.classList.remove('d-none');
+        importBtn.disabled = false;
+        
+        // Show success message
+        showMessage('success', result.message);
+      }, 2000);
+      
+    } else {
+      throw new Error(result.error || 'เกิดข้อผิดพลาดในการนำเข้า');
+    }
+  } catch (error) {
+    console.error('Error importing holidays:', error);
+    importSpinner.classList.add('d-none');
+    importMessage.innerHTML = `<strong>✗ ข้อผิดพลาด:</strong> ${error.message}`;
+    importBtn.disabled = false;
+  }
+}
+</script>

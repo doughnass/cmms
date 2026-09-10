@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block title %}<title>ตรวจสอบการสมัครบัญชี — CMMS</title>{% endblock %}
+{% block content %}
+<style>
+    .approvals-page {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f5f7ff 0%, #f9fafe 50%, #f5f9ff 100%);
+        padding: 1.5rem;
+    }
+    .approvals-container { max-width: 1100px; margin: 0 auto; }
+    .approvals-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;
+    }
+    .approvals-title { display: flex; align-items: center; gap: 0.75rem; }
+    .approvals-title-icon {
+        width: 48px; height: 48px; border-radius: 14px;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 1.25rem;
+        box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+    }
+    .approvals-title h1 { font-size: 1.4rem; font-weight: 700; color: #1e293b; margin: 0; }
+    .approvals-title p { font-size: 0.85rem; color: #64748b; margin: 0; }
+    .status-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .status-tabs a {
+        padding: 0.5rem 1rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+        text-decoration: none; color: #475569; background: #fff; border: 1px solid #e2e8f0;
+    }
+    .status-tabs a.active { background: #6366f1; color: #fff; border-color: #6366f1; }
+    .approvals-card {
+        background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+        overflow: hidden;
+    }
+    table.approvals-table { width: 100%; margin-bottom: 0; }
+    table.approvals-table th {
+        background: #f8fafc; font-size: 0.78rem; text-transform: uppercase; color: #64748b;
+        letter-spacing: 0.03em; padding: 0.85rem 1rem; border-bottom: 1px solid #e2e8f0;
+    }
+    table.approvals-table td { padding: 0.85rem 1rem; vertical-align: middle; border-bottom: 1px solid #f1f5f9; }
+    .badge-status { padding: 0.35rem 0.7rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; }
+    .badge-pending { background: #fef3c7; color: #b45309; }
+    .badge-approved { background: #dcfce7; color: #15803d; }
+    .badge-rejected { background: #fee2e2; color: #b91c1c; }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
+</style>
+<div class="approvals-page">
+    <div class="approvals-container">
+        <div class="approvals-header">
+            <div class="approvals-title">
+                <div class="approvals-title-icon"><i class="bi bi-person-check"></i></div>
+                <div>
+                    <h1>ตรวจสอบและอนุมัติบัญชีผู้ใช้</h1>
+                    <p>รอตรวจสอบ {{ pending_count }} รายการ</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-tabs">
+            <a href="?status=pending" class="{% if status == 'pending' %}active{% endif %}">รอตรวจสอบ</a>
+            <a href="?status=approved" class="{% if status == 'approved' %}active{% endif %}">อนุมัติแล้ว</a>
+            <a href="?status=rejected" class="{% if status == 'rejected' %}active{% endif %}">ปฏิเสธ</a>
+            <a href="?status=all" class="{% if status == 'all' %}active{% endif %}">ทั้งหมด</a>
+        </div>
+
+        <div class="approvals-card">
+            {% if profiles %}
+            <div class="table-responsive">
+                <table class="approvals-table">
+                    <thead>
+                        <tr>
+                            <th>ผู้ใช้</th>
+                            <th>ชื่อ-นามสกุล</th>
+                            <th>อีเมล / เบอร์โทร</th>
+                            <th>แผนก / ตำแหน่ง</th>
+                            <th>สถานะ</th>
+                            <th>วันที่สมัคร</th>
+                            <th class="text-end">การดำเนินการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in profiles %}
+                        <tr>
+                            <td>{{ p.user.username }}</td>
+                            <td>{{ p.user.get_full_name|default:"-" }}</td>
+                            <td>{{ p.user.email|default:"-" }}<br><small class="text-muted">{{ p.telephone|default:"-" }}</small></td>
+                            <td>{{ p.department|default:"-" }}<br><small class="text-muted">{{ p.position|default:"-" }}</small></td>
+                            <td>
+                                {% if p.approval_status == 'pending' %}
+                                    <span class="badge-status badge-pending">รอตรวจสอบ</span>
+                                {% elif p.approval_status == 'approved' %}
+                                    <span class="badge-status badge-approved">อนุมัติแล้ว</span>
+                                {% else %}
+                                    <span class="badge-status badge-rejected">ปฏิเสธ</span>
+                                    {% if p.rejection_reason %}<div><small class="text-muted">{{ p.rejection_reason }}</small></div>{% endif %}
+                                {% endif %}
+                            </td>
+                            <td>{{ p.created_at|date:"d/m/Y H:i" }}</td>
+                            <td class="text-end">
+                                {% if p.approval_status == 'pending' %}
+                                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#approveModal{{ p.user.id }}">
+                                    <i class="bi bi-check-lg"></i> อนุมัติ
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ p.user.id }}">
+                                    <i class="bi bi-x-lg"></i> ปฏิเสธ
+                                </button>
+                                {% else %}
+                                    <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <!-- Approve modal -->
+                        <div class="modal fade" id="approveModal{{ p.user.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <form method="post" action="{% url 'account_approve' p.user.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">อนุมัติบัญชี {{ p.user.username }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>กำหนดสิทธิ์ (กลุ่มผู้ใช้) ให้บัญชีนี้ (เลือกได้มากกว่า 1):</p>
+                                            {% for g in groups %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="groups" value="{{ g.id }}" id="grp{{ p.user.id }}_{{ g.id }}">
+                                                <label class="form-check-label" for="grp{{ p.user.id }}_{{ g.id }}">{{ g.name }}</label>
+                                            </div>
+                                            {% empty %}
+                                            <p class="text-muted small">ยังไม่มีกลุ่มผู้ใช้ในระบบ</p>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                                            <button type="submit" class="btn btn-success">ยืนยันการอนุมัติ</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Reject modal -->
+                        <div class="modal fade" id="rejectModal{{ p.user.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <form method="post" action="{% url 'account_reject' p.user.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">ปฏิเสธคำขอสมัครบัญชี {{ p.user.username }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <label class="form-label">เหตุผล (ถ้ามี)</label>
+                                            <textarea class="form-control" name="reason" rows="3" placeholder="ระบุเหตุผลที่ปฏิเสธคำขอ"></textarea>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                                            <button type="submit" class="btn btn-danger">ยืนยันการปฏิเสธ</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="bi bi-inbox" style="font-size: 2.5rem;"></i>
+                <p class="mt-2 mb-0">ไม่มีรายการในสถานะนี้</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

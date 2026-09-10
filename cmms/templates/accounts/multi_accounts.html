@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}<title>บัญชีที่บันทึกไว้</title>{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">บัญชีที่บันทึกไว้สำหรับการสลับ</div>
+  <div class="card-body">
+    <p>บัญชีที่สามารถสลับได้จะถูกเก็บไว้ใน session ของเบราว์เซอร์นี้เท่านั้น</p>
+    {% if accounts %}
+      <ul class="list-group">
+        {% for a in accounts %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{{ a.username }}</strong>
+              <div class="text-muted small">id: {{ a.user_id }}</div>
+            </div>
+            <div>
+              <button class="btn btn-sm btn-outline-primary me-2" onclick="switchAccount('{{ a.username }}')">สลับ</button>
+              <button class="btn btn-sm btn-outline-danger" onclick="removeAccount('{{ a.username }}')">ลบ</button>
+            </div>
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="alert alert-secondary">ยังไม่มีบัญชีอื่นที่บันทึกไว้</div>
+    {% endif %}
+    <div class="mt-3">
+      <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addAccountModal">เพิ่มบัญชี</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchAccount(username){
+  var token = document.querySelector('input[name=csrfmiddlewaretoken]') ? document.querySelector('input[name=csrfmiddlewaretoken]').value : '';
+  var fd = new FormData(); fd.append('username', username);
+  fetch('{% url "switch_account" %}', {method: 'POST', body: fd, headers: {'X-CSRFToken': token}})
+    .then(r=>r.json()).then(function(j){ if(j.ok){ location.reload(); } else { alert(j.error||'failed'); } }).catch(function(){ alert('failed'); });
+}
+function removeAccount(username){
+  var token = document.querySelector('input[name=csrfmiddlewaretoken]') ? document.querySelector('input[name=csrfmiddlewaretoken]').value : '';
+  var fd = new FormData(); fd.append('username', username);
+  fetch('{% url "remove_account" %}', {method: 'POST', body: fd, headers: {'X-CSRFToken': token}})
+    .then(r=>r.json()).then(function(j){ if(j.ok){ location.reload(); } else { alert(j.error||'failed'); } }).catch(function(){ alert('failed'); });
+}
+</script>
+
+{% endblock %}

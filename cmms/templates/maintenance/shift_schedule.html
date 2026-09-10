@@ -1,0 +1,827 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}<title>จัดตารางขึ้นเวร</title>{% endblock %}
+{% block content %}
+
+<style>
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --shift-morning: #fbbf24;
+  --shift-afternoon: #8b5cf6;
+  --shift-night: #8b5cf6;
+  --card-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.page-header {
+  background: var(--primary-gradient);
+  color: white;
+  padding: 2.5rem 0;
+  margin-bottom: 2rem;
+  border-radius: 0 0 30px 30px;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.page-header h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.controls-bar {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.month-selector {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.month-nav-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #667eea;
+  background: white;
+  color: #667eea;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.month-nav-btn:hover {
+  background: #667eea;
+  color: white;
+  transform: scale(1.1);
+}
+
+.month-display {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #2d3748;
+  min-width: 200px;
+  text-align: center;
+}
+
+.shift-legend {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+}
+
+.legend-morning {
+  background: var(--shift-morning);
+}
+
+.legend-afternoon {
+  background: var(--shift-afternoon);
+}
+
+.legend-night {
+  background: var(--shift-night);
+}
+
+.calendar-container {
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1rem;
+}
+
+.calendar-header {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #4a5568;
+  padding: 1rem;
+  text-align: center;
+  background: #f7fafc;
+  border-radius: 10px;
+}
+
+.calendar-header.weekend {
+  background: #fff5f5;
+  color: #e53e3e;
+}
+
+.calendar-day {
+  min-height: 200px;
+  border: 2px solid #e2e8f0;
+  border-radius: 15px;
+  padding: 0.8rem;
+  transition: all 0.3s ease;
+  background: white;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-day:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  transform: translateY(-2px);
+}
+
+.calendar-day.other-month {
+  background: #f7fafc;
+  opacity: 0.1;
+}
+
+.calendar-day.weekend {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+}
+
+.calendar-day.holiday {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: #f59e0b;
+}
+
+.calendar-day.today {
+  border-color: #667eea;
+  border-width: 3px;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.day-number {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+}
+
+.day-date {
+  font-size: 0.75rem;
+  color: #718096;
+  margin-bottom: 0.8rem;
+}
+
+.shift-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.shift-slot {
+  position: relative;
+  min-height: 70px;
+  display: flex;
+  flex-direction: column;
+}
+
+.shift-slot.shift-placeholder {
+  opacity: 0.4;
+  pointer-events: none;
+  background: #f7fafc;
+  border-radius: 8px;
+  padding: 0.5rem;
+  min-height: 70px;
+  justify-content: center;
+}
+
+.shift-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 0.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.tech-select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* Style for invalid/unselected state */
+.tech-select:invalid,
+.tech-select[value=""] {
+  border-color: #fc8181;
+  background: #fff5f5;
+}
+
+.tech-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Valid state (when selected) */
+.tech-select:valid {
+  border-color: #48bb78;
+  background: white;
+}
+
+.tech-select.morning {
+  border-left: 4px solid var(--shift-morning);
+}
+
+.tech-select.afternoon {
+  border-left: 4px solid var(--shift-afternoon);
+}
+
+.tech-select.night {
+  border-left: 4px solid var(--shift-night);
+}
+
+.tech-select option:disabled {
+  color: #cbd5e0;
+  font-style: italic;
+}
+
+.action-buttons {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  gap: 1rem;
+  z-index: 1000;
+}
+
+.btn-float {
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  border: none;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  color: white;
+}
+
+.btn-save:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 25px rgba(72, 187, 120, 0.4);
+}
+
+.btn-report {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-decoration: none;
+}
+
+.btn-report:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 25px rgba(102, 126, 234, 0.4);
+  color: white;
+}
+
+.btn-reset {
+  background: #718096;
+  color: white;
+}
+
+.btn-reset:hover {
+  background: #4a5568;
+  transform: translateY(-3px);
+}
+
+.empty-slot {
+  color: #cbd5e0;
+  font-style: italic;
+}
+
+@media (max-width: 1200px) {
+  .calendar-grid {
+    gap: 0.5rem;
+  }
+  
+  .calendar-day {
+    min-height: 150px;
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .calendar-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .controls-bar {
+    flex-direction: column;
+  }
+  
+  .action-buttons {
+    bottom: 1rem;
+    right: 1rem;
+    left: 1rem;
+    flex-direction: column;
+  }
+  
+  .btn-float {
+    width: 100%;
+    justify-content: center;
+  }
+}
+</style>
+
+<div class="page-header" style="margin-top: 4rem; border-radius: 1rem;">
+  <div class="container-fluid ms-4">
+    <h1>
+      <i class="bi bi-calendar-week"></i>
+      จัดตารางขึ้นเวร
+    </h1>
+    <div class="subtitle">จัดช่างขึ้นเวรตามวันและเวลา</div>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Controls Bar -->
+  <div class="controls-bar">
+    <div class="month-selector">
+      <button class="month-nav-btn" onclick="previousMonth()" title="เดือนก่อนหน้า" aria-label="เดือนก่อนหน้า">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      <div class="month-display" id="monthDisplay">มกราคม 2568</div>
+      <button class="month-nav-btn" onclick="nextMonth()" title="เดือนถัดไป" aria-label="เดือนถัดไป">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+    
+    <div class="shift-legend">
+      <div class="legend-item">
+        <div class="legend-color legend-morning"></div>
+        <span>☀️ เวรเช้า</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color legend-afternoon"></div>
+        <span>🌙 เวรบ่าย</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar -->
+  <div class="calendar-container">
+    <div class="calendar-grid" id="calendarDays">
+      <!-- Headers -->
+      <div class="calendar-header weekend">อาทิตย์</div>
+      <div class="calendar-header">จันทร์</div>
+      <div class="calendar-header">อังคาร</div>
+      <div class="calendar-header">พุธ</div>
+      <div class="calendar-header">พฤหัสบดี</div>
+      <div class="calendar-header">ศุกร์</div>
+      <div class="calendar-header weekend">เสาร์</div>
+      
+      <!-- Days will be generated by JavaScript -->
+    </div>
+  </div>
+
+  <!-- Floating Action Buttons -->
+  <div class="action-buttons">
+    <a href="{% url 'shift_schedule_report' %}" class="btn-float btn-report">
+      <i class="bi bi-file-text"></i>
+      ดูรายงาน
+    </a>
+    <button class="btn-float btn-reset" onclick="resetSchedule()">
+      <i class="bi bi-arrow-counterclockwise"></i>
+      รีเซ็ต
+    </button>
+    <button class="btn-float btn-save" onclick="saveSchedule()">
+      <i class="bi bi-check-circle"></i>
+      บันทึกตารางเวร
+    </button>
+  </div>
+</div>
+
+<!-- Config data from backend -->
+<script id="backend-config" type="application/json">
+{
+  "current_month": {{ current_month|default:"null" }},
+  "current_year": {{ current_year|default:"null" }},
+  "technicians": {{ technicians_json|safe }},
+  "schedules": {{ schedules_json|safe }}
+}
+</script>
+
+<script>
+// โหลด config จาก backend
+const backendConfig = JSON.parse(document.getElementById('backend-config').textContent);
+
+// ข้อมูลช่างเทคนิค
+const technicians = backendConfig.technicians || [];
+
+// ข้อมูลตารางเวรที่บันทึกไว้แล้ว
+const existingSchedules = backendConfig.schedules || {};
+
+// วันหยุดราชการ (จะดึงจาก API)
+let publicHolidays = [];
+
+// ใช้ค่า year/month จาก backend (ถ้ามี) หรือ ค่า default
+let currentMonth = backendConfig.current_month !== null 
+  ? backendConfig.current_month - 1  // Convert to 0-based
+  : new Date().getMonth();
+
+let currentYear = backendConfig.current_year !== null 
+  ? backendConfig.current_year 
+  : new Date().getFullYear();
+
+const thaiMonths = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+];
+
+const thaiDaysShort = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+
+// ดึงวันหยุดราชการจาก API
+async function loadPublicHolidays() {
+  try {
+    const response = await fetch('/api/holidays/');
+    if (!response.ok) {
+      console.warn('⚠️ ไม่สามารถโหลดวันหยุดราชการ:', response.status);
+      return;
+    }
+    
+    const result = await response.json();
+    
+    // API returns { success: true, data: [...], count: X }
+    if (result.success && Array.isArray(result.data)) {
+      publicHolidays = result.data.map(holiday => holiday.date);
+      console.log(`✅ โหลดวันหยุดราชการ ${publicHolidays.length} วัน`);
+    } else {
+      console.warn('⚠️ รูปแบบข้อมูลไม่ถูกต้อง:', result);
+      publicHolidays = [];
+    }
+    
+    // Render calendar ใหม่หลังโหลดวันหยุดเสร็จ
+    renderCalendar();
+  } catch (error) {
+    console.error('❌ Error loading holidays:', error);
+    // ถ้า API ล้มเหลว ใช้ค่า default (array ว่าง)
+    publicHolidays = [];
+  }
+}
+
+// ตรวจสอบว่าเป็นวันหยุดราชการหรือไม่
+function isPublicHoliday(dateStr) {
+  return publicHolidays.includes(dateStr);
+}
+
+// ตรวจสอบว่าควรมีเวรเช้าหรือไม่ (เสาร์/อาทิตย์/วันหยุด)
+function shouldHaveMorningShift(date, dateStr) {
+  const dayOfWeek = date.getDay();
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // 0=อาทิตย์, 6=เสาร์
+  const isHoliday = isPublicHoliday(dateStr);
+  return isWeekend || isHoliday;
+}
+
+function initCalendar() {
+  renderCalendar();
+  updateMonthDisplay();
+}
+
+function updateMonthDisplay() {
+  const thaiYear = currentYear + 543;
+  document.getElementById('monthDisplay').textContent = 
+    `${thaiMonths[currentMonth]} ${thaiYear}`;
+}
+
+function renderCalendar() {
+  const calendarDays = document.getElementById('calendarDays');
+  
+  // ลบเฉพาะวันที่ (เก็บ headers ไว้)
+  const headers = calendarDays.querySelectorAll('.calendar-header');
+  calendarDays.innerHTML = '';
+  headers.forEach(header => calendarDays.appendChild(header));
+  
+  const firstDay = new Date(currentYear, currentMonth, 1);
+  const lastDay = new Date(currentYear, currentMonth + 1, 0);
+  const prevLastDay = new Date(currentYear, currentMonth, 0);
+  
+  const firstDayOfWeek = firstDay.getDay();
+  const lastDateOfMonth = lastDay.getDate();
+  const prevLastDate = prevLastDay.getDate();
+  
+  const today = new Date();
+  const isCurrentMonth = today.getMonth() === currentMonth && 
+                         today.getFullYear() === currentYear;
+  
+  // Previous month days
+  for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+    const day = prevLastDate - i;
+    const dayDiv = createDayElement(day, currentMonth - 1, true);
+    calendarDays.appendChild(dayDiv);
+  }
+  
+  // Current month days
+  for (let day = 1; day <= lastDateOfMonth; day++) {
+    const date = new Date(currentYear, currentMonth, day);
+    const isToday = isCurrentMonth && today.getDate() === day;
+    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+    
+    const dayDiv = createDayElement(day, currentMonth, false, isToday, isWeekend);
+    calendarDays.appendChild(dayDiv);
+  }
+  
+  // Next month days
+  const remainingSlots = 7 - ((firstDayOfWeek + lastDateOfMonth) % 7);
+  if (remainingSlots < 7) {
+    for (let day = 1; day <= remainingSlots; day++) {
+      const dayDiv = createDayElement(day, currentMonth + 1, true);
+      calendarDays.appendChild(dayDiv);
+    }
+  }
+}
+
+function createDayElement(day, month, isOtherMonth, isToday = false, isWeekend = false) {
+  const dayDiv = document.createElement('div');
+  dayDiv.className = 'calendar-day';
+  
+  if (isOtherMonth) {
+    dayDiv.classList.add('other-month');
+  }
+  if (isToday) {
+    dayDiv.classList.add('today');
+  }
+  
+  const date = new Date(currentYear, month, day);
+  const dateStr = `${currentYear}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  
+  // ตรวจสอบว่าเป็นวันหยุดราชการหรือไม่
+  const isHoliday = isPublicHoliday(dateStr);
+  
+  // เพิ่ม class ตามประเภทวัน
+  if (isHoliday && !isOtherMonth) {
+    dayDiv.classList.add('holiday');
+  } else if (isWeekend && !isOtherMonth) {
+    dayDiv.classList.add('weekend');
+  }
+  
+  // ตรวจสอบว่าควรมีเวรเช้าหรือไม่
+  const hasMorningShift = shouldHaveMorningShift(date, dateStr);
+  
+  // สร้าง HTML สำหรับเวรเช้า (ถ้ามี) หรือ placeholder (ถ้าไม่มี)
+  const morningShiftHTML = hasMorningShift ? `
+    <div class="shift-slot">
+      <div class="shift-label">
+        <span>☀️</span>
+        <span>เวรเช้า</span>
+      </div>
+      <select class="tech-select morning" data-date="${dateStr}" data-shift="morning" onchange="updateShift(this)" required>
+        <option value="" disabled selected style="color: #e53e3e; font-style: italic;">-- โปรดระบุ --</option>
+        ${technicians.map(tech => `<option value="${tech.id}">${tech.name}</option>`).join('')}
+      </select>
+    </div>
+  ` : `
+    <div class="shift-slot shift-placeholder">
+      <div class="shift-label">
+        <span style="opacity: 0.3;">☀️</span>
+        <span style="opacity: 0.5;">ไม่มีเวรเช้า</span>
+      </div>
+    </div>
+  `;
+  
+  dayDiv.innerHTML = `
+    <div class="day-number">${day}${isHoliday ? ' 🎉' : ''}</div>
+    <div class="day-date">${thaiDaysShort[date.getDay()]}</div>
+    <div class="shift-slots">
+      ${morningShiftHTML}
+      <div class="shift-slot">
+        <div class="shift-label">
+          <span>🌙</span>
+          <span>เวรบ่าย</span>
+        </div>
+        <select class="tech-select afternoon" data-date="${dateStr}" data-shift="afternoon" onchange="updateShift(this)" required>
+          <option value="" disabled selected style="color: #e53e3e; font-style: italic;">-- โปรดระบุ --</option>
+          ${technicians.map(tech => `<option value="${tech.id}">${tech.name}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+  `;
+  
+  // โหลดข้อมูลที่บันทึกไว้แล้ว (ถ้ามี)
+  if (!isOtherMonth && existingSchedules[dateStr]) {
+    // หา dropdown elements
+    setTimeout(() => {
+      const morningSelect = dayDiv.querySelector('.tech-select.morning');
+      const afternoonSelect = dayDiv.querySelector('.tech-select.afternoon');
+      
+      // Set ค่าเวรเช้า
+      if (morningSelect && existingSchedules[dateStr].morning) {
+        morningSelect.value = existingSchedules[dateStr].morning.technician_id;
+        // Trigger update to save in memory
+        updateShift(morningSelect);
+      }
+      
+      // Set ค่าเวรบ่าย
+      if (afternoonSelect && existingSchedules[dateStr].afternoon) {
+        afternoonSelect.value = existingSchedules[dateStr].afternoon.technician_id;
+        // Trigger update to save in memory
+        updateShift(afternoonSelect);
+      }
+    }, 0);
+  }
+  
+  return dayDiv;
+}
+
+function updateShift(selectElement) {
+  const date = selectElement.dataset.date;
+  const shift = selectElement.dataset.shift;
+  const techId = selectElement.value;
+  
+  if (techId) {
+    const techName = technicians.find(t => t.id == techId)?.name || '';
+    console.log(`✅ ${date} - ${shift}: ${techName}`);
+  } else {
+    console.log(`❌ ${date} - ${shift}: ล้างการเลือก`);
+  }
+}
+
+function previousMonth() {
+  let newMonth = currentMonth - 1;
+  let newYear = currentYear;
+  
+  if (newMonth < 0) {
+    newMonth = 11;
+    newYear--;
+  }
+  
+  // Redirect to load new month data
+  window.location.href = `?year=${newYear}&month=${newMonth + 1}`;
+}
+
+function nextMonth() {
+  let newMonth = currentMonth + 1;
+  let newYear = currentYear;
+  
+  if (newMonth > 11) {
+    newMonth = 0;
+    newYear++;
+  }
+  
+  // Redirect to load new month data
+  window.location.href = `?year=${newYear}&month=${newMonth + 1}`;
+}
+
+function resetSchedule() {
+  if (confirm('⚠️ ยืนยันรีเซ็ตตารางเวรทั้งหมด?')) {
+    document.querySelectorAll('.tech-select').forEach(select => {
+      select.value = '';
+    });
+    console.log('🔄 รีเซ็ตตารางเวรเรียบร้อย');
+  }
+}
+
+function saveSchedule() {
+  const schedule = [];
+  const invalidSelects = [];
+  
+  // ตรวจสอบ dropdown ทั้งหมด
+  document.querySelectorAll('.tech-select').forEach(select => {
+    if (select.value) {
+      schedule.push({
+        date: select.dataset.date,
+        shift: select.dataset.shift,
+        technician_id: parseInt(select.value),
+        technician_name: technicians.find(t => t.id == select.value)?.name
+      });
+    } else {
+      // เก็บรายการที่ยังไม่ได้เลือกช่าง
+      invalidSelects.push({
+        date: select.dataset.date,
+        shift: select.dataset.shift === 'morning' ? 'เวรเช้า' : 'เวรบ่าย'
+      });
+    }
+  });
+  
+  // ถ้ามี dropdown ที่ยังไม่ได้เลือก แสดงคำเตือน
+  if (invalidSelects.length > 0) {
+    const warningMessage = `⚠️ พบช่องที่ยังไม่ได้ระบุช่าง ${invalidSelects.length} รายการ:\n\n` +
+      invalidSelects.slice(0, 5).map(item => `• ${item.date} - ${item.shift}`).join('\n') +
+      (invalidSelects.length > 5 ? `\n... และอีก ${invalidSelects.length - 5} รายการ` : '') +
+      '\n\nต้องการบันทึกเฉพาะรายการที่เลือกแล้วหรือไม่?';
+    
+    if (!confirm(warningMessage)) {
+      return; // ยกเลิกการบันทึก
+    }
+  }
+  
+  if (schedule.length === 0) {
+    alert('❌ ไม่มีข้อมูลที่จะบันทึก กรุณาเลือกช่างอย่างน้อย 1 รายการ');
+    return;
+  }
+  
+  console.log('💾 กำลังบันทึกตารางเวร:', schedule);
+  
+  // แสดง loading
+  const saveBtn = document.querySelector('.btn-save');
+  const originalText = saveBtn.innerHTML;
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> กำลังบันทึก...';
+  
+  // ส่งข้อมูลไป backend
+  fetch('/api/shift-schedule/save/', {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCsrfToken()
+    },
+    body: JSON.stringify({ schedules: schedule })
+  })
+  .then(response => response.json())
+  .then(data => {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = originalText;
+    
+    if (data.success) {
+      let message = `✅ ${data.message}`;
+      if (data.errors && data.errors.length > 0) {
+        message += `\n\n⚠️ พบข้อผิดพลาดบางรายการ:\n${data.errors.slice(0, 3).join('\n')}`;
+      }
+      alert(message);
+      
+      // Reload with current month/year parameters
+      const monthParam = currentMonth + 1; // Convert back to 1-based
+      window.location.href = `?year=${currentYear}&month=${monthParam}`;
+    } else {
+      alert(`❌ เกิดข้อผิดพลาด: ${data.error}`);
+    }
+  })
+  .catch(error => {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = originalText;
+    console.error('❌ Error:', error);
+    alert('❌ เกิดข้อผิดพลาดในการบันทึก: ' + error.message);
+  });
+}
+
+// Helper function to get CSRF token
+function getCsrfToken() {
+  const cookies = document.cookie.split(';');
+  for (let cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'csrftoken') {
+      return value;
+    }
+  }
+  return '';
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', async function() {
+  // โหลดวันหยุดราชการก่อน
+  await loadPublicHolidays();
+  
+  // แล้วจึง init calendar
+  initCalendar();
+});
+
+// ป้องกัน error จาก browser extensions
+window.addEventListener('error', function(e) {
+  if (e.message && e.message.includes('Extension context invalidated')) {
+    e.stopImmediatePropagation();
+    return true;
+  }
+}, true);
+</script>
+
+{% endblock %}

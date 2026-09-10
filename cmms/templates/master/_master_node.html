@@ -1,0 +1,63 @@
+<div class="master-node master-node-card" data-pk="{{ node.item.pk }}" data-category="{{ node.item.category }}" draggable="true">
+  <div class="node-header">
+    <div class="node-toggle-area">
+      {% if node.children %}
+        <button type="button" class="node-toggle-btn master-node-toggle" aria-expanded="true" data-target="#children-{{ node.item.pk }}" title="ขยาย/ย่อ">
+          <i class="bi bi-caret-down-fill toggle-icon"></i>
+        </button>
+      {% else %}
+        <span class="node-spacer"></span>
+      {% endif %}
+    </div>
+    
+    <div class="node-content">
+      <div class="node-drag-handle" title="ลากเพื่อย้าย">
+        <i class="bi bi-grip-vertical"></i>
+      </div>
+      <div class="node-info">
+        <div class="node-label">{{ node.item.label }}</div>
+        <div class="node-meta">
+          <span class="node-code">
+            <i class="bi bi-tag"></i> {{ node.item.code }}
+          </span>
+          {% if node.item.category %}
+            <span class="node-category">
+              <i class="bi bi-folder"></i> {{ node.item.category }}
+            </span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <div class="node-actions">
+      <button type="button" class="node-action-btn add-btn btn-add-child" 
+              data-pk="{{ node.item.pk }}" 
+              data-create-url="{% url 'master_create' %}?parent_id={{ node.item.pk }}{% if active_category %}&amp;category={{ active_category|urlencode }}{% endif %}" 
+              title="เพิ่มลูก" 
+              data-bs-toggle="tooltip" 
+              onclick="if(window.master_add_child){ window.master_add_child('{{ node.item.pk }}', this); }else{ window.location.href=this.getAttribute('data-create-url'); }">
+        <i class="bi bi-plus-circle"></i>
+      </button>
+      <button type="button" class="node-action-btn edit-btn btn-edit" 
+              data-pk="{{ node.item.pk }}" 
+              data-edit-url="{% url 'master_edit' node.item.pk %}" 
+              title="แก้ไข" 
+              data-bs-toggle="tooltip" 
+              onclick="if(window.master_edit){ window.master_edit('{{ node.item.pk }}', this); }else{ window.location.href=this.getAttribute('data-edit-url'); }">
+        <i class="bi bi-pencil"></i>
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-danger" 
+              onclick="deleteMasterItem('{{ node.item.pk }}', '{{ node.item.label|escapejs }}', '{{ node.item.category|escapejs }}')">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+  </div>
+  
+  {% if node.children %}
+    <div id="children-{{ node.item.pk }}" class="master-children">
+      {% for child in node.children %}
+        {% include 'master/_master_node.html' with node=child %}
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>

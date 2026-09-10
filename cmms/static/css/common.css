@@ -1,0 +1,195 @@
+/* === CMMS Common Design System === */
+/* Shared CSS variables and utilities for all modules */
+
+:root {
+  /* Colors */
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --primary-light: #dbeafe;
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --info: #06b6d4;
+  --info-light: #cffafe;
+  --purple: #8b5cf6;
+  --purple-light: #ede9fe;
+  
+  /* Neutrals */
+  --bg-light: #f1f5f9;
+  --bg-card: #ffffff;
+  --border: #e2e8f0;
+  --border-light: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  
+  /* Border Radius */
+  --radius: 0.75rem;
+  --radius-lg: 1rem;
+}
+
+/* === Modern Card Components === */
+.card-modern {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  margin-bottom: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  transition: all 0.3s ease;
+}
+
+.card-modern:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.card-header-modern {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 1.5rem 2rem;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.card-header-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+}
+
+.card-header-modern h3 {
+  position: relative;
+  z-index: 1;
+  font-weight: 700;
+  font-size: 1.75rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin: 0;
+}
+
+.card-header-modern p {
+  position: relative;
+  z-index: 1;
+  margin: 0.5rem 0 0 0;
+  opacity: 0.95;
+}
+
+.card-body-modern {
+  padding: 1rem;
+}
+
+/* === Modern Buttons === */
+.btn-modern {
+  border-radius: var(--radius);
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-modern:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.btn-modern:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary-modern {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  border-color: var(--primary);
+}
+
+.btn-success-modern {
+  background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+  color: white;
+  border-color: var(--success);
+}
+
+.btn-warning-modern {
+  background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+  color: white;
+  border-color: var(--warning);
+}
+
+.btn-danger-modern {
+  background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+  color: white;
+  border-color: var(--danger);
+}
+
+.btn-info-modern {
+  background: linear-gradient(135deg, var(--info) 0%, #0891b2 100%);
+  color: white;
+  border-color: var(--info);
+}
+
+.btn-outline-modern {
+  background: white;
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+.btn-outline-modern:hover:not(:disabled) {
+  background: var(--bg-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* === Utility Classes === */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.bg-light { background: var(--bg-light); }
+.border-light { border-color: var(--border-light); }
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .card-body-modern {
+    padding: 1rem;
+  }
+  
+  .card-header-modern {
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .card-header-modern h3 {
+    font-size: 1.35rem;
+  }
+}
+
+/* === Print === */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .card-modern {
+    box-shadow: none;
+    border: 1px solid var(--border);
+  }
+}

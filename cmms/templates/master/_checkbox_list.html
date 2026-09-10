@@ -1,0 +1,109 @@
+{#
+  Usage:
+  {% include 'master/_checkbox_list.html' with category='departments' input_name='equipment_owner_department' selected=selected_ids %}
+
+  - category: master category string
+  - input_name: name attribute for checkboxes (use trailing [] for multiple if desired; template will append [] automatically)
+  - selected: optional list of selected ids to pre-check
+#}
+<div class="master-checkbox-list" data-category="{{ category }}" data-input-name="{{ input_name }}" data-selected="{{ selected|default:'[]'|escapejs }}">
+  <div class="mb-2 d-flex align-items-center gap-2">
+    <input type="text" class="form-control form-control-sm master-checkbox-search" placeholder="ค้นหา...">
+    <div class="form-check ms-2">
+      <input class="form-check-input" type="checkbox" id="master-{{ category }}-selectall">
+      <label class="form-check-label small" for="master-{{ category }}-selectall">เลือกทั้งหมด</label>
+    </div>
+    <div class="btn-group btn-group-sm ms-2" role="group" aria-label="actions">
+      <button type="button" id="master-{{ category }}-undo" class="btn btn-outline-warning" disabled>Undo</button>
+      <button type="button" id="master-{{ category }}-redo" class="btn btn-outline-secondary" disabled>Redo</button>
+      <button type="button" id="master-{{ category }}-testjs" class="btn btn-outline-info">Test JS</button>
+    </div>
+  </div>
+  <div class="master-checkbox-items list-group master-checkbox-scrollable">
+    <div class="text-muted small px-2">กำลังโหลด...</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var container = document.currentScript ? document.currentScript.previousElementSibling : null;
+  if(!container || !container.classList || !container.classList.contains('master-checkbox-list')){
+    container = document.querySelector('.master-checkbox-list[data-category="{{ category }}"]');
+  }
+  if(!container) return;
+  var category = container.getAttribute('data-category');
+  var inputName = container.getAttribute('data-input-name') || '{{ input_name }}';
+  if(inputName.indexOf('[]') === -1) inputName = inputName + '[]';
+  var itemsEl = container.querySelector('.master-checkbox-items');
+  var searchEl = container.querySelector('.master-checkbox-search');
+  var selectAllEl = container.querySelector('#master-{{ category }}-selectall');
+  var undoBtn = container.querySelector('#master-{{ category }}-undo');
+  var redoBtn = container.querySelector('#master-{{ category }}-redo');
+  var testJsBtn = container.querySelector('#master-{{ category }}-testjs');
+  var preselected = [];
+  try{ preselected = JSON.parse(container.getAttribute('data-selected') || '[]').map(String); }catch(e){ preselected = []; }
+
+  // undo/redo stacks for selection state
+  var undoStack = []; var redoStack = []; var maxStack = 30;
+  function snapshotSelection(){ var chks = Array.from(itemsEl.querySelectorAll('input[type=checkbox]')); var state = chks.map(function(c){ return { id: c.value, checked: c.checked }; }); return state; }
+  function applySelection(state){ if(!state) return; var map = {}; state.forEach(function(s){ map[String(s.id)] = s.checked; }); var chks = Array.from(itemsEl.querySelectorAll('input[type=checkbox]')); chks.forEach(function(c){ if(map.hasOwnProperty(String(c.value))){ c.checked = !!map[c.value]; } }); // update selectAll
+    if(selectAllEl){ var vis = Array.from(itemsEl.querySelectorAll('input[type=checkbox]')).filter(function(c){ return c.style.display !== 'none'; }); selectAllEl.checked = vis.length > 0 && vis.every(function(c){ return c.checked; }); }
+  }
+  function pushUndo(state){ undoStack.push(state); if(undoStack.length > maxStack) undoStack.shift(); redoStack = []; updateUndoRedoButtons(); }
+  function updateUndoRedoButtons(){ if(undoBtn) undoBtn.disabled = undoStack.length === 0; if(redoBtn) redoBtn.disabled = redoStack.length === 0; }
+  function performUndoLocal(){ if(!undoStack.length) return; var s = undoStack.pop(); var cur = snapshotSelection(); redoStack.push(cur); applySelection(s); updateUndoRedoButtons(); }
+  function performRedoLocal(){ if(!redoStack.length) return; var s = redoStack.pop(); var cur = snapshotSelection(); undoStack.push(cur); applySelection(s); updateUndoRedoButtons(); }
+
+  function renderList(items, preselected){
+    itemsEl.innerHTML = '';
+    if(!items || items.length === 0){ itemsEl.innerHTML = '<div class="text-muted small px-2">ยังไม่มีรายการ</div>'; return; }
+    items.forEach(function(it){
+      var id = it.id;
+      var label = it.label || it.text || (it.code ? (it.code + ' - ' + it.label) : String(it.id));
+      var li = document.createElement('div'); li.className = 'list-group-item d-flex align-items-center';
+      var ck = document.createElement('input'); ck.type='checkbox'; ck.name = inputName; ck.value = id; ck.className='form-check-input me-2'; ck.id = 'master-' + category + '-item-' + id;
+      if(preselected && preselected.indexOf && preselected.indexOf(String(id)) !== -1) ck.checked = true;
+      var lab = document.createElement('label'); lab.htmlFor = ck.id; lab.className='form-check-label'; lab.textContent = label;
+      li.appendChild(ck); li.appendChild(lab);
+      itemsEl.appendChild(li);
+    });
+    // initial snapshot after render
+    pushUndo(snapshotSelection());
+    updateUndoRedoButtons();
+  }
+
+  function fetchItems(){
+    fetch('{% url "api_master_items" %}?category=' + encodeURIComponent(category)).then(function(r){ return r.json(); }).then(function(j){
+      var out = j && j.results ? j.results.map(function(x){ return { id: x.id, label: (x.label || x.text || (x.code || '') ) }; }) : [];
+      renderList(out, preselected);
+    }).catch(function(){ itemsEl.innerHTML = '<div class="text-danger small px-2">ไม่สามารถโหลดรายการได้</div>'; });
+  }
+
+  function filterList(q){
+    q = (q || '').trim().toLowerCase();
+    var nodes = itemsEl.querySelectorAll('.list-group-item');
+    nodes.forEach(function(n){ var txt = (n.textContent || '').toLowerCase(); n.style.display = txt.indexOf(q) !== -1 ? '' : 'none'; });
+  }
+
+  // wire search
+  if(searchEl) searchEl.addEventListener('input', function(){ filterList(this.value); });
+
+  // select all handling
+  if(selectAllEl){ selectAllEl.addEventListener('change', function(){ var chks = itemsEl.querySelectorAll('input[type=checkbox]'); chks.forEach(function(c){ if(c.style.display === 'none') return; c.checked = selectAllEl.checked; }); }); }
+
+  // track checkbox change events to push undo snapshots
+  itemsEl.addEventListener('change', function(ev){ var t = ev.target; if(t && t.type === 'checkbox'){ // push previous state to undo stack
+    // we store snapshot BEFORE the change — for simplicity we captured after render; here we push current snapshot as new state
+    pushUndo(snapshotSelection()); }
+  });
+
+  if(undoBtn) undoBtn.addEventListener('click', performUndoLocal);
+  if(redoBtn) redoBtn.addEventListener('click', performRedoLocal);
+
+  if(testJsBtn){ testJsBtn.addEventListener('click', function(){ try{ var first = itemsEl.querySelector('input[type=checkbox]'); if(first){ first.click(); debugBanner && typeof debugBanner === 'function' && debugBanner('[checkbox-list] simulated click on first item'); pushUndo(snapshotSelection()); updateUndoRedoButtons(); } else { debugBanner && typeof debugBanner === 'function' && debugBanner('[checkbox-list] no items found'); } }catch(e){ console.debug('testjs error', e); } }); }
+
+  // initial fetch
+  fetchItems();
+})();
+</script>
+

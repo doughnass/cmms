@@ -1,0 +1,787 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}<title>CMMS MedCMU : เปรียบเทียบ KPI</title>{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<style>
+:root {
+  --compare-primary: #667eea;
+  --compare-secondary: #764ba2;
+  --compare-current: #3b82f6;
+  --compare-previous: #94a3b8;
+}
+
+.compare-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* Header */
+.compare-header {
+  background: linear-gradient(135deg, var(--compare-primary), var(--compare-secondary));
+  color: white;
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  margin-top: 4rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+}
+
+.compare-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem 0;
+}
+
+.compare-header p {
+  margin: 0;
+  opacity: 0.95;
+  font-size: 1.05rem;
+}
+
+/* Period Selector */
+.period-selector {
+  background: white;
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  margin-bottom: 2rem;
+}
+
+.period-selector h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+}
+
+.period-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.period-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.period-box label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.95rem;
+}
+
+.period-box select,
+.period-box input {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  transition: all 0.3s;
+}
+
+.period-box select:focus,
+.period-box input:focus {
+  outline: none;
+  border-color: var(--compare-primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.btn-compare {
+  background: linear-gradient(135deg, var(--compare-primary), var(--compare-secondary));
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-compare:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* Comparison Cards */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.comparison-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  transition: all 0.3s;
+}
+
+.comparison-card:hover {
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  transform: translateY(-5px);
+}
+
+.comparison-card h4 {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin: 0 0 1.25rem 0;
+  font-weight: 600;
+}
+
+.comparison-values {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.value-box {
+  padding: 1rem;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.value-box.current {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 2px solid #3b82f6;
+}
+
+.value-box.previous {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+}
+
+.value-label {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.value-number {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1;
+}
+
+.comparison-change {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.comparison-change.positive {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.comparison-change.negative {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.comparison-change.neutral {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.change-icon {
+  font-size: 1.25rem;
+}
+
+/* Detailed Comparison Table */
+.comparison-table-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  margin-bottom: 2rem;
+}
+
+.comparison-table-card h3 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.comparison-table thead {
+  background: #f9fafb;
+}
+
+.comparison-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.comparison-table th:first-child { border-radius: 12px 0 0 0; }
+.comparison-table th:last-child { border-radius: 0 12px 0 0; }
+
+.comparison-table td {
+  padding: 1rem;
+  color: #6b7280;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.comparison-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.comparison-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.comparison-table .kpi-name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.comparison-table .period-value {
+  font-weight: 600;
+  color: #374151;
+}
+
+.change-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.change-badge.up { background: #d1fae5; color: #065f46; }
+.change-badge.down { background: #fee2e2; color: #991b1b; }
+.change-badge.same { background: #f3f4f6; color: #6b7280; }
+
+/* Chart Comparison */
+.chart-comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(550px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.chart-comparison-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+
+.chart-comparison-card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+}
+
+.chart-comparison-wrapper {
+  position: relative;
+  height: 320px;
+}
+
+/* Insights */
+.insights-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  margin-bottom: 2rem;
+}
+
+.insights-card h3 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.insight-box {
+  padding: 1.25rem;
+  border-left: 4px solid;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.insight-box.improvement {
+  background: #f0fdf4;
+  border-color: #10b981;
+}
+
+.insight-box.decline {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+.insight-box.stable {
+  background: #f0f9ff;
+  border-color: #3b82f6;
+}
+
+.insight-box h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.insight-box p {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .compare-container { padding: 1rem; }
+  .compare-header { padding: 1.5rem; margin-top: 2rem; }
+  .compare-header h1 { font-size: 1.5rem; }
+  .period-grid { grid-template-columns: 1fr; }
+  .comparison-grid { grid-template-columns: 1fr; }
+  .chart-comparison-grid { grid-template-columns: 1fr; }
+  .comparison-table { font-size: 0.85rem; }
+}
+</style>
+
+<div class="compare-container">
+  <!-- Header -->
+  <div class="compare-header">
+    <h1><i class="bi bi-arrow-left-right me-2"></i>เปรียบเทียบ KPI ระหว่างช่วงเวลา</h1>
+    <p>วิเคราะห์แนวโน้มและความเปลี่ยนแปลงของตัวชี้วัดประสิทธิภาพการทำงาน</p>
+  </div>
+
+  <!-- Period Selector -->
+  <div class="period-selector">
+    <h3><i class="bi bi-calendar-range me-2"></i>เลือกช่วงเวลาเปรียบเทียบ</h3>
+    <div class="period-grid">
+      <div class="period-box">
+        <label><i class="bi bi-calendar-check"></i> ช่วงเวลาปัจจุบัน</label>
+        <select class="form-select">
+          <option value="this-month" selected>เดือนนี้ (มิ.ย. 2026)</option>
+          <option value="this-quarter">ไตรมาสนี้ (Q2 2026)</option>
+          <option value="this-year">ปีนี้ (2026)</option>
+          <option value="custom">กำหนดเอง</option>
+        </select>
+      </div>
+      <div class="period-box">
+        <label><i class="bi bi-calendar-x"></i> ช่วงเวลาก่อนหน้า</label>
+        <select class="form-select">
+          <option value="last-month" selected>เดือนที่แล้ว (พ.ค. 2026)</option>
+          <option value="last-quarter">ไตรมาสที่แล้ว (Q1 2026)</option>
+          <option value="last-year">ปีที่แล้ว (2025)</option>
+          <option value="custom">กำหนดเอง</option>
+        </select>
+      </div>
+      <div class="period-box" style="display: flex; justify-content: flex-end; align-items: flex-end;">
+        <button class="btn-compare">
+          <i class="bi bi-arrow-repeat"></i>
+          เปรียบเทียบ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Comparison Cards -->
+  <div class="comparison-grid">
+    <!-- Completion Rate -->
+    <div class="comparison-card">
+      <h4>อัตราการดำเนินการเสร็จสิ้น</h4>
+      <div class="comparison-values">
+        <div class="value-box current">
+          <div class="value-label">มิ.ย. 2026</div>
+          <div class="value-number">94.5%</div>
+        </div>
+        <div class="value-box previous">
+          <div class="value-label">พ.ค. 2026</div>
+          <div class="value-number">89.8%</div>
+        </div>
+      </div>
+      <div class="comparison-change positive">
+        <span class="change-icon">↑</span>
+        <span>เพิ่มขึ้น 4.7% (ดีขึ้น)</span>
+      </div>
+    </div>
+
+    <!-- MTTR -->
+    <div class="comparison-card">
+      <h4>เวลาเฉลี่ยในการซ่อม (MTTR)</h4>
+      <div class="comparison-values">
+        <div class="value-box current">
+          <div class="value-label">มิ.ย. 2026</div>
+          <div class="value-number">3.2 ชม.</div>
+        </div>
+        <div class="value-box previous">
+          <div class="value-label">พ.ค. 2026</div>
+          <div class="value-number">3.8 ชม.</div>
+        </div>
+      </div>
+      <div class="comparison-change positive">
+        <span class="change-icon">↓</span>
+        <span>ลดลง 0.6 ชม. (ดีขึ้น)</span>
+      </div>
+    </div>
+
+    <!-- Uptime -->
+    <div class="comparison-card">
+      <h4>เวลาการใช้งานเครื่องมือ (Uptime)</h4>
+      <div class="comparison-values">
+        <div class="value-box current">
+          <div class="value-label">มิ.ย. 2026</div>
+          <div class="value-number">98.3%</div>
+        </div>
+        <div class="value-box previous">
+          <div class="value-label">พ.ค. 2026</div>
+          <div class="value-number">96.5%</div>
+        </div>
+      </div>
+      <div class="comparison-change positive">
+        <span class="change-icon">↑</span>
+        <span>เพิ่มขึ้น 1.8% (ดีขึ้น)</span>
+      </div>
+    </div>
+
+    <!-- PM Compliance -->
+    <div class="comparison-card">
+      <h4>การปฏิบัติตามแผน PM</h4>
+      <div class="comparison-values">
+        <div class="value-box current">
+          <div class="value-label">มิ.ย. 2026</div>
+          <div class="value-number">87.2%</div>
+        </div>
+        <div class="value-box previous">
+          <div class="value-label">พ.ค. 2026</div>
+          <div class="value-number">91.5%</div>
+        </div>
+      </div>
+      <div class="comparison-change negative">
+        <span class="change-icon">↓</span>
+        <span>ลดลง 4.3% (แย่ลง)</span>
+      </div>
+    </div>
+
+    <!-- Response Time -->
+    <div class="comparison-card">
+      <h4>เวลาตอบสนองเฉลี่ย</h4>
+      <div class="comparison-values">
+        <div class="value-box current">
+          <div class="value-label">มิ.ย. 2026</div>
+          <div class="value-number">1.8 ชม.</div>
+        </div>
+        <div class="value-box previous">
+          <div class="value-label">พ.ค. 2026</div>
+          <div class="value-number">2.1 ชม.</div>
+        </div>
+      </div>
+      <div class="comparison-change positive">
+        <span class="change-icon">↓</span>
+        <span>ลดลง 0.3 ชม. (ดีขึ้น)</span>
+      </div>
+    </div>
+
+    <!-- Backlog -->
+    <div class="comparison-card">
+      <h4>งานค้างทำ (Backlog)</h4>
+      <div class="comparison-values">
+        <div class="value-box current">
+          <div class="value-label">มิ.ย. 2026</div>
+          <div class="value-number">23 งาน</div>
+        </div>
+        <div class="value-box previous">
+          <div class="value-label">พ.ค. 2026</div>
+          <div class="value-number">28 งาน</div>
+        </div>
+      </div>
+      <div class="comparison-change positive">
+        <span class="change-icon">↓</span>
+        <span>ลดลง 5 งาน (ดีขึ้น)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Comparison Table -->
+  <div class="comparison-table-card">
+    <h3><i class="bi bi-table"></i> ตารางเปรียบเทียบ KPI โดยละเอียด</h3>
+    <div class="table-responsive">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>ตัวชี้วัด (KPI)</th>
+            <th>มิ.ย. 2026</th>
+            <th>พ.ค. 2026</th>
+            <th>ผลต่าง</th>
+            <th>% เปลี่ยนแปลง</th>
+            <th>แนวโน้ม</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="kpi-name">อัตราการดำเนินการเสร็จสิ้น</td>
+            <td class="period-value">94.5%</td>
+            <td>89.8%</td>
+            <td>+4.7%</td>
+            <td>+5.2%</td>
+            <td><span class="change-badge up"><i class="bi bi-arrow-up"></i> ดีขึ้น</span></td>
+          </tr>
+          <tr>
+            <td class="kpi-name">เวลาเฉลี่ยในการซ่อม (MTTR)</td>
+            <td class="period-value">3.2 ชม.</td>
+            <td>3.8 ชม.</td>
+            <td>-0.6 ชม.</td>
+            <td>-15.8%</td>
+            <td><span class="change-badge up"><i class="bi bi-arrow-up"></i> ดีขึ้น</span></td>
+          </tr>
+          <tr>
+            <td class="kpi-name">เวลาการใช้งานเครื่องมือ (Uptime)</td>
+            <td class="period-value">98.3%</td>
+            <td>96.5%</td>
+            <td>+1.8%</td>
+            <td>+1.9%</td>
+            <td><span class="change-badge up"><i class="bi bi-arrow-up"></i> ดีขึ้น</span></td>
+          </tr>
+          <tr>
+            <td class="kpi-name">การปฏิบัติตามแผน PM</td>
+            <td class="period-value">87.2%</td>
+            <td>91.5%</td>
+            <td>-4.3%</td>
+            <td>-4.7%</td>
+            <td><span class="change-badge down"><i class="bi bi-arrow-down"></i> แย่ลง</span></td>
+          </tr>
+          <tr>
+            <td class="kpi-name">เวลาตอบสนองเฉลี่ย</td>
+            <td class="period-value">1.8 ชม.</td>
+            <td>2.1 ชม.</td>
+            <td>-0.3 ชม.</td>
+            <td>-14.3%</td>
+            <td><span class="change-badge up"><i class="bi bi-arrow-up"></i> ดีขึ้น</span></td>
+          </tr>
+          <tr>
+            <td class="kpi-name">ค่าใช้จ่ายการบำรุงรักษา</td>
+            <td class="period-value">฿285,000</td>
+            <td>฿248,000</td>
+            <td>+฿37,000</td>
+            <td>+14.9%</td>
+            <td><span class="change-badge down"><i class="bi bi-arrow-down"></i> เพิ่มขึ้น</span></td>
+          </tr>
+          <tr>
+            <td class="kpi-name">งานค้างทำ (Backlog)</td>
+            <td class="period-value">23 งาน</td>
+            <td>28 งาน</td>
+            <td>-5 งาน</td>
+            <td>-17.9%</td>
+            <td><span class="change-badge up"><i class="bi bi-arrow-up"></i> ดีขึ้น</span></td>
+          </tr>
+          <tr>
+            <td class="kpi-name">อัตราซ่อมสำเร็จครั้งแรก</td>
+            <td class="period-value">91.3%</td>
+            <td>88.5%</td>
+            <td>+2.8%</td>
+            <td>+3.2%</td>
+            <td><span class="change-badge up"><i class="bi bi-arrow-up"></i> ดีขึ้น</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Chart Comparisons -->
+  <div class="chart-comparison-grid">
+    <!-- Trend Comparison -->
+    <div class="chart-comparison-card">
+      <h3><i class="bi bi-graph-up"></i> เปรียบเทียบแนวโน้มรายสัปดาห์</h3>
+      <div class="chart-comparison-wrapper">
+        <canvas id="weeklyTrendChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Performance Radar -->
+    <div class="chart-comparison-card">
+      <h3><i class="bi bi-radar"></i> ภาพรวมประสิทธิภาพ</h3>
+      <div class="chart-comparison-wrapper">
+        <canvas id="performanceRadarChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Insights -->
+  <div class="insights-card">
+    <h3><i class="bi bi-lightbulb"></i> สรุปข้อมูลเชิงลึก</h3>
+    
+    <div class="insight-box improvement">
+      <h4>📈 จุดที่ปรับปรุงได้ดี</h4>
+      <p>
+        <strong>อัตราการดำเนินการเสร็จสิ้น</strong> เพิ่มขึ้นจาก 89.8% เป็น 94.5% แสดงให้เห็นว่าทีมมีประสิทธิภาพในการปิดงานมากขึ้น 
+        และ<strong>เวลาเฉลี่ยในการซ่อม</strong>ลดลงจาก 3.8 ชม. เป็น 3.2 ชม. ซึ่งช่วยเพิ่ม Uptime ของเครื่องมือ
+      </p>
+    </div>
+
+    <div class="insight-box decline">
+      <h4>📉 จุดที่ต้องให้ความสนใจ</h4>
+      <p>
+        <strong>การปฏิบัติตามแผน PM</strong> ลดลงจาก 91.5% เป็น 87.2% อาจเป็นผลมาจากภาระงานซ่อมฉุกเฉินที่เพิ่มขึ้น 
+        และ<strong>ค่าใช้จ่าย</strong>เพิ่มขึ้น 14.9% ควรตรวจสอบสาเหตุและวางแผนควบคุมงบประมาณ
+      </p>
+    </div>
+
+    <div class="insight-box stable">
+      <h4>💡 ข้อเสนอแนะ</h4>
+      <p>
+        ควรจัดสรรทรัพยากรให้สมดุลระหว่างงาน PM และงานซ่อมแซม เพื่อรักษาระดับ PM Compliance ให้สูงขึ้น 
+        และควรพิจารณาวิเคราะห์ Root Cause ของการเพิ่มขึ้นของค่าใช้จ่ายเพื่อหาแนวทางลดต้นทุน
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const chartColors = {
+  current: '#3b82f6',
+  previous: '#94a3b8',
+  success: '#10b981',
+  warning: '#f59e0b',
+  danger: '#ef4444'
+};
+
+// Weekly Trend Comparison Chart
+const weeklyCtx = document.getElementById('weeklyTrendChart').getContext('2d');
+new Chart(weeklyCtx, {
+  type: 'line',
+  data: {
+    labels: ['สัปดาห์ 1', 'สัปดาห์ 2', 'สัปดาห์ 3', 'สัปดาห์ 4'],
+    datasets: [{
+      label: 'มิ.ย. 2026 (ปัจจุบัน)',
+      data: [92, 94, 95, 94.5],
+      borderColor: chartColors.current,
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      tension: 0.4,
+      fill: true,
+      borderWidth: 3
+    }, {
+      label: 'พ.ค. 2026 (ก่อนหน้า)',
+      data: [88, 89, 90, 89.8],
+      borderColor: chartColors.previous,
+      backgroundColor: 'rgba(148, 163, 184, 0.1)',
+      tension: 0.4,
+      fill: true,
+      borderWidth: 2,
+      borderDash: [5, 5]
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { usePointStyle: true, padding: 15 }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return context.dataset.label + ': ' + context.parsed.y + '%';
+          }
+        }
+      }
+    },
+    scales: {
+      y: { 
+        beginAtZero: false,
+        min: 85,
+        max: 100,
+        grid: { color: '#f3f4f6' },
+        ticks: {
+          callback: function(value) {
+            return value + '%';
+          }
+        }
+      },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// Performance Radar Chart
+const radarCtx = document.getElementById('performanceRadarChart').getContext('2d');
+new Chart(radarCtx, {
+  type: 'radar',
+  data: {
+    labels: ['Completion', 'Uptime', 'Response', 'PM Compliance', 'FTFR', 'Cost Control'],
+    datasets: [{
+      label: 'มิ.ย. 2026',
+      data: [94.5, 98.3, 90, 87.2, 91.3, 85],
+      borderColor: chartColors.current,
+      backgroundColor: 'rgba(59, 130, 246, 0.2)',
+      borderWidth: 2
+    }, {
+      label: 'พ.ค. 2026',
+      data: [89.8, 96.5, 86, 91.5, 88.5, 92],
+      borderColor: chartColors.previous,
+      backgroundColor: 'rgba(148, 163, 184, 0.2)',
+      borderWidth: 2,
+      borderDash: [5, 5]
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { usePointStyle: true, padding: 15 }
+      }
+    },
+    scales: {
+      r: {
+        beginAtZero: true,
+        max: 100,
+        ticks: {
+          stepSize: 20,
+          callback: function(value) {
+            return value + '%';
+          }
+        }
+      }
+    }
+  }
+});
+</script>
+
+{% endblock %}

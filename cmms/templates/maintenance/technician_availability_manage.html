@@ -1,0 +1,4365 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+<title>จัดการตารางช่าง - CMMS</title>
+{% endblock %}
+
+
+{% block content %}
+
+<style>
+/* ============================================
+   🎨 ULTRA MODERN DESIGN SYSTEM 2025
+   ============================================ */
+:root {
+  /* Primary Colors */
+  --color-primary: #667eea;
+  --color-primary-light: #818cf8;
+  --color-primary-dark: #4f46e5;
+  --color-primary-bg: #eef2ff;
+  
+  /* Accent Colors */
+  --color-accent: #f59e0b;
+  --color-accent-light: #fbbf24;
+  --color-accent-dark: #d97706;
+  
+  /* Success */
+  --color-success: #10b981;
+  --color-success-light: #34d399;
+  --color-success-bg: #d1fae5;
+  
+  /* Warning */
+  --color-warning: #f59e0b;
+  --color-warning-light: #fbbf24;
+  --color-warning-bg: #fef3c7;
+  
+  /* Danger */
+  --color-danger: #ef4444;
+  --color-danger-light: #f87171;
+  --color-danger-bg: #fee2e2;
+  
+  /* Info */
+  --color-info: #3b82f6;
+  --color-info-light: #60a5fa;
+  --color-info-bg: #dbeafe;
+  
+  /* Neutrals */
+  --gray-50: #fafafa;
+  --gray-100: #f5f5f5;
+  --gray-200: #e5e5e5;
+  --gray-300: #d4d4d4;
+  --gray-400: #a3a3a3;
+  --gray-500: #737373;
+  --gray-600: #525252;
+  --gray-700: #404040;
+  --gray-800: #262626;
+  --gray-900: #171717;
+  
+  /* Spacing System */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+  
+  /* Shadows */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  
+  /* Typography */
+  /* --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', sans-serif;
+  --font-display: 'Lexend', var(--font-sans); */
+  
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+} */
+
+/* body {
+  font-family: var(--font-sans);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-attachment: fixed;
+  color: var(--gray-900);
+  line-height: 1.6;
+} */
+
+/* ============================================
+   🎯 MAIN CONTAINER
+   ============================================ */
+.modern-container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: var(--space-8);
+}
+
+/* Calendar Grid (copied from daily_capacity, adjusted to avoid overflow) */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.calendar-day {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 150px;
+  border: 2px solid transparent;
+  min-width: 0; /* prevents children from forcing overflow */
+}
+
+.calendar-day:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  border-color: var(--color-primary-dark);
+}
+
+.calendar-day.today {
+  border-color: var(--color-info);
+  background: linear-gradient(135deg, #EFF6FF 0%, white 100%);
+}
+
+.calendar-day.selected {
+  border-color: var(--color-primary-dark);
+  background: linear-gradient(135deg, #EEF2FF 0%, white 100%);
+}
+
+.calendar-day.holiday {
+  background: linear-gradient(135deg, #FEF3C7 0%, white 100%);
+  border-color: var(--color-warning);
+}
+
+.calendar-day.blank {
+  background: transparent;
+  box-shadow: none;
+  cursor: default;
+  border: 2px dashed transparent;
+  min-height: 120px;
+  opacity: 0.6;
+}
+
+/* ============================================
+   📱 HERO HEADER
+   ============================================ */
+.hero-header {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8);
+  margin-bottom: var(--space-8);
+  box-shadow: var(--shadow-2xl);
+  animation: slideInDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-8);
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.hero-title-section {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.hero-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  border-radius: var(--radius-2xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-icon-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.hero-icon {
+  font-size: 2.5rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.hero-title-content h1 {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: var(--space-2);
+  letter-spacing: -0.02em;
+}
+
+.hero-title-content p {
+  font-size: 1rem;
+  color: var(--gray-600);
+  font-weight: 500;
+}
+
+.hero-actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* ============================================
+   📊 STATS DASHBOARD
+   ============================================ */
+.stats-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.stat-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-base);
+  border: 2px solid transparent;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--stat-gradient);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-2xl);
+  border-color: var(--stat-color);
+}
+
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.stat-icon-box {
+  width: 60px;
+  height: 60px;
+  background: var(--stat-bg);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-badge {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.stat-badge-primary {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+
+.stat-badge-success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.stat-badge-danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.stat-badge-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.stat-card-body h3 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--gray-900);
+  margin-bottom: var(--space-1);
+}
+
+.stat-card-body p {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  font-weight: 600;
+}
+
+.stat-progress {
+  margin-top: var(--space-3);
+  height: 6px;
+  background: var(--gray-200);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.stat-progress-bar {
+  height: 100%;
+  background: var(--stat-gradient);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-slow);
+}
+
+.stat-progress-full {
+  width: 100%;
+}
+
+.stat-progress-dynamic {
+  width: 0%;
+}
+
+/* Stat Card Variations */
+.stat-card.stat-total {
+  --stat-color: var(--color-primary);
+  --stat-gradient: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  --stat-bg: var(--color-primary-bg);
+}
+
+.stat-card.stat-working {
+  --stat-color: var(--color-success);
+  --stat-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --stat-bg: var(--color-success-bg);
+}
+
+.stat-card.stat-leave {
+  --stat-color: var(--color-danger);
+  --stat-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --stat-bg: var(--color-danger-bg);
+}
+
+.stat-card.stat-ot {
+  --stat-color: var(--color-warning);
+  --stat-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --stat-bg: var(--color-warning-bg);
+}
+
+/* ============================================
+   🎛️ CONTROL CENTER
+   ============================================ */
+.control-center {
+  background: white;
+  border-radius: var(--radius-2xl);
+  padding: var(--space-6);
+  margin-bottom: var(--space-8);
+  box-shadow: var(--shadow-xl);
+}
+
+.control-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-6);
+}
+
+.view-mode-switcher {
+  display: flex;
+  gap: var(--space-2);
+  background: var(--gray-100);
+  padding: var(--space-1);
+  border-radius: var(--radius-lg);
+}
+
+.view-mode-btn {
+  padding: var(--space-3) var(--space-5);
+  border: none;
+  background: transparent;
+  color: var(--gray-600);
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.view-mode-btn:hover {
+  color: var(--color-primary);
+}
+
+.view-mode-btn.active {
+  background: white;
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.date-navigator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.nav-button {
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--gray-300);
+  background: white;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-700);
+  font-size: 1.25rem;
+}
+
+.nav-button:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: scale(1.1);
+}
+
+.current-period {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  min-width: 240px;
+  text-align: center;
+  padding: var(--space-3) var(--space-6);
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+}
+
+.today-button {
+  padding: var(--space-3) var(--space-6);
+  border: 2px solid var(--color-primary);
+  background: white;
+  color: var(--color-primary);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.today-button:hover {
+  background: var(--color-primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.control-filters {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  padding: var(--space-2) var(--space-4);
+  border: 2px solid var(--gray-300);
+  background: white;
+  border-radius: var(--radius-full);
+  color: var(--gray-700);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.filter-chip.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: white;
+}
+
+/* ============================================
+   � TECHNICIAN SELECTOR (COMPACT + TOGGLE)
+   ============================================ */
+.tech-selector-wrapper {
+  margin-top: var(--space-6);
+  padding: 0;
+  background: white;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: all var(--transition-base);
+}
+
+.tech-selector-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: white;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: all var(--transition-fast);
+}
+
+.tech-selector-toggle:hover {
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+}
+
+.tech-selector-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.tech-selector-toggle-left i {
+  font-size: 1.25rem;
+}
+
+.tech-selector-toggle-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.tech-selector-toggle-icon {
+  font-size: 1.25rem;
+  transition: transform var(--transition-base);
+}
+
+.tech-selector-wrapper.collapsed .tech-selector-toggle-icon {
+  transform: rotate(-90deg);
+}
+
+.tech-selector-content {
+  max-height: 500px;
+  overflow: auto;
+  transition: max-height var(--transition-base) ease-out, padding var(--transition-base);
+  padding: var(--space-5);
+}
+
+.tech-selector-wrapper.collapsed .tech-selector-content {
+  max-height: 0;
+  padding: 0 var(--space-5);
+}
+
+.tech-selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.tech-selector-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.tech-selector-title i {
+  font-size: 1rem;
+  color: var(--color-primary);
+}
+
+.tech-selector-search {
+  position: relative;
+  flex: 1;
+  max-width: 280px;
+  min-width: 200px;
+}
+
+.tech-selector-search i {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-400);
+  font-size: 0.875rem;
+}
+
+.tech-selector-search input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-10);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: 0.813rem;
+  transition: all var(--transition-fast);
+  background: white;
+}
+
+.tech-selector-search input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-bg);
+}
+
+.tech-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-3);
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: var(--space-2);
+}
+
+.tech-selector-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tech-selector-grid::-webkit-scrollbar-track {
+  background: var(--gray-100);
+  border-radius: var(--radius-full);
+}
+
+.tech-selector-grid::-webkit-scrollbar-thumb {
+  background: var(--gray-400);
+  border-radius: var(--radius-full);
+}
+
+.tech-selector-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-500);
+}
+
+.tech-card {
+  background: white;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  position: relative;
+  overflow: hidden;
+}
+
+.tech-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gray-300);
+  transition: all var(--transition-fast);
+}
+
+.tech-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.tech-card:hover::before {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+}
+
+.tech-card.selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
+  box-shadow: var(--shadow-md);
+}
+
+.tech-card.selected::before {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  height: 4px;
+}
+
+.tech-card-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.tech-card.selected .tech-card-avatar {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.tech-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tech-card-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: var(--space-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tech-card-role {
+  font-size: 0.688rem;
+  color: var(--gray-500);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
+}
+
+.tech-card-stats {
+  display: flex;
+  gap: var(--space-2);
+  font-size: 0.688rem;
+}
+
+.tech-card-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--gray-600);
+}
+
+.tech-card-stat i {
+  font-size: 0.75rem;
+}
+
+.tech-card-check {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--color-success);
+  color: white;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  box-shadow: var(--shadow-md);
+  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.tech-card.selected .tech-card-check {
+  display: flex;
+}
+
+/* ============================================
+   �📅 MODERN CALENDAR
+   ============================================ */
+.calendar-wrapper {
+  background: white;
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+
+.calendar-header {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  padding: var(--space-6);
+  color: white;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.calendar-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  justify-self: start;
+}
+
+.calendar-title i {
+  font-size: 1.75rem;
+}
+
+.calendar-title span {
+  font-size: 1.5rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.selected-tech-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-lg);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  justify-self: start;
+}
+
+.tech-avatar-small {
+  width: 40px;
+  height: 40px;
+  background: white;
+  color: var(--color-primary);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tech-name-small {
+  font-weight: 600;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.tech-avatar-small.invisible {
+  opacity: 0.3;
+}
+
+/* Header Stats Badges - Compact Summary */
+.header-stats-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-self: end;
+}
+
+.stat-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-lg);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+  cursor: help;
+}
+
+.stat-badge:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.stat-badge i {
+  font-size: 1rem;
+  opacity: 0.95;
+}
+
+.stat-count {
+  font-size: 1rem;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Stat badge variants */
+.stat-badge.stat-work i { color: #86efac; }
+.stat-badge.stat-leave i { color: #fca5a5; }
+.stat-badge.stat-ot i { color: #fde047; }
+
+.current-month-display {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-lg);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  justify-self: end;
+}
+
+.current-month-display i {
+  font-size: 1.25rem;
+}
+
+.current-month-display span {
+  font-size: 1.125rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+  .calendar-header {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  
+  .calendar-title,
+  .selected-tech-info,
+  .header-stats-container,
+  .current-month-display {
+    justify-self: center;
+  }
+  
+  .header-stats-container {
+    order: 3;
+  }
+}
+
+.calendar-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.calendar-body {
+  padding: var(--space-8);
+  background: var(--gray-50);
+}
+
+/* Weekday Headers */
+.weekday-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.weekday {
+  text-align: center;
+  padding: var(--space-3);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--gray-700);
+  background: white;
+  border-radius: var(--radius-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 2px solid var(--gray-200);
+}
+
+.weekday.weekend-header {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+/* Calendar Days Grid (responsive) */
+.calendar-days {
+  display: grid;
+  /* allow columns to shrink but keep readable min width */
+  grid-template-columns: repeat(7, minmax(120px, 1fr));
+  gap: var(--space-3);
+  width: 100%;
+}
+
+/* Make weekday header horizontally scrollable on very small screens */
+.weekday-header {
+  width: 100%;
+}
+
+/* Breakpoint: medium screens - reduce min column width */
+@media (max-width: 1200px) {
+  .calendar-days {
+    grid-template-columns: repeat(7, minmax(100px, 1fr));
+  }
+  .day-cell {
+    min-height: 140px;
+    padding: var(--space-3);
+  }
+  .day-number { width: 40px; height: 40px; font-size: 1.25rem; }
+}
+
+/* Breakpoint: small screens - switch to 2 columns and make weekday header scroll */
+@media (max-width: 768px) {
+  .weekday-header {
+    display: flex;
+    gap: var(--space-2);
+    overflow-x: auto;
+    padding-bottom: 6px;
+    margin-bottom: var(--space-2);
+    white-space: nowrap;
+  }
+  .weekday { flex: 0 0 auto; min-width: 80px; }
+
+  .calendar-days {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+  }
+  .day-cell {
+    min-height: 120px;
+    padding: var(--space-2);
+  }
+  .day-number { width: 36px; height: 36px; font-size: 1.125rem; }
+  .shift-badges-container { margin-top: var(--space-1); }
+  
+  /* Stats badges responsive - reduce padding on mobile */
+  .stat-badge {
+    padding: 4px 8px;
+    gap: 3px;
+  }
+  
+  .stat-badge i {
+    font-size: 0.875rem;
+  }
+  
+  .stat-count {
+    font-size: 0.875rem;
+    min-width: 18px;
+  }
+}
+
+/* Breakpoint: very small phones - single column view */
+@media (max-width: 420px) {
+  .calendar-days { grid-template-columns: repeat(1, 1fr); }
+  .day-cell { min-height: 110px; padding: var(--space-2); }
+  .day-number { width: 32px; height: 32px; font-size: 1rem; }
+  .status-btn-text { font-size: 0.7rem; }
+  .ot-hours-display { font-size: 0.7rem; min-width: 40px; }
+  
+  /* Stats badges - show icon only on very small screens */
+  .stat-badge {
+    padding: 4px 6px;
+    gap: 2px;
+  }
+  
+  .stat-badge i {
+    font-size: 0.75rem;
+  }
+  
+  .stat-count {
+    font-size: 0.75rem;
+    min-width: 16px;
+  }
+  
+  .header-stats-container {
+    gap: 4px;
+  }
+}
+
+/* Day Cell */
+.day-cell {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  min-height: 160px;
+  border: 2px solid var(--gray-200);
+  display: flex;
+  flex-direction: column;
+  transition: all var(--transition-base);
+  cursor: pointer;
+}
+
+.day-cell:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+
+.day-cell.empty {
+  background: transparent;
+  border: none;
+  cursor: default;
+  pointer-events: none;
+}
+
+.day-cell.weekend {
+  background: linear-gradient(135deg, #fff5f5 0%, #fee2e2 100%);
+}
+
+.day-cell.today {
+  border-color: var(--color-primary);
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  box-shadow: 0 0 0 3px var(--color-primary-bg);
+}
+
+/* วันหยุดราชการ */
+.day-cell.holiday {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: #f59e0b;
+  position: relative;
+}
+
+.day-cell.holiday::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+.day-cell.holiday .day-number {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);
+}
+
+/* ไอคอนวันหยุด - แสดงเฉพาะสัญลักษณ์ */
+.holiday-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border-radius: var(--radius-full);
+  font-size: 1rem;
+  cursor: help;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+  transition: all var(--transition-fast);
+  animation: holidayPulse 2s ease-in-out infinite;
+  position: relative;
+}
+
+.holiday-icon i {
+  animation: holidayStar 3s ease-in-out infinite;
+}
+
+/* Tooltip แสดงเมื่อ hover */
+.holiday-icon:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.5);
+  z-index: 10;
+}
+
+.holiday-icon::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: var(--radius-md);
+  opacity: 0;
+  pointer-events: none;
+  transition: all var(--transition-fast);
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.holiday-icon::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.9);
+  opacity: 0;
+  transition: all var(--transition-fast);
+  z-index: 1000;
+}
+
+.holiday-icon:hover::after,
+.holiday-icon:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+@keyframes holidayPulse {
+  0%, 100% {
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 8px rgba(245, 158, 11, 0.5);
+  }
+}
+
+@keyframes holidayStar {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.1) rotate(-5deg);
+  }
+  75% {
+    transform: scale(1.1) rotate(5deg);
+  }
+}
+
+/* Day Header */
+.day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.day-number {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--gray-900);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-100);
+  border-radius: var(--radius-lg);
+}
+
+.day-cell.weekend .day-number {
+  background: var(--color-danger);
+  color: white;
+}
+
+.day-cell.today .day-number {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: white;
+  box-shadow: var(--shadow-md);
+  animation: pulse 2s infinite;
+}
+
+.today-badge {
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-primary);
+  color: white;
+  border-radius: var(--radius-full);
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================
+   🏷️ SHIFT BADGES - Modern Design
+   ============================================ */
+.shift-badges-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(249, 250, 251, 0.7) 100%);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  margin-top: var(--space-2);
+}
+
+.shift-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: 6px 8px;
+  border-radius: var(--radius-md);
+  font-size: 0.688rem;
+  font-weight: 700;
+  cursor: help;
+  transition: all var(--transition-fast);
+  position: relative;
+  width: 100%;
+}
+
+/* Shine effect on hover */
+.shift-badge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.4s;
+  pointer-events: none;
+}
+
+.shift-badge:hover::before {
+  left: 100%;
+}
+
+.shift-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Morning Shift - Sunrise Theme */
+.shift-morning {
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  color: #92400E;
+  border: 1.5px solid #FCD34D;
+  box-shadow: 0 1px 3px rgba(252, 211, 77, 0.3);
+}
+
+.shift-morning:hover {
+  background: linear-gradient(135deg, #FDE68A 0%, #FCD34D 100%);
+  border-color: #F59E0B;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+}
+
+/* Afternoon Shift - Twilight Theme */
+.shift-afternoon {
+  background: linear-gradient(135deg, #E9D5FF 0%, #D8B4FE 100%);
+  color: #6B21A8;
+  border: 1.5px solid #C084FC;
+  box-shadow: 0 1px 3px rgba(192, 132, 252, 0.3);
+}
+
+.shift-afternoon:hover {
+  background: linear-gradient(135deg, #D8B4FE 0%, #C084FC 100%);
+  border-color: #A855F7;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
+}
+
+.shift-icon {
+  font-size: 0.875rem;
+  line-height: 1;
+  filter: drop-shadow(0 0.5px 1px rgba(0, 0, 0, 0.1));
+}
+
+.shift-name {
+  font-size: 0.688rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-shadow: 0 0.5px 1px rgba(255, 255, 255, 0.5);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .shift-badges-container {
+    padding: 2px 4px;
+  }
+  
+  .shift-badge {
+    padding: 3px 6px;
+    font-size: 0.625rem;
+  }
+  
+  .shift-icon {
+    font-size: 0.75rem;
+  }
+  
+  .shift-name {
+    font-size: 0.625rem;
+    max-width: 70px;
+  }
+}
+
+/* Day Content */
+.day-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* (Old tech-cell styles removed) */
+
+/* ============================================
+   🎨 STATUS BUTTONS (CALENDAR LAYOUT)
+   ============================================ */
+.status-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.status-btn {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid;
+  border-radius: var(--radius-lg);
+  background: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-height: 38px;
+  position: relative;
+  overflow: hidden;
+}
+
+.status-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.status-btn:hover::before {
+  transform: translateX(100%);
+}
+
+.status-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.status-btn-icon {
+  font-size: 1rem;
+}
+
+.status-btn-text {
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Work Button */
+.status-btn.btn-work {
+  border-color: var(--color-success);
+  color: var(--color-success);
+  background: linear-gradient(135deg, white, var(--color-success-bg));
+}
+
+.status-btn.btn-work:hover {
+  background: var(--color-success);
+  color: white;
+  border-color: var(--color-success);
+}
+
+/* Leave Button */
+.status-btn.btn-leave {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: linear-gradient(135deg, white, var(--color-danger-bg));
+}
+
+.status-btn.btn-leave:hover {
+  background: var(--color-danger);
+  color: white;
+  border-color: var(--color-danger);
+}
+
+/* Holiday Locked - Read Only */
+.status-btn.holiday-locked {
+  cursor: not-allowed;
+  opacity: 0.85;
+  position: relative;
+}
+
+.status-btn.holiday-locked:hover {
+  transform: none;
+  box-shadow: none;
+  background: linear-gradient(135deg, white, var(--color-danger-bg));
+  color: var(--color-danger);
+}
+
+.status-btn.holiday-locked::before {
+  display: none;
+}
+
+.status-btn.holiday-locked .lock-icon {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.625rem;
+  opacity: 0.6;
+}
+
+/* OT Button */
+.status-btn.btn-ot {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+  background: linear-gradient(135deg, white, var(--color-warning-bg));
+}
+
+.status-btn.btn-ot:hover {
+  background: var(--color-warning);
+  color: white;
+  border-color: var(--color-warning);
+}
+
+/* Empty OT Button */
+.status-btn.btn-ot-empty {
+  border-color: var(--gray-300);
+  color: var(--gray-400);
+  background: white;
+  border-style: dashed;
+}
+
+.status-btn.btn-ot-empty:hover {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+  border-style: solid;
+  background: var(--color-warning-bg);
+}
+
+/* ============================================
+   🔄 OT TOGGLE SWITCH (COMPACT VERSION)
+   ============================================ */
+.ot-toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: white;
+  border: 1.5px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+  min-height: 32px;
+}
+
+.ot-toggle-container:has(.ot-toggle-checkbox:checked) {
+  border-color: var(--color-warning);
+  background: linear-gradient(135deg, white, var(--color-warning-bg));
+}
+
+/* OT Disabled State (for holidays) */
+.ot-toggle-container.ot-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+}
+
+.ot-toggle-container.ot-disabled:hover {
+  border-color: var(--gray-300);
+  background: var(--gray-100);
+}
+
+/* Hide checkbox */
+.ot-toggle-checkbox {
+  display: none;
+}
+
+/* Toggle Label - Compact Size */
+.ot-toggle-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 20px;
+  background: linear-gradient(135deg, #e53e3e, #c53030);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 4px rgba(229, 62, 62, 0.3);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Toggle Slider - Smaller */
+.ot-toggle-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Toggle Icons - Smaller */
+.ot-toggle-text {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  z-index: 1;
+}
+
+.ot-toggle-icon {
+  font-size: 0.625rem;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  /* align icon to left side of the toggle */
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.ot-inactive-icon {
+  color: white;
+  opacity: 1;
+
+}
+
+.ot-active-icon {
+  color: white;
+  opacity: 0;
+  font-weight: bold;
+}
+
+/* Checked State */
+.ot-toggle-checkbox:checked + .ot-toggle-label {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 1px 4px rgba(245, 158, 11, 0.4);
+}
+
+.ot-toggle-checkbox:checked + .ot-toggle-label .ot-toggle-slider {
+  left: calc(100% - 18px);
+}
+
+.ot-toggle-checkbox:checked + .ot-toggle-label .ot-active-icon {
+  opacity: 1;
+}
+
+.ot-toggle-checkbox:checked + .ot-toggle-label .ot-inactive-icon {
+  opacity: 0;
+}
+
+/* Hover Effects - Subtle */
+.ot-toggle-label:hover {
+  transform: scale(1.03);
+}
+
+.ot-toggle-label:active {
+  transform: scale(0.97);
+}
+
+/* Hours Display - Compact */
+.ot-hours-display {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--gray-500);
+  white-space: nowrap;
+  min-width: 35px;
+  text-align: center;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+/* Responsive sizing for OT toggle across breakpoints */
+/* Large screens: make toggle larger and more touch-friendly */
+@media (min-width: 1201px) {
+  .ot-toggle-label {
+    width: 60px;
+    height: 32px;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(229, 62, 62, 0.32);
+  }
+  .ot-toggle-slider {
+    top: 3px;
+    left: 3px;
+    width: 26px;
+    height: 26px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+  }
+  .ot-toggle-text { padding: 0 12px; }
+  .ot-toggle-icon { font-size: 1rem; }
+  .ot-toggle-checkbox:checked + .ot-toggle-label .ot-toggle-slider { left: calc(100% - 29px); }
+  .ot-hours-display { font-size: 0.75rem; min-width: 50px; }
+}
+
+/* Medium screens (<=1200px): slightly smaller */
+@media (max-width: 1200px) and (min-width: 769px) {
+  .ot-toggle-label { width: 52px; height: 28px; border-radius: 14px; }
+  .ot-toggle-slider { top: 3px; left: 3px; width: 22px; height: 22px; }
+  .ot-toggle-text { padding: 0 10px; }
+  .ot-toggle-icon { font-size: 0.9rem; }
+  .ot-toggle-checkbox:checked + .ot-toggle-label .ot-toggle-slider { left: calc(100% - 25px); }
+  .ot-hours-display { font-size: 0.72rem; min-width: 45px; }
+}
+
+/* Small screens (<=768px): compact but usable */
+@media (max-width: 768px) and (min-width: 421px) {
+  .ot-toggle-label { width: 44px; height: 24px; border-radius: 12px; }
+  .ot-toggle-slider { top: 2px; left: 2px; width: 18px; height: 18px; }
+  .ot-toggle-text { padding: 0 8px; }
+  .ot-toggle-icon { font-size: 0.85rem; }
+  .ot-toggle-checkbox:checked + .ot-toggle-label .ot-toggle-slider { left: calc(100% - 21px); }
+  .ot-hours-display { font-size: 0.7rem; min-width: 40px; }
+}
+
+/* Very small phones (<=420px): single column view, smallest toggle */
+@media (max-width: 420px) {
+  .ot-toggle-label { width: 36px; height: 20px; border-radius: 10px; }
+  .ot-toggle-slider { top: 2px; left: 2px; width: 14px; height: 14px; }
+  .ot-toggle-text { padding: 0 6px; }
+  .ot-toggle-icon { font-size: 0.7rem; }
+  .ot-toggle-checkbox:checked + .ot-toggle-label .ot-toggle-slider { left: calc(100% - 16px); }
+  .ot-hours-display { font-size: 0.65rem; min-width: 36px; }
+}
+/* Shift Button */
+.status-btn.btn-shift {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+  background: linear-gradient(135deg, white, #f5f3ff);
+}
+
+.status-btn.btn-shift:hover {
+  background: #8b5cf6;
+  color: white;
+  border-color: #8b5cf6;
+}
+
+/* Empty Shift Button */
+.status-btn.btn-shift-empty {
+  border-color: var(--gray-300);
+  color: var(--gray-400);
+  background: white;
+  border-style: dashed;
+}
+
+.status-btn.btn-shift-empty:hover {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+  border-style: solid;
+  background: #f5f3ff;
+}
+
+/* ============================================
+   🎯 DROPDOWN MENU (MODERN SELECT STYLE)
+   ============================================ */
+.status-dropdown {
+  position: absolute;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 9999;
+  max-height: 380px;
+  overflow: hidden;
+  animation: dropdownSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 260px;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.status-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.status-dropdown::-webkit-scrollbar-track {
+  background: var(--gray-100);
+}
+
+.status-dropdown::-webkit-scrollbar-thumb {
+  background: var(--gray-400);
+  border-radius: var(--radius-full);
+}
+
+.dropdown-section {
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--gray-100);
+  overflow-y: auto;
+  max-height: 360px;
+}
+
+.dropdown-section:last-child {
+  border-bottom: none;
+}
+
+.dropdown-section-title {
+  padding: var(--space-3) var(--space-4) var(--space-2);
+  font-size: 0.688rem;
+  font-weight: 700;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--gray-50);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dropdown-section-title::before {
+  content: '';
+  width: 3px;
+  height: 12px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  border-radius: var(--radius-full);
+}
+
+/* Modern Select Styling */
+.dropdown-section select {
+  width: calc(100% - var(--space-8));
+  margin: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  background: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23667eea' d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 40px;
+}
+
+.dropdown-section select:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-bg);
+}
+
+.dropdown-section select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-bg);
+}
+
+.dropdown-section select option {
+  padding: var(--space-3);
+  font-weight: 600;
+}
+
+.dropdown-section select option:checked {
+  background: linear-gradient(135deg, var(--color-primary-bg) 0%, var(--color-primary-light) 10%);
+  color: var(--color-primary-dark);
+}
+
+.dropdown-item {
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--gray-700);
+  font-size: 0.875rem;
+  font-weight: 600;
+  position: relative;
+}
+
+.dropdown-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: transparent;
+  transition: all var(--transition-fast);
+}
+
+.dropdown-item:hover {
+  background: linear-gradient(90deg, var(--color-primary-bg) 0%, transparent 100%);
+  color: var(--color-primary);
+  padding-left: calc(var(--space-4) + 4px);
+}
+
+.dropdown-item:hover::before {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+}
+
+.dropdown-item-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 1rem;
+  background: var(--gray-100);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.dropdown-item:hover .dropdown-item-icon {
+  background: var(--color-primary-bg);
+  transform: scale(1.1);
+}
+
+.dropdown-item.item-child {
+  padding-left: calc(var(--space-4) + var(--space-6));
+  font-size: 0.813rem;
+  opacity: 0.9;
+}
+
+.dropdown-item.item-child:hover {
+  padding-left: calc(var(--space-4) + var(--space-6) + 4px);
+  opacity: 1;
+}
+
+.dropdown-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ============================================
+   ✨ BEAUTIFUL OPTIONS LIST STYLING
+   ============================================ */
+.options-list {
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.option-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.option-group-label {
+  font-size: 0.688rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 8px;
+  background: linear-gradient(135deg, var(--color-primary-bg) 100%, var(--color-primary-light) 0%);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-primary);
+}
+
+.option-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 12px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  box-shadow: 0 1px 3px rgba(102, 126, 234, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.option-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-primary);
+  transform: scaleY(0);
+  transition: transform var(--transition-fast);
+}
+
+.option-item:hover {
+  border-color: var(--color-primary);
+  background: linear-gradient(135deg, #ffffff 0%, #eef2ff 100%);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  transform: translateX(4px);
+}
+
+.option-item:hover::before {
+  transform: scaleY(1);
+}
+
+.option-item:active {
+  transform: translateX(4px) scale(0.98);
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.2);
+}
+
+.option-icon {
+  font-size: 1.125rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--color-primary-bg) 0%, var(--color-primary-light) 100%);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.option-item:hover .option-icon {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.option-text {
+  flex: 1;
+  text-align: left;
+}
+
+/* Enhanced styling for work section options */
+.work-section .option-item {
+  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+}
+
+.work-section .option-item:hover {
+  background: linear-gradient(135deg, #ffffff 0%, #d1fae5 100%);
+  border-color: var(--color-success);
+}
+
+.work-section .option-item::before {
+  background: var(--color-success);
+}
+
+.work-section .option-icon {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.15) 100%);
+}
+
+.work-section .option-item:hover .option-icon {
+  background: linear-gradient(135deg, var(--color-success) 0%, #059669 100%);
+}
+
+/* Enhanced styling for OT section options */
+.ot-section .option-item {
+  background: linear-gradient(135deg, #ffffff 0%, #fff7ed 100%);
+}
+
+.ot-section .option-item:hover {
+  background: linear-gradient(135deg, #ffffff 0%, #ffedd5 100%);
+  border-color: var(--color-warning);
+}
+
+.ot-section .option-item::before {
+  background: var(--color-warning);
+}
+
+.ot-section .option-icon {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.15) 100%);
+}
+
+.ot-section .option-item:hover .option-icon {
+  background: linear-gradient(135deg, var(--color-warning) 0%, #d97706 100%);
+}
+
+/* ============================================
+   🌙 SHIFT CHECKBOX STYLING
+   ============================================ */
+
+.option-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.option-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #8b5cf6;
+  border: 2px solid #cbd5e0;
+  border-radius: 4px;
+}
+
+.option-item-clear {
+  background: linear-gradient(135deg, #fff5f5 0%, #fee 100%);
+  border-color: #fc8181;
+}
+
+.option-item-clear:hover {
+  background: linear-gradient(135deg, #fee 0%, #fdd 100%);
+  border-color: #f56565;
+}
+
+.dropdown-footer {
+  padding: var(--space-3);
+  border-top: 1px solid var(--gray-200);
+  background: var(--gray-50);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.btn-apply-shift,
+.btn-manage-shift {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.938rem;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+  display: block;
+  text-align: center;
+}
+
+.btn-apply-shift:hover,
+.btn-manage-shift:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-apply-shift:active,
+.btn-manage-shift:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(139, 92, 246, 0.3);
+}
+
+/* Shift Info Items (in dropdown) */
+.shift-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: white;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+  border: 1px solid var(--gray-200);
+}
+
+.shift-info-item:last-child {
+  margin-bottom: 0;
+}
+
+.shift-info-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.shift-info-content {
+  flex: 1;
+}
+
+.shift-info-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-1);
+}
+
+.shift-info-name {
+  font-size: 0.938rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: var(--space-1);
+}
+
+.shift-info-note {
+  font-size: 0.813rem;
+  color: var(--gray-600);
+  font-style: italic;
+}
+
+/* ============================================
+   ✨ BEAUTIFUL SELECT STYLING (Deprecated - kept for backward compatibility)
+   ============================================ */
+
+.select-wrapper {
+  position: relative;
+  padding: var(--space-4);
+}
+
+.status-select {
+  width: 100%;
+  padding: 14px 48px 14px 16px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-lg);
+  font-size: 0.938rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  appearance: none;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08),
+              inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  position: relative;
+  z-index: 1;
+}
+
+.status-select:hover {
+  border-color: var(--color-primary);
+  background: linear-gradient(135deg, #ffffff 0%, #eef2ff 100%);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+}
+
+.status-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: white;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2),
+              0 0 0 4px var(--color-primary-bg),
+              inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+}
+
+.select-arrow {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  pointer-events: none;
+  transition: all var(--transition-fast);
+  opacity: 0.7;
+}
+
+.status-select:hover + .select-arrow {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.status-select:focus + .select-arrow {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+/* Enhanced styling for different select types */
+.work-status-select {
+  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+}
+
+.work-status-select:hover {
+  background: linear-gradient(135deg, #ffffff 0%, #d1fae5 100%);
+}
+
+.ot-status-select {
+  background: linear-gradient(135deg, #ffffff 0%, #fff7ed 100%);
+}
+
+.ot-status-select:hover {
+  background: linear-gradient(135deg, #ffffff 0%, #ffedd5 100%);
+}
+
+/* Beautiful optgroup styling */
+.status-select optgroup {
+  font-weight: 700;
+  font-size: 0.813rem;
+  color: var(--color-primary);
+  padding: var(--space-2) 0;
+  background: linear-gradient(135deg, var(--color-primary-bg) 0%, var(--color-primary-light) 100%);
+}
+
+/* Beautiful option styling */
+.status-select option {
+  padding: 12px 16px;
+  font-weight: 600;
+  color: var(--gray-800);
+  background: white;
+  transition: all var(--transition-fast);
+}
+
+.status-select option:hover {
+  background: linear-gradient(135deg, var(--color-primary-bg) 0%, var(--color-primary-light) 100%);
+  color: var(--color-primary-dark);
+}
+
+.status-select option:checked {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: white;
+  font-weight: 700;
+}
+
+/* Section styling enhancements */
+.work-section {
+  border-left: 4px solid var(--color-success);
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.03) 0%, transparent 100%);
+}
+
+.ot-section {
+  border-left: 4px solid var(--color-warning);
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.03) 0%, transparent 100%);
+}
+
+.dropdown-section-title .icon {
+  display: inline-block;
+  font-size: 1.125rem;
+  margin-right: var(--space-1);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+/* ============================================
+   🔘 MODERN BUTTONS
+   ============================================ */
+.btn {
+  padding: var(--space-3) var(--space-6);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+}
+
+.btn-outline {
+  background: white;
+  border: 2px solid var(--gray-300);
+  color: var(--gray-700);
+}
+
+.btn-outline:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, var(--color-success) 0%, #059669 100%);
+  color: white;
+}
+
+.btn-lg {
+  padding: var(--space-4) var(--space-8);
+  font-size: 1rem;
+}
+
+/* ============================================
+   🎭 LOADING & ANIMATIONS
+   ============================================ */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.spinner-wrapper {
+  text-align: center;
+}
+
+.spinner {
+  width: 64px;
+  height: 64px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto var(--space-4);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner-text {
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+/* ============================================
+   📱 RESPONSIVE
+   ============================================ */
+@media (max-width: 1024px) {
+  .modern-container {
+    padding: var(--space-6);
+  }
+  
+  .hero-header {
+    padding: var(--space-6);
+  }
+  
+  .hero-title-content h1 {
+    font-size: 2rem;
+  }
+  
+  .stats-dashboard {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+  }
+}
+
+@media (max-width: 768px) {
+  .modern-container {
+    padding: var(--space-4);
+  }
+  
+  .hero-header {
+    padding: var(--space-4);
+  }
+  
+  .hero-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .hero-title-section {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .hero-icon-wrapper {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .hero-title-content h1 {
+    font-size: 1.5rem;
+  }
+  
+  .stats-dashboard {
+    grid-template-columns: 1fr;
+  }
+  
+  .control-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .date-navigator {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .calendar-table thead th:first-child {
+    min-width: 150px;
+  }
+}
+
+/* ============================================
+   🎨 UTILITY CLASSES
+   ============================================ */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.mt-0 { margin-top: 0; }
+.mb-0 { margin-bottom: 0; }
+.hidden { display: none; }
+</style>
+
+
+
+<div class="modern-container">
+  
+  <!-- HERO HEADER -->
+  <div class="hero-header">
+    <div class="hero-top">
+      <div class="hero-title-section">
+        <div class="hero-icon-wrapper">
+          <div class="hero-icon">📅</div>
+        </div>
+        <div class="hero-title-content">
+          <h1>จัดการตารางช่างเทคนิค</h1>
+          <p>วางแผนและติดตามสถานะการทำงาน ลา และโอทีของช่างอย่างมีประสิทธิภาพ</p>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'shift_schedule' %}" class="btn btn-primary">
+          <i class="bi bi-calendar-plus"></i>
+          <span>จัดตารางขึ้นเวร</span>
+        </a>
+        <button type="button" class="btn btn-outline" onclick="openHolidayModal()">
+          <i class="bi bi-calendar-event"></i>
+          <span>วันหยุดราชการ</span>
+        </button>
+        <a href="{% url 'technician_availability_report' %}" class="btn btn-outline">
+          <i class="bi bi-file-bar-graph"></i>
+          <span>รายงาน</span>
+        </a>
+      </div>
+    </div>
+    
+    <!-- STATS DASHBOARD -->
+    <div class="stats-dashboard">
+      <div class="stat-card stat-total">
+        <div class="stat-card-header">
+          <div class="stat-icon-box">👷</div>
+          <div class="stat-badge stat-badge-primary">
+            <span>100%</span>
+          </div>
+        </div>
+        <div class="stat-card-body">
+          <h3 id="totalTechs">0</h3>
+          <p>ช่างทั้งหมด</p>
+        </div>
+        <div class="stat-progress">
+          <div class="stat-progress-bar stat-progress-full"></div>
+        </div>
+      </div>
+      
+      <div class="stat-card stat-working">
+        <div class="stat-card-header">
+          <div class="stat-icon-box">💼</div>
+          <div class="stat-badge stat-badge-success">
+            <i class="bi bi-arrow-up"></i>
+            <span id="workingPercent">0%</span>
+          </div>
+        </div>
+        <div class="stat-card-body">
+          <h3 id="workingToday">0</h3>
+          <p>ปฏิบัติงานวันนี้</p>
+        </div>
+        <div class="stat-progress">
+          <div class="stat-progress-bar stat-progress-dynamic" id="workingProgress"></div>
+        </div>
+      </div>
+      
+      <div class="stat-card stat-leave">
+        <div class="stat-card-header">
+          <div class="stat-icon-box">🏖️</div>
+          <div class="stat-badge stat-badge-danger">
+            <i class="bi bi-arrow-down"></i>
+            <span id="leavePercent">0%</span>
+          </div>
+        </div>
+        <div class="stat-card-body">
+          <h3 id="leaveToday">0</h3>
+          <p>ลาวันนี้</p>
+        </div>
+        <div class="stat-progress">
+          <div class="stat-progress-bar stat-progress-dynamic" id="leaveProgress"></div>
+        </div>
+      </div>
+      
+      <div class="stat-card stat-ot">
+        <div class="stat-card-header">
+          <div class="stat-icon-box">⏰</div>
+          <div class="stat-badge stat-badge-warning">
+            <i class="bi bi-arrow-up"></i>
+            <span id="otPercent">0%</span>
+          </div>
+        </div>
+        <div class="stat-card-body">
+          <h3 id="otToday">0</h3>
+          <p>โอทีวันนี้</p>
+        </div>
+        <div class="stat-progress">
+          <div class="stat-progress-bar stat-progress-dynamic" id="otProgress"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- CONTROL CENTER -->
+  <div class="control-center">
+    <div class="control-top">
+      <div class="view-mode-switcher invisible">
+        <button class="view-mode-btn active" data-view="single">
+          <i class="bi bi-person-check"></i>
+          <span>ทีละคน</span>
+        </button>
+        <button class="view-mode-btn" data-view="all">
+          <i class="bi bi-people"></i>
+          <span>ทั้งหมด</span>
+        </button>
+      </div>
+      
+      <div class="date-navigator">
+        <button type="button" class="nav-button" id="prevMonth" title="เดือนก่อนหน้า" aria-label="เดือนก่อนหน้า">
+          <i class="bi bi-chevron-left"></i>
+        </button>
+        <div class="current-period" id="currentPeriod">
+          มกราคม 2568
+        </div>
+        <button type="button" class="nav-button" id="nextMonth" title="เดือนถัดไป" aria-label="เดือนถัดไป">
+          <i class="bi bi-chevron-right"></i>
+        </button>
+        <button type="button" class="today-button" id="todayBtn" title="กลับไปวันนี้" aria-label="กลับไปวันนี้">
+          <i class="bi bi-calendar-check"></i>
+          <span>วันนี้</span>
+        </button>
+      </div>
+    </div>
+    
+    <!-- TECHNICIAN SELECTOR (COMPACT WITH TOGGLE) -->
+  <div class="tech-selector-wrapper" id="techSelectorWrapper">
+      <div class="tech-selector-toggle" onclick="toggleTechSelector()">
+        <div class="tech-selector-toggle-left">
+          <i class="bi bi-people-fill"></i>
+          <span>จัดการตารางงาน</span>
+          <span class="tech-name-small selected-tech-decor" id="selectedTechName">โปรดเลือกช่าง</span>
+        </div>
+        <i class="bi bi-chevron-down tech-selector-toggle-icon"></i>
+      </div>
+      
+      <div class="tech-selector-content">
+      <div class="tech-selector-header">
+        <div class="tech-selector-title">
+          <i class="bi bi-search"></i>
+          <span>ค้นหาช่าง</span>
+        </div>
+        <div class="tech-selector-search">
+          <i class="bi bi-search"></i>
+          <input type="text" id="techSearch" placeholder="ค้นหาชื่อช่าง...">
+        </div>
+      </div>
+      <div class="tech-selector-grid" id="techSelectorGrid">
+        <!-- Technician cards will be generated by JS -->
+      </div>
+      </div>
+    </div>
+    
+    <div class="control-filters mt-2">
+      <button class="filter-chip active" data-filter="all" >
+        <i class="bi bi-people"></i> ทั้งหมด
+      </button>
+      <button class="filter-chip" data-filter="working">
+        <i class="bi bi-briefcase"></i> ปฏิบัติงาน
+      </button>
+      <button class="filter-chip" data-filter="leave">
+        <i class="bi bi-sunset"></i> ลาหยุด
+      </button>
+      <button class="filter-chip" data-filter="ot">
+        <i class="bi bi-alarm"></i> ล่วงเวลา
+      </button>
+      <button class="filter-chip" data-filter="unscheduled">
+        <i class="bi bi-question-circle"></i> ยังไม่จัดตาราง
+      </button>
+
+
+
+    </div>
+  </div>
+  
+  <!-- CALENDAR -->
+  <form id="calendarForm" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="month" id="monthInput" value="{{ date.month }}">
+    <input type="hidden" name="year" id="yearInput" value="{{ date.year }}">
+  <input type="hidden" name="redirect_to_report" id="redirectToReport" value="">
+    
+    <div class="calendar-wrapper">
+      <div class="calendar-header">
+        <div class="calendar-title">
+          <i class="bi bi-calendar3"></i>
+          <span>ปฏิทินตารางงาน</span>
+        </div>
+        
+        <div class="selected-tech-info invisible" id="selectedTechInfo">
+          <div class="tech-avatar-small" id="selectedTechAvatar">??</div>
+          <div class="tech-name-small selected-tech-decor" id="selectedTechName">เลือกช่าง</div>
+        </div>
+
+        <div class="current-month-display invisible">
+          <i class="bi bi-calendar3"></i>
+          <span id="headerPeriod">มกราคม 2568</span>
+        </div>
+        
+        <div class="header-stats-container" id="headerStats">
+          <div class="stat-badge stat-work" title="วันทำงาน">
+            <i class="bi bi-briefcase-fill"></i>
+            <span class="stat-count" id="statWorkCount">0</span>
+          </div>
+          <div class="stat-badge stat-holiday" title="วันหยุดราชการ">
+            <i class="bi bi-calendar-x-fill"></i>
+            <span class="stat-count" id="statHolidayCount">0</span>
+          </div>
+          <div class="stat-badge stat-leave" title="วันลาหยุด">
+            <i class="bi bi-person-x-fill"></i>
+            <span class="stat-count" id="statLeaveCount">0</span>
+          </div>
+          <div class="stat-badge stat-ot" title="วันล่วงเวลา">
+            <i class="bi bi-alarm-fill"></i>
+            <span class="stat-count" id="statOTCount">0</span>
+            <div class="stat-sub" id="statOTHours">0 ชม.</div>
+          </div>
+        </div>
+        
+
+      </div>
+      
+      <div class="calendar-body">
+        <!-- Weekday Headers -->
+        <div class="weekday-header">
+          <div class="weekday weekend-header">อาทิตย์</div>
+          <div class="weekday">จันทร์</div>
+          <div class="weekday">อังคาร</div>
+          <div class="weekday">พุธ</div>
+          <div class="weekday">พฤหัสบดี</div>
+          <div class="weekday">ศุกร์</div>
+          <div class="weekday weekend-header">เสาร์</div>
+        </div>
+        
+        <!-- Calendar Days Grid -->
+        <div class="calendar-days" id="calendarDays">
+          <!-- Generated by JavaScript -->
+        </div>
+        
+        <div class="container text-end mt-4">
+          <button type="button" class="btn btn-primary btn-lg" id="saveAllBtn">
+            <i class="bi bi-save"></i>
+            <span>บันทึกข้อมูล</span>
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-lg ms-2" id="saveAndReportBtn">
+            <i class="bi bi-bar-chart"></i>
+            <span>บันทึกและดูรายงาน</span>
+          </button>
+      </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Include Holiday Modal -->
+{% include 'maintenance/partials/holiday_modal.html' %}
+
+<!-- JSON Data -->
+{{ technicians|json_script:"technicians-data" }}
+{{ availabilities|json_script:"availabilities-data" }}
+{{ shift_schedules|json_script:"shift-schedules-data" }}
+<!-- NOTE: work_statuses ถูกยกเลิกจากการ inject ของ backend ตามคำขอ
+  แก้ไขตัวแปร `workStatuses` ด้านล่างในสคริปต์เพื่อกำหนดค่าเอง -->
+
+<style>
+  /* Decorative style for the selected technician name */
+  .selected-tech-decor {
+    font-weight: 600;
+    color: #667eea;
+    background: #eef2ff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    display: inline-block;
+  }
+  .tech-selector-toggle .selected-tech-decor { margin-left: 0.5rem; }
+  .current-month-display .selected-tech-decor { margin-left: 0.5rem; }
+</style>
+
+<script>
+// ============================================
+// 📊 DATA & STATE MANAGEMENT
+// ============================================
+const technicians = JSON.parse(document.getElementById('technicians-data').textContent || '[]');
+const availabilities = JSON.parse(document.getElementById('availabilities-data').textContent || '[]');
+const shiftSchedules = JSON.parse(document.getElementById('shift-schedules-data').textContent || '{}');
+
+// Debug: Check loaded data
+console.log('📊 Loaded Data:', {
+  techniciansCount: technicians.length,
+  availabilitiesCount: availabilities.length,
+  shiftSchedulesCount: Object.keys(shiftSchedules).length
+});
+console.log('📋 Sample availabilities:', availabilities.slice(0, 3));
+
+// ------------------------------------------------------------------
+// NOTE (ภาษาไทย): ปัจจุบันเราไม่ใช้ master data จาก backend อีกต่อไป
+// คุณสามารถกำหนดค่าของ `workStatuses` ที่นี่ได้เอง ตามรูปแบบตัวอย่างด้านล่าง
+// - parent: { id, name, code, color, is_overtime?, is_leave?, children: [...] }
+// - child: { id, name, code, color, is_default?, is_active? }
+// แก้ไขหรือเพิ่มรายการตามต้องการ แล้วรีเฟรชหน้าเพื่อดูผล
+// ------------------------------------------------------------------
+const workStatuses = [
+  {
+    id: 1,
+    name: 'ทำงาน (ในเวลาราชการ)',
+    code: 'work_intime',
+    color: '#10b981',
+    is_overtime: false,
+    is_leave: false,
+    is_shift: false,
+    children: [
+      { id: 11, name: 'ปฏิบัติงาน', code: 'work_regular', color: '#10b981', is_default: true },
+    ]
+  },
+  {
+    id: 2,
+    name: 'โอที (นอกเวลาราชการ)',
+    code: 'work_outtime',
+    color: '#f59e0b',
+    is_overtime: true,
+    is_leave: false,
+    is_shift: false,
+    children: [
+      { id: 21, name: 'OT 4 ชั่วโมง', code: 'ot_4h', color: '#f59e0b' },
+      { id: 22, name: 'OT 7 ชั่วโมง', code: 'ot_7h', color: '#f59e0b' }
+    ]
+  },
+  {
+    id: 3,
+    name: 'ประเภทการลา',
+    code: 'off_leave',
+    color: '#ef4444',
+    is_overtime: false,
+    is_leave: true,
+    is_shift: false,
+    children: [
+      { id: 31, name: 'ลากิจ', code: 'leave_personal', color: '#ef4444' },
+      { id: 32, name: 'ลาป่วย', code: 'leave_sick', color: '#ef4444' },
+      { id: 33, name: 'ลาพักร้อน', code: 'leave_annual', color: '#ef4444' },
+      { id: 34, name: 'ลาอื่นๆ', code: 'leave_other', color: '#ef4444' },
+      { id: 35, name: 'ลาไปราชการ', code: 'leave_official', color: '#ef4444' }
+    ]
+  },
+  {
+    id: 4,
+    name: 'ขึ้นเวร',
+    code: 'shift',
+    color: '#8b5cf6',
+    is_overtime: false,
+    is_leave: false,
+    is_shift: true,
+    children: [
+      { id: 41, name: 'เวรเช้า', code: 'shift_morning', color: '#8b5cf6' },
+      { id: 42, name: 'เวรบ่าย', code: 'shift_afternoon', color: '#8b5cf6' }
+    ]
+  }
+];
+
+let currentDate = new Date('{{ date|date:"Y-m-d" }}' || new Date());
+let currentYear = currentDate.getFullYear();
+let currentMonth = currentDate.getMonth() + 1;
+let viewMode = 'single'; // 'single' or 'all'
+let selectedTechId = null;
+
+const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+const thaiDays = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+
+// 🎊 วันหยุดราชการสำหรับปฏิทิน (ใช้ชื่อต่างจาก holiday_modal.html)
+let calendarHolidays = [];
+
+// ============================================
+// 🎯 INITIALIZATION
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 Initializing calendar...');
+  console.log('📊 Shift Schedules:', shiftSchedules);
+  console.log('📅 Available shift dates:', Object.keys(shiftSchedules));
+  
+  // โหลดวันหยุดก่อนแสดงปฏิทิน
+  loadCalendarHolidays().then(() => {
+    updateStats();
+    renderTechnicianSelector();
+    updateTechCountBadge();
+    renderCalendar();
+    setupEventListeners();
+    loadExistingData();
+    
+    // Auto-select first technician if in single mode
+    if (technicians.length > 0) {
+      selectTechnician(technicians[0].id);
+    }
+  });
+  
+  // 🔄 ฟังการเปลี่ยนแปลงของ localStorage เมื่อ holiday_modal.html อัปเดตวันหยุด
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'holidays') {
+      console.log('🔄 ตรวจพบการเปลี่ยนแปลงวันหยุด - รีเฟรชปฏิทิน');
+      loadCalendarHolidays().then(() => {
+        renderCalendar();
+      });
+    }
+  });
+  
+  // 🔄 สำหรับ same-tab: ฟังการ custom event จาก holiday modal
+  window.addEventListener('holidaysUpdated', function(e) {
+    console.log('🔄 วันหยุดถูกอัปเดต - รีโหลดและรีเฟรชปฏิทิน');
+    loadCalendarHolidays().then(() => {
+      renderCalendar();
+    });
+  });
+});
+
+// ============================================
+// 🎊 โหลดวันหยุดราชการสำหรับปฏิทิน
+// ============================================
+async function loadCalendarHolidays(forceReload = false) {
+  // ถ้าไม่บังคับ reload ให้ลองโหลดจาก localStorage ก่อน
+  if (!forceReload) {
+    const cached = localStorage.getItem('holidays');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        // ตรวจสอบว่าเป็น array หรือ object ที่มี data
+        if (Array.isArray(parsed)) {
+          calendarHolidays = parsed;
+        } else if (parsed && Array.isArray(parsed.data)) {
+          calendarHolidays = parsed.data;
+        } else {
+          calendarHolidays = [];
+        }
+        console.log(`✅ โหลดวันหยุด ${calendarHolidays.length} รายการจาก cache`);
+        return;
+      } catch (e) {
+        console.warn('ไม่สามารถอ่าน cache วันหยุดได้');
+      }
+    }
+  }
+  
+  // ดึงจาก API (เมื่อไม่มี cache หรือบังคับ reload)
+  try {
+    const response = await fetch('/api/holidays/', {
+      credentials: 'same-origin',
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const result = await response.json();
+    
+    // ตรวจสอบว่าเป็น array หรือ object ที่มี data
+    if (Array.isArray(result)) {
+      calendarHolidays = result;
+    } else if (result && Array.isArray(result.data)) {
+      calendarHolidays = result.data;
+    } else {
+      console.error('ข้อมูลวันหยุดไม่ใช่ array:', result);
+      calendarHolidays = [];
+    }
+    
+    // บันทึกลง localStorage
+    if (calendarHolidays.length > 0) {
+      localStorage.setItem('holidays', JSON.stringify(calendarHolidays));
+      console.log(`✅ โหลดวันหยุด ${calendarHolidays.length} รายการจาก API`);
+    }
+  } catch (error) {
+    console.error('ไม่สามารถโหลดวันหยุดได้:', error);
+    calendarHolidays = [];
+  }
+}
+
+// ฟังก์ชันตรวจสอบว่าวันนั้นเป็นวันหยุดหรือไม่
+function getHolidayForDate(dateStr) {
+  // ตรวจสอบว่า calendarHolidays เป็น array หรือไม่
+  if (!Array.isArray(calendarHolidays)) {
+    return null;
+  }
+  return calendarHolidays.find(h => h.date === dateStr);
+}
+
+// ============================================
+// 📊 UPDATE STATISTICS
+// ============================================
+function updateStats() {
+  const total = technicians.length;
+  document.getElementById('totalTechs').textContent = total;
+  
+  // Get today's date
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  
+  let working = 0, leave = 0, ot = 0;
+  
+  availabilities.forEach(avail => {
+    if (avail.work_date === todayStr) {
+      const status = findStatusByCode(avail.status);
+      if (status) {
+        if (status.is_leave) {
+          leave++;
+        } else {
+          working++;
+        }
+      }
+      if (avail.ot_type) {
+        ot++;
+      }
+    }
+  });
+  
+  // Update counts
+  document.getElementById('workingToday').textContent = working;
+  document.getElementById('leaveToday').textContent = leave;
+  document.getElementById('otToday').textContent = ot;
+  
+  // Update percentages
+  if (total > 0) {
+    const workingPct = Math.round((working / total) * 100);
+    const leavePct = Math.round((leave / total) * 100);
+    const otPct = Math.round((ot / total) * 100);
+    
+    document.getElementById('workingPercent').textContent = workingPct + '%';
+    document.getElementById('leavePercent').textContent = leavePct + '%';
+    document.getElementById('otPercent').textContent = otPct + '%';
+    
+    // Update progress bars
+    document.getElementById('workingProgress').style.width = workingPct + '%';
+    document.getElementById('leaveProgress').style.width = leavePct + '%';
+    document.getElementById('otProgress').style.width = otPct + '%';
+  }
+}
+
+// ============================================
+// � RENDER TECHNICIAN SELECTOR
+// ============================================
+function renderTechnicianSelector() {
+  const grid = document.getElementById('techSelectorGrid');
+  grid.innerHTML = '';
+  
+  technicians.forEach(tech => {
+    const techName = tech.name || `${tech.first_name || ''} ${tech.last_name || ''}`.trim() || 'ไม่ระบุชื่อ';
+    const initials = techName.split(' ').map(n => n.charAt(0)).join('').toUpperCase() || '??';
+    
+    // Count stats for this technician
+    const techAvails = availabilities.filter(a => a.technician && a.technician.id === tech.id);
+    // Count per-category for debug/logging
+    let workingCount = 0;
+    let leaveCount = 0;
+    let holidayCount = 0;
+    let otCountLocal = 0;
+    let shiftCount = 0;
+    techAvails.forEach(a => {
+      const code = (a.status || '').toString().toLowerCase();
+      // overtime detection
+      const isOT = (a.note && a.note.toString().toUpperCase().startsWith('OT:')) || (a.ot || a.ot_type) || code.includes('ot') || code.includes('overtime');
+      const isHoliday = code.startsWith('off_') || code.includes('holiday');
+      const isLeave = code.includes('leave') || code.includes('ลา') || code.includes('sick');
+      const isShift = code.includes('shift') || code.includes('เวร') || (a.shift && !!a.shift);
+
+      if (isHoliday) holidayCount++;
+      else if (isLeave) leaveCount++;
+      else if (isOT) otCountLocal++;
+      else if (isShift) shiftCount++;
+      else workingCount++;
+    });
+    
+    // Debug: แสดงข้อมูลการนับ
+    if (tech.id === technicians[0]?.id) {
+      console.log(`🔍 นับสถิติช่าง ${tech.name}:`, {
+        totalAvails: techAvails.length,
+        statuses: techAvails.map(a => a.status),
+        work: workingCount,
+        leave: leaveCount,
+        holiday: holidayCount,
+        overtime: otCountLocal,
+        shift: shiftCount
+      });
+    }
+    
+    const card = document.createElement('div');
+    card.className = 'tech-card';
+    card.dataset.techId = tech.id;
+    card.dataset.techName = techName.toLowerCase();
+    card.onclick = () => selectTechnician(tech.id);
+    
+    card.innerHTML = `
+      <div class="tech-card-avatar">${initials}</div>
+      <div class="tech-card-info">
+        <div class="tech-card-name">${techName}</div>
+        <div class="tech-card-role">
+          <i class="bi bi-wrench"></i>
+          <span>ช่างเทคนิค</span>
+        </div>
+        <div class="tech-card-stats">
+          <div class="tech-card-stat">
+            <i class="bi bi-briefcase" style="color: var(--color-success);"></i>
+            <span>${workingCount} วัน</span>
+          </div>
+          <div class="tech-card-stat">
+            <i class="bi bi-sunset" style="color: var(--color-danger);"></i>
+            <span>${leaveCount} วัน</span>
+          </div>
+        </div>
+      </div>
+      <div class="tech-card-check">
+        <i class="bi bi-check-lg"></i>
+      </div>
+    `;
+    
+    grid.appendChild(card);
+  });
+}
+
+function selectTechnician(techId) {
+  selectedTechId = techId;
+  
+  // Update selected card
+  document.querySelectorAll('.tech-card').forEach(card => {
+    card.classList.remove('selected');
+    if (parseInt(card.dataset.techId) === techId) {
+      card.classList.add('selected');
+    }
+  });
+  
+  // Update header info
+  const tech = technicians.find(t => t.id === techId);
+  if (tech) {
+    const techName = tech.name || `${tech.first_name || ''} ${tech.last_name || ''}`.trim() || 'ไม่ระบุชื่อ';
+    const initials = techName.split(' ').map(n => n.charAt(0)).join('').toUpperCase() || '??';
+    
+    document.getElementById('selectedTechInfo').style.display = 'flex';
+    document.getElementById('selectedTechAvatar').textContent = initials;
+    document.getElementById('selectedTechName').textContent = techName;
+  }
+  
+  // Re-render calendar
+  renderCalendar();
+  loadExistingData();
+}
+
+// ============================================
+// � UPDATE HEADER STATS
+// ============================================
+function updateHeaderStats() {
+  if (viewMode === 'single' && !selectedTechId) {
+    document.getElementById('statWorkCount').textContent = '0';
+    document.getElementById('statLeaveCount').textContent = '0';
+    document.getElementById('statOTCount').textContent = '0';
+    const otHoursEl = document.getElementById('statOTHours');
+    if (otHoursEl) otHoursEl.textContent = '0 ชม.';
+    return;
+  }
+
+  let workCount = 0;
+  let leaveCount = 0;
+  let holidayCount = 0;
+  let otCount = 0;
+  let otHours = 0;
+  // collect per-leave-type counts (keyed by name)
+  const leaveTypeCounts = {};
+
+  const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+  // Count from current DOM state (real-time)
+  for (let day = 1; day <= daysInMonth; day++) {
+    // Get work/leave status
+    const statusInput = document.getElementById(`status_${selectedTechId}_${day}`);
+      if (statusInput && statusInput.value) {
+      const statusCode = statusInput.value;
+      const status = findStatusByCode(statusCode);
+
+      // Classify into work / leave / holiday
+      let isLeave = false;
+      let isHoliday = false;
+      let leaveLabel = null;
+
+      if (status) {
+        isLeave = !!status.is_leave;
+        // some legacy holiday codes are marked as off_*
+        if (status.code && status.code.startsWith('off_')) {
+          isHoliday = true;
+        }
+        // if status explicitly marked as holiday in data
+        if (status.code && status.code.includes('holiday')) isHoliday = true;
+        // if named as holiday
+        if (status.name && status.name.toLowerCase().includes('วันหยุด')) isHoliday = true;
+
+        if (isLeave && !isHoliday) {
+          // use status.name (fallback to code) as leave type label
+          leaveLabel = status.name || status.code || 'ลา';
+        }
+      } else {
+        // fallback heuristics
+        const sc = statusCode.toLowerCase();
+        if (sc.startsWith('off_') || sc.includes('holiday')) {
+          isHoliday = true;
+        } else if (sc.includes('leave') || sc.includes('ลา') || sc.includes('sick')) {
+          isLeave = true;
+          // derive label from code (e.g., leave_sick -> ลาป่วย)
+          leaveLabel = sc.replace(/_/g, ' ');
+        }
+      }
+
+      if (isHoliday) {
+        holidayCount++;
+      } else if (isLeave) {
+        leaveCount++;
+        const key = leaveLabel || (status && (status.name || status.code)) || statusCode;
+        leaveTypeCounts[key] = (leaveTypeCounts[key] || 0) + 1;
+      } else {
+        workCount++;
+      }
+    }
+
+    // Get OT status
+    const otInput = document.getElementById(`ot_${selectedTechId}_${day}`);
+    if (otInput && otInput.value) {
+      otCount++;
+      // Determine OT hours from ot code: e.g., ot_4h -> 4, ot_7h -> 7
+      const v = (otInput.value || '').toString().toLowerCase();
+      let hrs = 0;
+      if (v.includes('ot_4') || v.includes('4h')) hrs = 4;
+      else if (v.includes('ot_7') || v.includes('7h')) hrs = 7;
+      else {
+        // try to extract a number
+        const m = v.match(/(\d{1,2})/);
+        if (m) hrs = parseInt(m[1], 10) || 0;
+      }
+      // fallback default
+      if (!hrs) hrs = 4;
+      otHours += hrs;
+    }
+  }
+
+  // Update display
+  document.getElementById('statWorkCount').textContent = workCount;
+  // set holiday and leave counts
+  const holidayEl = document.getElementById('statHolidayCount');
+  if (holidayEl) holidayEl.textContent = holidayCount;
+  document.getElementById('statLeaveCount').textContent = leaveCount;
+  document.getElementById('statOTCount').textContent = otCount;
+  const otHoursEl = document.getElementById('statOTHours');
+  if (otHoursEl) otHoursEl.textContent = `${otHours} ชม.`;
+
+  // Attach detailed leave-type breakdown as tooltip on leave badge
+  try {
+    const leaveBadge = document.querySelector('.stat-badge.stat-leave');
+    if (leaveBadge) {
+      const parts = Object.keys(leaveTypeCounts).map(k => `${k}: ${leaveTypeCounts[k]}`);
+      const title = parts.length > 0 ? parts.join('\n') : 'ไม่มีข้อมูลลา';
+      leaveBadge.setAttribute('title', title);
+    }
+  } catch (e) {
+    // ignore tooltip errors
+  }
+
+  // Also update calendar summary if present
+  const calendarSummary = document.getElementById('calendarSummary');
+  if (calendarSummary) {
+    document.getElementById('summaryWorkCount').textContent = workCount;
+    document.getElementById('summaryLeaveCount').textContent = leaveCount;
+  document.getElementById('summaryOTCount').textContent = otCount;
+  document.getElementById('summaryTotalCount').textContent = workCount + leaveCount + otCount;
+  const summaryOTHours = document.getElementById('summaryOTHours');
+  if (summaryOTHours) summaryOTHours.textContent = `${otHours} ชม.`;
+    calendarSummary.style.display = (workCount + leaveCount + otCount) > 0 ? 'block' : 'none';
+  }
+
+  // Debug log
+  console.log('📊 Header Stats Updated:', {
+    tech: selectedTechId,
+    month: currentMonth,
+    year: currentYear,
+    workCount,
+    leaveCount,
+    otCount,
+    otHours
+  });
+}
+
+// ============================================
+// �📅 RENDER CALENDAR (NEW CLEAN VERSION)
+// ============================================
+function renderCalendar() {
+  const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+  const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1);
+  const firstDayWeek = firstDayOfMonth.getDay();
+  
+  // Update period display
+  const buddhistYear = currentYear + 543;
+  const periodText = `${thaiMonths[currentMonth - 1]} ${buddhistYear}`;
+  document.getElementById('currentPeriod').textContent = periodText;
+  document.getElementById('headerPeriod').textContent = periodText;
+  
+  // Update form inputs
+  document.getElementById('monthInput').value = currentMonth;
+  document.getElementById('yearInput').value = currentYear;
+  
+  // Clear calendar
+  const calendarDays = document.getElementById('calendarDays');
+  if (!calendarDays) return;
+  
+  calendarDays.innerHTML = '';
+  
+  // Check if technician is selected in single mode
+  if (viewMode === 'single' && !selectedTechId) {
+    calendarDays.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 4rem; color: var(--gray-500);">
+        <i class="bi bi-person-x" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+        <p style="font-size: 1.125rem; font-weight: 600;">กรุณาเลือกช่างที่ต้องการจัดการ</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Calculate starting position (Sunday = 0, Monday = 1, ..., Saturday = 6)
+  // Since we want Sunday as first column, use getDay() directly
+  const startPos = firstDayWeek;
+  
+  // Add empty cells before first day
+  for (let i = 0; i < startPos; i++) {
+    const emptyCell = document.createElement('div');
+    emptyCell.className = 'day-cell empty';
+    calendarDays.appendChild(emptyCell);
+  }
+  
+  // Add day cells
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(currentYear, currentMonth - 1, day);
+    const dayOfWeek = date.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const isToday = isDateToday(date);
+    
+    // ตรวจสอบว่าเป็นวันหยุดราชการหรือไม่
+    const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const holiday = getHolidayForDate(dateStr);
+    
+    // ส่งข้อมูลวันหยุดและวันสุดสัปดาห์ไปด้วย
+    const dayCell = createDayCell(day, isWeekend, isToday, holiday);
+    calendarDays.appendChild(dayCell);
+  }
+  
+  // Update header stats after rendering calendar
+  updateHeaderStats();
+}
+
+function createDayCell(day, isWeekend, isToday, holiday) {
+  const cell = document.createElement('div');
+  cell.className = 'day-cell';
+  if (isWeekend) cell.classList.add('weekend');
+  if (isToday) cell.classList.add('today');
+  if (holiday) cell.classList.add('holiday');
+  
+  // สร้าง holiday icon ถ้ามีวันหยุด (แสดงเฉพาะไอคอน)
+  let holidayIcon = '';
+  if (holiday) {
+    const tooltipText = holiday.name + (holiday.description ? '\n' + holiday.description : '');
+    holidayIcon = `
+      <div class="holiday-icon" title="${tooltipText}">
+        <i class="bi bi-calendar-star-fill"></i>
+      </div>
+    `;
+  }
+  
+  // สร้างป้ายเวรถ้ามีข้อมูล
+  const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const shiftBadges = createShiftBadges(dateStr);
+  
+  cell.innerHTML = `
+    <div class="day-header">
+      <div class="day-number">${day}</div>
+      ${holidayIcon}
+      ${isToday ? '<span class="today-badge">วันนี้</span>' : ''}
+    </div>
+    <div class="day-content">
+      ${createStatusButtons(selectedTechId, day, isWeekend, holiday)}
+    </div>
+    ${shiftBadges}
+  `;
+  
+  return cell;
+}
+
+function createShiftBadges(dateStr) {
+  const shifts = shiftSchedules[dateStr];
+  
+  // Debug: แสดงข้อมูลทุกครั้งที่เรียก (temporary)
+  console.log('🔍 createShiftBadges called:', {
+    dateStr,
+    shifts,
+    hasShifts: !!shifts,
+    shiftKeys: shifts ? Object.keys(shifts) : []
+  });
+  
+  if (!shifts) return '';
+  
+  let badges = '<div class="shift-badges-container">';
+  
+  if (shifts.morning) {
+    const tech = shifts.morning;
+    const initials = getInitials(tech.technician_name);
+    const tooltip = `เวรเช้า: ${tech.technician_name}${tech.note ? '\n' + tech.note : ''}`;
+    badges += `
+      <div class="shift-badge shift-morning" title="${tooltip}">
+        <span class="shift-icon">☀️</span>
+        <span class="shift-name">${initials}</span>
+      </div>
+    `;
+  }
+  
+  if (shifts.afternoon) {
+    const tech = shifts.afternoon;
+    const initials = getInitials(tech.technician_name);
+    const tooltip = `เวรบ่าย: ${tech.technician_name}${tech.note ? '\n' + tech.note : ''}`;
+    badges += `
+      <div class="shift-badge shift-afternoon" title="${tooltip}">
+        <span class="shift-icon">🌙</span>
+        <span class="shift-name">${initials}</span>
+      </div>
+    `;
+  }
+  
+  badges += '</div>';
+  console.log('✅ Badges HTML generated:', badges);
+  return badges;
+}
+
+function getInitials(name) {
+  if (!name) return '';
+  // แยกชื่อตามช่องว่าง และเอาคำแรก
+  const words = name.trim().split(/\s+/);
+  // คืนค่าคำแรก (ชื่อ)
+  return words[0] || '';
+}
+
+function createStatusButtons(techId, day, isWeekend = false, holiday = null) {
+  // 🎯 ตรวจสอบว่าเป็นวันหยุดหรือไม่ (เสาร์/อาทิตย์/วันหยุดราชการ)
+  const isHoliday = isWeekend || holiday;
+  
+  // 🔒 ถ้าเป็นวันหยุด → แสดงแบบ read-only ไม่สามารถเลือกได้
+  if (isHoliday) {
+    // For holidays: show plain 'วันหยุด' label but allow OT via toggle
+    const holidayStatus = { code: 'off_holiday', name: 'วันหยุด', is_leave: true };
+    const hasHoliday = holiday ? true : false;
+    return `
+      <div class="status-btn-group">
+        <!-- Hidden status input for form submission -->
+        <input type="hidden" id="status_${techId}_${day}" name="status_${techId}_${day}" value="${holidayStatus.code}" required>
+
+        <!-- Visible plain label for holiday (non-interactive for status) -->
+        <div class="status-btn btn-leave holiday-readonly" title="วันหยุด">
+          <span class="status-btn-text">${holidayStatus.name}</span>
+        </div>
+
+        <!-- OT toggle allowed on holidays -->
+        <input type="hidden" id="ot_${techId}_${day}" name="ot_${techId}_${day}" value="">
+        <div class="ot-toggle-container">
+          <input type="checkbox" id="ot_toggle_${techId}_${day}" class="ot-toggle-checkbox"
+                 onchange="toggleOT(${techId}, ${day}, ${isWeekend}, ${hasHoliday})">
+          <label class="ot-toggle-label" for="ot_toggle_${techId}_${day}" title="คลิกเพื่อเปิด/ปิด OT">
+            <span class="ot-toggle-slider"></span>
+            <span class="ot-toggle-text">
+              <span class="ot-toggle-icon ot-inactive-icon">⏰</span>
+              <span class="ot-toggle-icon ot-active-icon">✓</span>
+            </span>
+          </label>
+          <span class="ot-hours-display" id="ot_hours_${techId}_${day}">-</span>
+        </div>
+      </div>
+    `;
+  }
+  
+  // 📅 วันธรรมดา → แสดงแบบปกติ เลือกได้
+  let defaultStatus = null;
+  
+  // Default status: Prefer the master category 'work_status' first
+  // 1) Try to find work parent by explicit category
+  // 2) Fallback to previous heuristic (!is_overtime && !is_leave)
+  // Prefer explicit known parent codes from catalog (see admin UI):
+  // - work_intime (work parent)
+  // - off_leave (leave parent)
+  // - work_outtime (outtime parent)
+  const workParentByCode = workStatuses.find(ws => ws.code === 'work_intime' || ws.code === 'working');
+  const workParentByCategory = workStatuses.find(ws => ws.category === 'work_status');
+  const workParentHeuristic = workStatuses.find(ws => !ws.is_overtime && !ws.is_leave);
+  const workParent = workParentByCode || workParentByCategory || workParentHeuristic;
+  // Resolve work parent choice (no debug logs in production)
+  let useFallbackWorkIntime = false;
+  if (workParent && workParent.children && workParent.children.length > 0) {
+    // ถ้ามี child ที่กำหนดเป็น default ให้ใช้ค่านั้นก่อน
+    const defaultChild = workParent.children.find(c => c.is_default === true);
+    if (defaultChild) {
+      defaultStatus = defaultChild;
+    } else {
+      // fallback ไปยัง child ตัวแรก
+      defaultStatus = workParent.children[0];
+    }
+  } else {
+  // fallback ไปหา work_intime ตามโค้ด
+  defaultStatus = workStatuses.find(ws => ws.code === 'work_intime') || { code: 'work_intime', name: 'ปฏิบัติงาน' };
+    useFallbackWorkIntime = true;
+  }
+  
+  // 🎨 กำหนด CSS class และไอคอนตามสถานะ
+  const isLeave = defaultStatus.is_leave || defaultStatus.code.includes('off_') || defaultStatus.code.includes('leave');
+  const btnClass = isLeave ? 'btn-leave' : 'btn-work';
+  const btnIcon = isLeave ? '🏖️' : '💼';
+  
+  // leave options are handled in the work dropdown (createWorkDropdown)
+  let leaveSelectHTML = '';
+  
+  // แปลง holiday เป็น boolean เพื่อส่งไปยัง JavaScript
+  const hasHoliday = holiday ? true : false;
+  
+  return `
+    <div class="status-btn-group">
+      <input type="hidden" id="status_${techId}_${day}" name="status_${techId}_${day}" value="${defaultStatus.code}" required>
+      <button type="button" class="status-btn ${btnClass}" onclick="toggleDropdown(event, ${techId}, ${day}, 'work')">
+        <span class="status-btn-icon">${btnIcon}</span>
+        <span class="status-btn-text">${defaultStatus.name}</span>
+      </button>
+      
+      <input type="hidden" id="ot_${techId}_${day}" name="ot_${techId}_${day}" value="">
+      <div class="ot-toggle-container">
+        <input type="checkbox" id="ot_toggle_${techId}_${day}" class="ot-toggle-checkbox" 
+               onchange="toggleOT(${techId}, ${day}, ${isWeekend}, ${hasHoliday})">
+        <label class="ot-toggle-label" for="ot_toggle_${techId}_${day}" title="คลิกเพื่อเปิด/ปิด OT">
+          <span class="ot-toggle-slider"></span>
+          <span class="ot-toggle-text">
+            <span class="ot-toggle-icon ot-inactive-icon">⏰</span>
+            <span class="ot-toggle-icon ot-active-icon">✓</span>
+          </span>
+        </label>
+        <span class="ot-hours-display" id="ot_hours_${techId}_${day}">-</span>
+      </div>
+      ${leaveSelectHTML}
+    </div>
+  `;
+}
+
+// ============================================
+// 🎯 DROPDOWN LOGIC (FIXED POSITIONING)
+// ============================================
+let activeDropdown = null;
+
+function toggleDropdown(event, techId, day, type) {
+  event.stopPropagation();
+  event.preventDefault();
+  
+  // 🔒 ป้องกันการเปิด dropdown สำหรับวันหยุดที่ล็อค
+  const btn = event.currentTarget;
+  if (btn.classList.contains('holiday-locked')) {
+    // แสดง tooltip หรือ alert
+    return;
+  }
+  
+  // Close existing dropdown
+  closeAllDropdowns();
+  
+  const btnRect = btn.getBoundingClientRect();
+  
+  // Create dropdown
+  const dropdown = document.createElement('div');
+  dropdown.className = 'status-dropdown';
+  dropdown.dataset.techId = techId;
+  dropdown.dataset.day = day;
+  dropdown.dataset.type = type;
+  
+  // Calculate position (ensure it stays within viewport)
+  const viewportHeight = window.innerHeight;
+  const viewportWidth = window.innerWidth;
+  
+  let top = btnRect.bottom + window.scrollY + 4;
+  let left = btnRect.left + window.scrollX;
+  
+  // Apply styles with absolute positioning relative to document
+  // ไม่มี max-height และ overflow เพื่อแสดงทั้งหมด
+  dropdown.style.cssText = `
+    position: absolute;
+    top: ${top}px;
+    left: ${left}px;
+    width: ${Math.max(btnRect.width, 200)}px;
+    z-index: 9999;
+    background: white;
+    border: 2px solid var(--color-primary);
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3), 0 10px 10px -5px rgba(0,0,0,0.1);
+    animation: dropdownSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  `;
+  
+  // Generate dropdown content
+  if (type === 'work') {
+    dropdown.innerHTML = createWorkDropdown(techId, day);
+  } else if (type === 'shift') {
+    dropdown.innerHTML = createShiftDropdown(techId, day);
+  } else {
+    dropdown.innerHTML = createOTDropdown(techId, day);
+  }
+  
+  // Add to document body
+  document.body.appendChild(dropdown);
+  activeDropdown = dropdown;
+  
+  // ปรับตำแหน่งหลังจากสร้างเสร็จเพื่อให้ไม่เกิน viewport
+  setTimeout(() => {
+    const dropdownRect = dropdown.getBoundingClientRect();
+    
+    // ถ้า dropdown ล้นล่าง ให้แสดงด้านบน
+    if (dropdownRect.bottom > viewportHeight - 10) {
+      const newTop = btnRect.top + window.scrollY - dropdownRect.height - 4;
+      dropdown.style.top = Math.max(10, newTop) + 'px';
+    }
+    
+    // ถ้า dropdown ล้นขวา ให้ชิดซ้าย
+    if (dropdownRect.right > viewportWidth - 10) {
+      dropdown.style.left = (viewportWidth - dropdownRect.width - 10) + 'px';
+    }
+  }, 0);
+  
+  // Add to document body
+  document.body.appendChild(dropdown);
+  activeDropdown = dropdown;
+  
+  // Setup event listeners
+  setupDropdownListeners(dropdown, btn);
+}
+
+function setupDropdownListeners(dropdown, btn) {
+  // Close on outside click
+  const closeHandler = function(e) {
+    if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+      closeAllDropdowns();
+      document.removeEventListener('click', closeHandler);
+    }
+  };
+  setTimeout(() => {
+    document.addEventListener('click', closeHandler);
+  }, 10);
+  
+  // Update position on scroll/resize
+  const updatePosition = function() {
+    if (!dropdown.isConnected) {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+      return;
+    }
+    
+    const btnRect = btn.getBoundingClientRect();
+    const top = btnRect.bottom + window.scrollY + 4;
+    const left = btnRect.left + window.scrollX;
+    
+    dropdown.style.top = top + 'px';
+    dropdown.style.left = left + 'px';
+  };
+  
+  window.addEventListener('scroll', updatePosition, true);
+  window.addEventListener('resize', updatePosition);
+  
+  // Store cleanup function
+  dropdown._cleanup = function() {
+    document.removeEventListener('click', closeHandler);
+    window.removeEventListener('scroll', updatePosition, true);
+    window.removeEventListener('resize', updatePosition);
+  };
+}
+
+function closeAllDropdowns() {
+  if (activeDropdown && activeDropdown.isConnected) {
+    if (activeDropdown._cleanup) {
+      activeDropdown._cleanup();
+    }
+    activeDropdown.remove();
+    activeDropdown = null;
+  }
+  
+  // Fallback: remove any orphaned dropdowns
+  document.querySelectorAll('.status-dropdown').forEach(d => {
+    if (d._cleanup) d._cleanup();
+    d.remove();
+  });
+}
+
+function createWorkDropdown(techId, day) {
+  // แสดง options ทั้งหมดเป็นปุ่มที่มองเห็นทันที
+  let html = '';
+  html += '<div class="dropdown-section work-section">';
+  html += '<div class="dropdown-section-title"><span class="icon">💼</span>ในเวลาราชการ</div>';
+  html += '<div class="options-list">';
+  
+  // ในเวลาราชการ
+  html += '<div class="option-group">';
+  html += `
+    <button type="button" class="option-item" onclick="selectWork(${techId}, ${day}, 'work_regular', 'ปฏิบัติงาน', false)">
+      <span class="option-icon">💼</span>
+      <span class="option-text">ปฏิบัติงาน</span>
+    </button>
+  `;
+  html += '</div>';
+  
+  // ลาหยุด
+  html += '<div class="option-group">';
+  html += '<div class="option-group-label">🌴 ลา</div>';
+  html += `
+    <button type="button" class="option-item" onclick="selectWork(${techId}, ${day}, 'leave_annual', 'ลาพักร้อน', true)">
+      <span class="option-icon">🏖️</span>
+      <span class="option-text">ลาพักร้อน</span>
+    </button>
+    <button type="button" class="option-item" onclick="selectWork(${techId}, ${day}, 'leave_sick', 'ลาป่วย', true)">
+      <span class="option-icon">🏥</span>
+      <span class="option-text">ลาป่วย</span>
+    </button>
+    <button type="button" class="option-item" onclick="selectWork(${techId}, ${day}, 'leave_personal', 'ลากิจ', true)">
+      <span class="option-icon">📝</span>
+      <span class="option-text">ลากิจ</span>
+    </button>
+    <button type="button" class="option-item" onclick="selectWork(${techId}, ${day}, 'leave_official', 'ลาไปราชการ', true)">
+      <span class="option-icon">🏛️</span>
+      <span class="option-text">ลาไปราชการ</span>
+    </button>
+    <button type="button" class="option-item" onclick="selectWork(${techId}, ${day}, 'leave_other', 'ลาอื่นๆ', true)">
+      <span class="option-icon">❓</span>
+      <span class="option-text">ลาอื่นๆ</span>
+    </button>
+
+  `;
+  html += '</div>';
+  
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
+function createOTDropdown(techId, day) {
+  // แสดง options สำหรับงานล่วงเวลา
+  let html = '';
+  html += '<div class="dropdown-section ot-section">';
+  html += '<div class="dropdown-section-title"><span class="icon">⏰</span>งานล่วงเวลา (OT)</div>';
+  html += '<div class="options-list">';
+  
+  // ไม่ทำงานล่วงเวลา
+  html += `
+    <button type="button" class="option-item" onclick="selectOT(${techId}, ${day}, '', '-')">
+      <span class="option-icon">❌</span>
+      <span class="option-text">ไม่ทำงานล่วงเวลา</span>
+    </button>
+  `;
+  
+  // ล่วงเวลา 4 ชั่วโมง
+  html += `
+    <button type="button" class="option-item" onclick="selectOT(${techId}, ${day}, 'ot_4h', 'OT 4 ชม.')">
+      <span class="option-icon">🕐</span>
+      <span class="option-text">ล่วงเวลา 4 ชั่วโมง</span>
+    </button>
+  `;
+  
+  // ล่วงเวลา 7 ชั่วโมง
+  html += `
+    <button type="button" class="option-item" onclick="selectOT(${techId}, ${day}, 'ot_7h', 'OT 7 ชม.')">
+      <span class="option-icon">🕖</span>
+      <span class="option-text">ล่วงเวลา 7 ชั่วโมง</span>
+    </button>
+  `;
+  
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
+function createShiftDropdown(techId, day) {
+  // แสดงข้อมูลเวรจากตารางที่บันทึกไว้แล้ว (read-only)
+  const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const shifts = shiftSchedules[dateStr];
+  
+  let html = '';
+  html += '<div class="dropdown-section shift-section">';
+  html += '<div class="dropdown-section-title"><span class="icon">📋</span>ตารางขึ้นเวร</div>';
+  html += '<div class="options-list">';
+  
+  if (!shifts || (!shifts.morning && !shifts.afternoon)) {
+    html += `
+      <div style="padding: 1rem; text-align: center; color: var(--gray-500);">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📅</div>
+        <div style="font-size: 0.875rem;">ไม่มีตารางเวรในวันนี้</div>
+        <div style="font-size: 0.75rem; margin-top: 0.25rem;">ไปที่ "จัดตารางขึ้นเวร" เพื่อจัดการ</div>
+      </div>
+    `;
+  } else {
+    if (shifts.morning) {
+      html += `
+        <div class="shift-info-item">
+          <span class="shift-info-icon">🌅</span>
+          <div class="shift-info-content">
+            <div class="shift-info-label">เวรเช้า</div>
+            <div class="shift-info-name">${shifts.morning.technician_name}</div>
+            ${shifts.morning.note ? `<div class="shift-info-note">${shifts.morning.note}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }
+    
+    if (shifts.afternoon) {
+      html += `
+        <div class="shift-info-item">
+          <span class="shift-info-icon">🌆</span>
+          <div class="shift-info-content">
+            <div class="shift-info-label">เวรบ่าย</div>
+            <div class="shift-info-name">${shifts.afternoon.technician_name}</div>
+            ${shifts.afternoon.note ? `<div class="shift-info-note">${shifts.afternoon.note}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }
+  }
+  
+  html += '</div>';
+  html += '<div class="dropdown-footer">';
+  html += `<a href="/cmms/shift-schedule/?year=${currentYear}&month=${currentMonth}" class="btn-manage-shift" style="text-decoration: none; color: inherit;">📝 จัดการตารางเวร</a>`;
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
+function escapeQuotes(str) {
+  return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+function selectWork(techId, day, code, name, isLeave) {
+  const input = document.getElementById(`status_${techId}_${day}`);
+  const btn = input.nextElementSibling;
+  
+  if (!input || !btn) return;
+  
+  input.value = code;
+  btn.querySelector('.status-btn-text').textContent = name;
+  btn.classList.remove('btn-work', 'btn-leave');
+  btn.classList.add(isLeave ? 'btn-leave' : 'btn-work');
+  btn.querySelector('.status-btn-icon').textContent = isLeave ? '🏖️' : '💼';
+  
+  closeAllDropdowns();
+  
+  // Update header stats when work status changes
+  updateHeaderStats();
+}
+
+function selectOT(techId, day, code, name) {
+  const input = document.getElementById(`ot_${techId}_${day}`);
+  const btn = input.nextElementSibling;
+  
+  if (!input || !btn) return;
+  
+  input.value = code;
+  btn.querySelector('.status-btn-text').textContent = name;
+  btn.classList.remove('btn-ot', 'btn-ot-empty');
+  btn.classList.add(code ? 'btn-ot' : 'btn-ot-empty');
+  
+  closeAllDropdowns();
+  
+  // Update header stats when OT changes
+  updateHeaderStats();
+}
+
+// ============================================
+// � OT TOGGLE SWITCH HANDLER
+// ============================================
+function toggleOT(techId, day, isWeekend, holiday) {
+  const checkbox = document.getElementById(`ot_toggle_${techId}_${day}`);
+  const hiddenInput = document.getElementById(`ot_${techId}_${day}`);
+  const hoursDisplay = document.getElementById(`ot_hours_${techId}_${day}`);
+  
+  if (!checkbox || !hiddenInput || !hoursDisplay) return;
+  
+  if (checkbox.checked) {
+    // Calculate OT hours: 7 hrs for weekend/holiday, 4 hrs for weekday
+    const otHours = (isWeekend || holiday) ? 7 : 4;
+    const otCode = otHours === 7 ? 'ot_7h' : 'ot_4h';
+    const otName = `OT ${otHours} ชม.`;
+    
+    // Update hidden input
+    hiddenInput.value = otCode;
+    
+    // Update hours display
+    hoursDisplay.textContent = `${otHours} ชม.`;
+    hoursDisplay.style.color = 'var(--color-success)';
+    hoursDisplay.style.fontWeight = '600';
+  } else {
+    // Turn off OT
+    hiddenInput.value = '';
+    hoursDisplay.textContent = '-';
+    hoursDisplay.style.color = 'var(--gray-500)';
+    hoursDisplay.style.fontWeight = '400';
+  }
+  
+  // Update header stats when OT toggle changes
+  updateHeaderStats();
+}
+
+// ============================================
+// �📥 LOAD EXISTING DATA (robust: retry element lookup like shift_schedule)
+// ============================================
+function loadExistingData() {
+  // helper: call cb when element with id exists (retry a few times)
+  function whenElementReady(id, cb, attempts = 8, interval = 40) {
+    try {
+      const el = document.getElementById(id);
+      if (el) return cb(el);
+    } catch (e) {
+      // ignore
+    }
+    if (attempts <= 0) return null;
+    setTimeout(() => whenElementReady(id, cb, attempts - 1, interval), interval);
+  }
+
+  availabilities.forEach(avail => {
+    if (!avail.work_date || !avail.technician) return;
+
+    const [y, m, d] = avail.work_date.split('-').map(Number);
+    if (y !== currentYear || m !== currentMonth) return;
+
+    const techId = avail.technician.id;
+    const day = d;
+
+    // ตรวจสอบว่าวันนี้เป็นวันหยุดหรือไม่ (locked state)
+    const date = new Date(y, m - 1, d);
+    const dayOfWeek = date.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const holiday = getHolidayForDate(dateStr);
+    const isHolidayLocked = isWeekend || holiday;
+
+    // Load work/leave status (skip when holiday locked)
+    if (!isHolidayLocked && avail.status) {
+      // If the saved status is actually an overtime marker (legacy 'overtime' or 'ot_*'),
+      // don't set the status button to that value — keep the status UI limited to
+      // ทำงาน / ลาพักร้อน / ลาป่วย / ลากิจ. OT is represented separately via the OT controls.
+      const rawStatus = (avail.status || '').toString().toLowerCase();
+      const statusIsOT = rawStatus === 'overtime' || rawStatus === 'over_time' || rawStatus.startsWith('ot_');
+      if (!statusIsOT) {
+        whenElementReady(`status_${techId}_${day}`, (statusInput) => {
+          const status = findStatusByCode(avail.status) || { code: avail.status, name: avail.status };
+          statusInput.value = status.code;
+          const btn = statusInput.nextElementSibling;
+          if (btn && btn.classList && btn.classList.contains('status-btn')) {
+            const t = btn.querySelector('.status-btn-text');
+            const i = btn.querySelector('.status-btn-icon');
+            if (t) t.textContent = status.name || status.code;
+            btn.classList.remove('btn-work', 'btn-leave');
+            btn.classList.add(status.is_leave ? 'btn-leave' : 'btn-work');
+            if (i) i.textContent = status.is_leave ? '🏖️' : '💼';
+          }
+        });
+
+        // New select control
+        whenElementReady(`work_select_${techId}_${day}`, (workSelect) => {
+          workSelect.value = avail.status || '';
+          const selOpt = workSelect.selectedOptions[0];
+          if (selOpt) {
+            const name = selOpt.dataset.name || selOpt.textContent;
+            const isLeave = selOpt.dataset.isleave === '1' || selOpt.dataset.isleave === 'true';
+            selectWork(techId, day, workSelect.value, name, isLeave);
+          }
+        });
+      }
+    }
+
+    // Load OT from note/status or explicit field (works on holidays too)
+    (function() {
+      let otCode = null;
+      if (avail.note && typeof avail.note === 'string' && avail.note.startsWith('OT:')) {
+        otCode = avail.note.replace('OT:', '').trim();
+      }
+      const rawStatus = (avail.status || '').toString().toLowerCase();
+      if (!otCode && rawStatus) {
+        if (rawStatus === 'overtime' || rawStatus === 'over_time') {
+          otCode = 'ot_4h';
+        } else if (rawStatus.startsWith('ot_')) {
+          otCode = rawStatus;
+        }
+      }
+
+      if (otCode) {
+        whenElementReady(`ot_${techId}_${day}`, (otInput) => {
+          whenElementReady(`ot_toggle_${techId}_${day}`, (otToggle) => {
+            whenElementReady(`ot_hours_${techId}_${day}`, (hoursDisplay) => {
+              if (otInput && otToggle && hoursDisplay && !otToggle.disabled) {
+                const otStatus = findStatusByCode(otCode) || { code: otCode };
+                otInput.value = otStatus.code || otCode;
+                otToggle.checked = true;
+                const hoursMatch = (otStatus.code || otCode).match(/(\d+)h/);
+                if (hoursMatch) {
+                  const hours = hoursMatch[1];
+                  hoursDisplay.textContent = `${hours} ชม.`;
+                  hoursDisplay.style.color = 'var(--color-success)';
+                  hoursDisplay.style.fontWeight = '600';
+                } else {
+                  const dateObj = new Date(y, m - 1, d);
+                  const isWeekendDay = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+                  const fallbackHours = (isWeekendDay || (getHolidayForDate && getHolidayForDate(avail.work_date))) ? 7 : 4;
+                  hoursDisplay.textContent = `${fallbackHours} ชม.`;
+                  hoursDisplay.style.color = 'var(--color-success)';
+                  hoursDisplay.style.fontWeight = '600';
+                }
+              }
+            });
+          });
+        });
+
+        // legacy select OT
+        whenElementReady(`ot_select_${techId}_${day}`, (otSelect) => {
+          otSelect.value = otCode || '';
+          const selOpt = otSelect.selectedOptions[0];
+          if (selOpt) {
+            const name = selOpt.dataset.name || selOpt.textContent;
+            selectOT(techId, day, otSelect.value, name);
+          }
+        });
+      }
+    })();
+  });
+
+  // Update header stats after loading data
+  updateHeaderStats();
+}
+
+function findStatusByCode(code) {
+  if (!code) return null;
+  const raw = code.toString().toLowerCase();
+  // Normalize legacy 'overtime' code into an OT child if available
+  if (raw === 'overtime' || raw === 'over_time') {
+    // prefer explicit ot_4h or ot_regular child if present
+    for (const ws2 of workStatuses) {
+      if (!ws2.children) continue;
+      const prefer = ws2.children.find(c => c.code === 'ot_4h' || c.code === 'ot_regular' || c.code === 'ot_7h');
+      if (prefer) {
+        const normalized = Object.assign({}, prefer);
+        if (typeof normalized.is_leave === 'undefined') normalized.is_leave = !!ws2.is_leave;
+        if (typeof normalized.is_overtime === 'undefined') normalized.is_overtime = !!ws2.is_overtime;
+        return normalized;
+      }
+    }
+    // fallback synthetic OT-4h
+    return { code: 'ot_4h', name: 'OT 4 ชม.', is_overtime: true };
+  }
+
+  for (const ws of workStatuses) {
+    if (ws.code === code) return ws;
+    if (ws.children) {
+      for (const child of ws.children) {
+        if (child.code === code) {
+          // Ensure child inherits parent's is_leave/is_overtime flags when missing
+          const normalized = Object.assign({}, child);
+          if (typeof normalized.is_leave === 'undefined') normalized.is_leave = !!ws.is_leave;
+          if (typeof normalized.is_overtime === 'undefined') normalized.is_overtime = !!ws.is_overtime;
+          return normalized;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+// ============================================
+// 🎮 EVENT LISTENERS
+// ============================================
+function setupEventListeners() {
+  // Previous month
+  document.getElementById('prevMonth').addEventListener('click', () => {
+    currentMonth--;
+    if (currentMonth < 1) {
+      currentMonth = 12;
+      currentYear--;
+    }
+    // Reload page with new month/year to fetch shift data from backend
+    window.location.href = `?month=${currentMonth}&year=${currentYear}`;
+  });
+  
+  // Next month
+  document.getElementById('nextMonth').addEventListener('click', () => {
+    currentMonth++;
+    if (currentMonth > 12) {
+      currentMonth = 1;
+      currentYear++;
+    }
+    // Reload page with new month/year to fetch shift data from backend
+    window.location.href = `?month=${currentMonth}&year=${currentYear}`;
+  });
+  
+  // Today button
+  document.getElementById('todayBtn').addEventListener('click', () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1;
+    // Reload page with today's month/year
+    window.location.href = `?month=${month}&year=${year}`;
+  });
+  
+  // Save button
+  document.getElementById('saveAllBtn').addEventListener('click', () => {
+    showLoading();
+    document.getElementById('calendarForm').submit();
+  });
+
+  // Save and view report button
+  const saveAndReportBtn = document.getElementById('saveAndReportBtn');
+  if (saveAndReportBtn) {
+    saveAndReportBtn.addEventListener('click', () => {
+      // set redirect flag then submit
+      const redirectInput = document.getElementById('redirectToReport');
+      if (redirectInput) redirectInput.value = '1';
+      showLoading();
+      document.getElementById('calendarForm').submit();
+    });
+  }
+  
+  // View mode switcher
+  document.querySelectorAll('.view-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const newMode = btn.dataset.view;
+      viewMode = newMode;
+      
+      document.querySelectorAll('.view-mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      // Toggle technician selector
+      const selectorWrapper = document.getElementById('techSelectorWrapper');
+      const selectedTechInfo = document.getElementById('selectedTechInfo');
+      
+      if (viewMode === 'single') {
+        selectorWrapper.style.display = 'block';
+        if (selectedTechId) {
+          selectedTechInfo.style.display = 'flex';
+        }
+      } else {
+        selectorWrapper.style.display = 'none';
+        selectedTechInfo.style.display = 'none';
+        selectedTechId = null;
+      }
+
+      // Debug: log view changes for troubleshooting
+      console.log('🔁 View mode changed', { viewMode, selectedTechId });
+      
+      renderCalendar();
+      loadExistingData();
+    });
+  });
+  
+  // Search technician
+  document.getElementById('techSearch').addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    document.querySelectorAll('.tech-card').forEach(card => {
+      const techName = card.dataset.techName;
+      if (techName.includes(searchTerm)) {
+        card.style.display = 'flex';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  });
+  
+  // Filter chips
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      // Apply visual filter to technician cards
+      const filter = chip.dataset.filter;
+      applyTechFilter(filter);
+    });
+  });
+
+  // Apply technician filter: 'all' | 'working' | 'leave' | 'ot'
+  function applyTechFilter(filter) {
+    const cards = document.querySelectorAll('.tech-card');
+    cards.forEach(card => {
+      const tid = parseInt(card.dataset.techId, 10);
+      if (isNaN(tid)) return;
+      const matches = techMatchesFilter(tid, filter);
+      card.style.display = matches ? 'flex' : 'none';
+    });
+  }
+
+  // Determine whether a technician matches the selected filter for the current month
+  function techMatchesFilter(techId, filter) {
+    if (!filter || filter === 'all') return true;
+    // collect availabilities for this tech in current month
+    const techAvails = availabilities.filter(a => a.technician && a.technician.id === techId).filter(a => {
+      if (!a.work_date) return false;
+      const [y, m] = a.work_date.split('-').map(Number);
+      return y === currentYear && m === currentMonth;
+    });
+
+    // special: show technicians with no availabilities for the month
+    if (filter === 'unscheduled') return techAvails.length === 0;
+
+    // helper to classify a single availability into 'work'|'ot'|'leave'|'holiday'
+    function classify(av) {
+      if (!av) return 'work';
+      if (av.note && typeof av.note === 'string' && av.note.trim().toUpperCase().startsWith('OT:')) return 'ot';
+      if (av.ot || av.ot_type) return 'ot';
+      const code = (av.status || '').toString().toLowerCase();
+      if (!code || code === '') return 'work';
+      if (code.includes('ot') || code.includes('overtime') || code.includes('over_time')) return 'ot';
+      if (code.startsWith('off_') || code.includes('holiday')) return 'holiday';
+      if (code.includes('leave') || code.includes('ลา') || code.includes('sick')) return 'leave';
+      if (code.includes('work') || code.includes('regular') || code.includes('normal')) return 'work';
+      return 'work';
+    }
+
+    for (const a of techAvails) {
+      const cat = classify(a);
+      if (filter === 'working' && cat === 'work') return true;
+      if (filter === 'leave' && cat === 'leave') return true;
+      if (filter === 'ot' && cat === 'ot') return true;
+    }
+    return false;
+  }
+}
+
+// ============================================
+// 🛠️ UTILITY FUNCTIONS
+// ============================================
+function isDateToday(date) {
+  const today = new Date();
+  return date.getDate() === today.getDate() &&
+         date.getMonth() === today.getMonth() &&
+         date.getFullYear() === today.getFullYear();
+}
+
+function showLoading() {
+  const overlay = document.createElement('div');
+  overlay.className = 'loading-overlay';
+  overlay.innerHTML = `
+    <div class="spinner-wrapper">
+      <div class="spinner"></div>
+      <div class="spinner-text">กำลังบันทึกข้อมูล...</div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function openHolidayModal() {
+  const modalElement = document.getElementById('holidayModal');
+  if (modalElement) {
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+  } else {
+    console.error('Holiday modal not found');
+  }
+}
+
+// ============================================
+// 🎯 TECHNICIAN SELECTOR TOGGLE
+// ============================================
+function toggleTechSelector() {
+  const wrapper = document.getElementById('techSelectorWrapper');
+  if (wrapper) {
+    wrapper.classList.toggle('collapsed');
+  }
+}
+
+// Update tech count badge
+function updateTechCountBadge() {
+  const badge = document.getElementById('techCountBadge');
+  if (badge && technicians) {
+    badge.textContent = `${technicians.length} คน`;
+  }
+}
+</script>
+{% endblock %}

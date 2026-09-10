@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}
+    <title>Login</title>
+{% endblock %}
+
+{% block content %}
+<div class="container login-container">
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title">เข้าสู่ระบบ</h3>
+            <form method="post">
+                {% csrf_token %}
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% empty %}
+                            กรุณาตรวจสอบข้อมูล
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="mb-3">
+                    <label for="id_username" class="form-label">ชื่อผู้ใช้</label>
+                    <input autocomplete="username" type="text" name="username" autofocus required id="id_username" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label for="id_password" class="form-label">รหัสผ่าน</label>
+                    <input autocomplete="current-password" type="password" name="password" required id="id_password" class="form-control">
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">เข้าสู่ระบบ</button>
+                </div>
+                <div class="text-center mt-3">
+                    <span class="text-muted">ยังไม่มีบัญชี?</span>
+                    <a href="{% url 'create_account' %}">สร้างบัญชีใหม่</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

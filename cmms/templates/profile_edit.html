@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block title %}<title>แก้ไขโปรไฟล์</title>{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">แก้ไขโปรไฟล์</div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      {% if form.first_name %}
+        <div class="mb-3">
+          {{ form.first_name.label_tag }}
+          {{ form.first_name }}
+          {% if form.first_name.help_text %}<div class="form-text text-muted">{{ form.first_name.help_text }}</div>{% endif %}
+          {{ form.first_name.errors }}
+        </div>
+      {% endif %}
+
+      {% if form.last_name %}
+        <div class="mb-3">
+          {{ form.last_name.label_tag }}
+          {{ form.last_name }}
+          {% if form.last_name.help_text %}<div class="form-text text-muted">{{ form.last_name.help_text }}</div>{% endif %}
+          {{ form.last_name.errors }}
+        </div>
+      {% endif %}
+
+      {% if form.email %}
+        <div class="mb-3">
+          {{ form.email.label_tag }}
+          {{ form.email }}
+          {% if form.email.help_text %}<div class="form-text text-muted">{{ form.email.help_text }}</div>{% endif %}
+          {{ form.email.errors }}
+        </div>
+      {% endif %}
+
+      {% if form.telephone %}
+        <div class="mb-3">
+          {{ form.telephone.label_tag }}
+          {{ form.telephone }}
+          {% if form.telephone.help_text %}<div class="form-text text-muted">{{ form.telephone.help_text }}</div>{% endif %}
+          {{ form.telephone.errors }}
+        </div>
+      {% endif %}
+
+      <div class="form-group mb-3">
+        <label for="department">
+          {{ form.department.label }}
+          {% if form_values.department %}
+            {% for c in master_customers %}
+              {% if c.label == form_values.department and c.ancestors %}
+                &nbsp;<small class="text-muted">({{ c.ancestors }})</small>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+        </label>
+        <!-- Enhanced searchable select wrapper (reuses master_customers) -->
+        <div class="position-relative">
+          <input type="text"
+                 id="department_search"
+                 class="form-control"
+                 placeholder="🔍 พิมพ์เพื่อค้นหาหน่วยงาน..."
+                 autocomplete="off"
+                 role="combobox"
+                 aria-autocomplete="list"
+                 aria-haspopup="listbox"
+                 aria-expanded="false"
+                 aria-controls="department_dropdown"
+                 style="padding-right:2.5rem">
+          <button type="button" id="department_clear" class="clear-search-btn btn btn-sm" aria-label="ล้างการเลือก" title="ล้างการเลือก" style="display:none">
+            <i class="bi bi-x-lg"></i>
+          </button>
+
+          <!-- Hidden select for form submission -->
+          <select id="department" name="department" class="form-select d-none">
+            <option value="">-- เลือกหน่วยงาน --</option>
+            {% for c in master_customers %}
+              <option value="{{ c.label }}" data-id="{{ c.id }}" data-ancestors="{{ c.ancestors }}" {% if form_values.department == c.label %}selected{% endif %}>{{ c.label }}</option>
+            {% endfor %}
+          </select>
+
+          <div id="department_dropdown" class="searchable-dropdown w-100" role="listbox" aria-labelledby="department_search" style="max-height:300px;overflow-y:auto;display:none;box-shadow:0 10px 30px rgba(0,0,0,0.15);border:1px solid #ddd;background:white;position:absolute;z-index:1000;">
+            <!-- populated by JS -->
+          </div>
+        </div>
+
+        <div id="department_tree" class="ancestors-display mt-2" style="display:none">
+          <i class="bi bi-diagram-2-fill me-1"></i>
+          <strong>โครงสร้างองค์กร:</strong>
+          <span id="department_chain" style="color:#495057"></span>
+        </div>
+
+        {% if form.department.help_text %}<div class="form-text text-muted">{{ form.department.help_text }}</div>{% endif %}
+        {{ form.department.errors }}
+      </div>
+
+      {% if form.position %}
+        <div class="mb-3">
+          {{ form.position.label_tag }}
+          {{ form.position }}
+          {% if form.position.help_text %}<div class="form-text text-muted">{{ form.position.help_text }}</div>{% endif %}
+          {{ form.position.errors }}
+        </div>
+      {% endif %}
+
+      {% if groups %}
+        <div class="mb-3">
+          <label>กลุ่มผู้ใช้</label>
+          {% for g in groups %}
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" id="group_{{ g.id }}" name="groups" value="{{ g.id }}" {% if g in user.groups.all %}checked{% endif %}>
+              <label class="form-check-label" for="group_{{ g.id }}">{{ g.name }}</label>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if form.is_staff %}
+        <div class="form-check mb-3">
+          {{ form.is_staff }} {{ form.is_staff.label_tag }}
+          {{ form.is_staff.errors }}
+        </div>
+      {% endif %}
+      <button class="btn btn-primary" type="submit">บันทึก</button>
+      <a href="{% url 'profile' %}" class="btn btn-secondary ms-2">ยกเลิก</a>
+    </form>
+  </div>
+</div>
+  <style>
+    .searchable-dropdown .searchable-option { padding: 0.5rem; border-bottom: 1px solid #eee; cursor: pointer; }
+    .searchable-dropdown .searchable-option:hover { background: #f8f9fa; }
+    .ancestors-display { background: linear-gradient(135deg,rgba(17,153,142,0.05),rgba(56,239,125,0.05)); border-left:3px solid #11998e; padding:0.75rem; border-radius:6px; }
+    .clear-search-btn { position: absolute; right: 0.5rem; top: 0.35rem; z-index: 5; }
+  </style>
+
+  <script>
+    (function(){
+      function syncSearchToSelect(searchId, selectId, clearId) {
+        const s = document.getElementById(searchId);
+        const sel = document.getElementById(selectId);
+        if (!s || !sel) return;
+        const typed = (s.value || '').replace(/\s+/g, ' ').trim();
+        if (typed && !sel.value) {
+          const match = Array.from(sel.options).find(o => (o.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase() === typed.toLowerCase());
+          if (match) {
+            sel.value = match.value;
+            try { sel.dispatchEvent(new Event('change')); } catch (err) {}
+            const clearBtn = document.getElementById(clearId);
+            if (clearBtn) clearBtn.style.display = 'inline-block';
+          }
+        }
+      }
+
+      function initSearchableSelect(config) {
+        const searchInput = document.getElementById(config.searchId);
+        const hiddenSelect = document.getElementById(config.selectId);
+        const dropdown = document.getElementById(config.dropdownId);
+        const clearBtn = document.getElementById(config.clearId);
+        const chainEl = document.getElementById(config.chainId);
+        const treeEl = document.getElementById(config.treeId);
+        if (!searchInput || !hiddenSelect || !dropdown) return;
+
+        const options = Array.from(hiddenSelect.options).filter(opt => opt.value).map(opt => ({
+          value: opt.value,
+          text: opt.textContent,
+          ancestors: opt.getAttribute('data-ancestors') || '',
+          id: opt.getAttribute('data-id')
+        }));
+
+        function renderResults(list){
+          dropdown.innerHTML = '';
+          list.forEach(opt => {
+            const div = document.createElement('div');
+            div.className = 'searchable-option p-2';
+            div.setAttribute('role','option');
+            div.textContent = opt.text;
+            div.dataset.value = opt.value;
+            div.addEventListener('click', function(){
+              hiddenSelect.value = this.dataset.value;
+              try { hiddenSelect.dispatchEvent(new Event('change')); } catch(e){}
+              searchInput.value = this.textContent;
+              if (clearBtn) clearBtn.style.display = 'inline-block';
+              if (chainEl) chainEl.textContent = opt.ancestors || opt.text;
+              if (treeEl) treeEl.style.display = (opt.ancestors? 'block':'none');
+              dropdown.style.display = 'none';
+            });
+            dropdown.appendChild(div);
+          });
+        }
+
+        searchInput.addEventListener('input', function(){
+          const q = (this.value||'').trim().toLowerCase();
+          if (!q) { dropdown.style.display='none'; return; }
+          const filtered = options.filter(o => o.text.toLowerCase().includes(q));
+          renderResults(filtered.slice(0,50));
+          dropdown.style.display = filtered.length? 'block':'none';
+        });
+
+        searchInput.addEventListener('focus', function(){
+          const q = (this.value||'').trim();
+          if (!q) {
+            // show full list on focus when nothing typed yet
+            renderResults(options.slice(0,50));
+            dropdown.style.display = options.length ? 'block' : 'none';
+          } else {
+            if (dropdown.children.length) dropdown.style.display = 'block';
+          }
+        });
+        document.addEventListener('click', function(e){ if (!dropdown.contains(e.target) && e.target !== searchInput) dropdown.style.display = 'none'; });
+
+        const selVal = hiddenSelect.value || '';
+        if (selVal) {
+          const opt = options.find(o=>o.value===selVal);
+          if (opt) {
+            searchInput.value = opt.text;
+            if (chainEl) chainEl.textContent = opt.ancestors || opt.text;
+            if (clearBtn) clearBtn.style.display = 'inline-block';
+          }
+        }
+
+        if (clearBtn) {
+          clearBtn.addEventListener('click', function(){
+            hiddenSelect.value = '';
+            searchInput.value = '';
+            clearBtn.style.display = 'none';
+            if (chainEl) chainEl.textContent = '';
+            if (treeEl) treeEl.style.display = 'none';
+          });
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', function(){
+        try {
+          initSearchableSelect({
+            searchId: 'department_search',
+            selectId: 'department',
+            dropdownId: 'department_dropdown',
+            clearId: 'department_clear',
+            chainId: 'department_chain',
+            treeId: 'department_tree'
+          });
+          // quick debug info: print number of options
+          try {
+            const sel = document.getElementById('department');
+            console && console.debug && console.debug('department select options:', sel ? sel.options.length : 0);
+          } catch (e) {}
+          const form = document.querySelector('form');
+          if (form) form.addEventListener('submit', function(){ try { syncSearchToSelect('department_search','department','department_clear'); } catch(e){} });
+        } catch (err) {
+          console && console.debug && console.debug('init dept searchable error', err);
+        }
+      });
+    })();
+  </script>
+
+{% endblock %}

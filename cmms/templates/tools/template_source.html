@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}<title>Template source - {{ path }}</title>{% endblock %}
+{% block content %}
+<h3>Source: {{ path }}</h3>
+<pre class="template-source-pre">{{ source|escape }}</pre>
+<p><a href="{% url 'template_render' %}?path={{ path|urlencode }}" class="btn btn-sm btn-primary">Render</a></p>
+{% endblock %}

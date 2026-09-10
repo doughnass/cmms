@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}<title>Master Data</title>{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid" style="max-width: 1800px;; margin: 0 auto; ">
+  
+  <!-- Header -->
+  <div class="card-modern no-print">
+    <div class="card-header-modern">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+          <h3>
+            <i class="bi bi-folder2-open me-2"></i>ข้อมูล Master
+          </h3>
+          <p>จัดการข้อมูลหลักทั้งหมด</p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{% url 'master_create' %}" class="btn-modern btn-success-modern no-print">
+            <i class="bi bi-plus-lg"></i> เพิ่มรายการ
+          </a>
+          {% if user.is_staff %}
+            <a href="{% url 'category_list' %}" class="btn-modern btn-info-modern no-print" title="จัดการหมวดและฟิลด์เพิ่มเติม">
+              <i class="bi bi-gear-fill"></i> จัดการหมวด/ฟิลด์
+            </a>
+          {% endif %}
+          {% if active_category and user.is_staff %}
+            <a href="{% url 'master_manage_by_category' active_category %}" class="btn-modern btn-warning-modern no-print">
+              <i class="bi bi-pencil-square"></i> แก้ไขขั้นสูง
+            </a>
+          {% endif %}
+            <a href="{% url 'master_import_excel' %}" class="btn-modern btn-outline-modern no-print">
+              <i class="bi bi-file-earmark-excel"></i> Import (Excel)
+            </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Category Sidebar + Main Content -->
+  <div class="row g-3">
+    <!-- Sidebar -->
+    <div class="col-md-3 category-sidebar">
+      <div class="card-modern">
+        <div class="card-header-modern sticky-header">
+          <h5><i class="bi bi-list-ul me-2"></i>หมวดหมู่</h5>
+        </div>
+        <div class="card-body-modern p-0">
+          <ul class="category-list mt-2">
+            <li>
+              <a href="{% url 'master_list' %}" class="category-item {% if not active_category %}active{% endif %}">
+                <i class="bi bi-layers-fill me-2"></i>ทั้งหมด
+              </a>
+            </li>
+            {% for c in categories %}
+              <li>
+                <a href="{% url 'master_list_by_category' c %}" class="category-item {% if active_category == c %}active{% endif %}">
+                  <i class="bi bi-folder2 me-2"></i>{{ c }}
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9 category-sidebar ">
+      <div class="card-modern ">
+        <div class="card-header-modern" >
+          <div class="d-flex justify-content-between align-items-center">
+            <h5>
+              {% if active_category %}
+                <i class="bi bi-folder2-open me-2"></i>{{ active_category }}
+              {% else %}
+                <i class="bi bi-list-ul me-2"></i>ทั้งหมด
+              {% endif %}
+            </h5>
+            {% if active_category and tree_roots %}
+            <div class="d-flex gap-2">
+              <button id="expand-all" type="button" class="btn-modern btn-outline-modern">
+                <i class="bi bi-arrows-expand"></i> Expand All
+              </button>
+              <button id="collapse-all" type="button" class="btn-modern btn-outline-modern">
+                <i class="bi bi-arrows-collapse"></i> Collapse All
+              </button>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="card-body-modern">
+    {% if active_category and tree_roots %}
+      <div class="master-tree">
+        {% for root in tree_roots %}
+          {% include 'master/_master_node.html' with node=root %}
+        {% endfor %}
+      </div>
+      <script>
+      (function(){
+        // Toggle a single node's children
+        function toggleNode(btn, expanded){
+          var target = btn.getAttribute('data-target');
+          var el = document.querySelector(target);
+          if(!el) return;
+          var icon = btn.querySelector('.toggle-icon');
+          if(expanded === undefined) expanded = el.style.display === 'none' || el.classList.contains('d-none') ? true : false;
+          if(expanded){
+            el.style.display = '';
+            btn.setAttribute('aria-expanded','true');
+            if(icon){
+              // prefer updating icon classes when using Bootstrap Icons
+              if(icon.classList) icon.className = 'bi bi-caret-down-fill toggle-icon'; else icon.textContent = '▼';
+            }
+          } else {
+            el.style.display = 'none';
+            btn.setAttribute('aria-expanded','false');
+            if(icon){
+              if(icon.classList) icon.className = 'bi bi-caret-right-fill toggle-icon'; else icon.textContent = '►';
+            }
+          }
+        }
+
+        // Attach click handlers
+        document.querySelectorAll('.master-node-toggle').forEach(function(b){
+          b.addEventListener('click', function(e){
+            e.preventDefault();
+            toggleNode(b);
+          });
+        });
+
+        // Expand/collapse all
+        document.getElementById('expand-all').addEventListener('click', function(){
+          document.querySelectorAll('.master-children').forEach(function(ch){ ch.style.display = ''; });
+          document.querySelectorAll('.master-node-toggle').forEach(function(b){
+            b.setAttribute('aria-expanded','true');
+            var ic = b.querySelector('.toggle-icon');
+            if(ic){ if(ic.classList) ic.className = 'bi bi-caret-down-fill toggle-icon'; else ic.textContent = '▼'; }
+          });
+        });
+        document.getElementById('collapse-all').addEventListener('click', function(){
+          document.querySelectorAll('.master-children').forEach(function(ch){ ch.style.display = 'none'; });
+          document.querySelectorAll('.master-node-toggle').forEach(function(b){
+            b.setAttribute('aria-expanded','false');
+            var ic = b.querySelector('.toggle-icon');
+            if(ic){ if(ic.classList) ic.className = 'bi bi-caret-right-fill toggle-icon'; else ic.textContent = '►'; }
+          });
+        });
+
+        // Initialize: collapse all children by default except roots
+        document.addEventListener('DOMContentLoaded', function(){
+          // only collapse non-root children
+            // collapse all child lists by default (show only root nodes)
+            document.querySelectorAll('.master-children').forEach(function(ch){
+              ch.style.display = 'none';
+                var btn = document.querySelector('[data-target="#'+ch.id+'"]');
+              if(btn){
+                btn.setAttribute('aria-expanded','false');
+                var ic = btn.querySelector('.toggle-icon');
+                if(ic){ if(ic.classList) ic.className = 'bi bi-caret-right-fill toggle-icon'; else ic.textContent = '►'; }
+              }
+            });
+        });
+      })();
+      </script>
+    {% else %}
+
+      <table class="table table-sm table-hover">
+        <thead>
+          <tr><th>Category</th><th>Code</th><th>Label</th><th>Active</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for it in items %}
+            <tr>
+              <td>{{ it.category }}</td>
+              <td>{{ it.code }}</td>
+              <td>{{ it.label }}</td>
+              <td>{{ it.active }}</td>
+              <td class="text-nowrap">
+                <a href="{% url 'master_edit' it.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                <button type="button" class="btn btn-sm btn-outline-danger" 
+                        onclick="deleteMasterItem('{{ it.pk }}', '{{ it.label|escapejs }}', '{{ it.category|escapejs }}')">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="text-center text-muted">ยังไม่มีข้อมูล</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_modals %}
+  {% include 'master/_master_modals.html' %}
+{% endblock %}
+
+{% block extra_scripts %}
+  {% include 'master/_master_shared_js.html' %}
+  <script>
+  // Initialize master shared functions with active category
+  if(typeof window.masterSharedInit === 'function'){
+    window.masterSharedInit('{{ active_category|default:""|escapejs }}');
+  }
+  </script>
+{% endblock %}

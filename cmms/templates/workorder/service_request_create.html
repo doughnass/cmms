@@ -1,0 +1,4741 @@
+{% extends 'base.html' %}
+{% load cmms_filters %}
+{% block title %}<title>แจ้งขอรับบริการ - Service Request</title>{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+        --secondary-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+        --success-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.2);
+        --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.08);
+        --shadow-medium: 0 8px 32px rgba(0, 0, 0, 0.12);
+        --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
+    }
+
+    .sr-page-wrapper {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 50%, #ecfeff 100%);
+        padding: 1.5rem;
+        position: center;
+        overflow: hidden;
+    }
+
+    .sr-page-wrapper::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 80%;
+        height: 80%;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .sr-page-wrapper::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -10%;
+        width: 60%;
+        height: 60%;
+        background: radial-gradient(circle, rgba(168, 85, 247, 0.06) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .sr-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Header Section */
+    .sr-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        animation: fadeInDown 0.6s ease-out;
+    }
+
+    @keyframes fadeInDown {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .sr-header-icon {
+        width: 80px;
+        height: 80px;
+        background: var(--primary-gradient);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        box-shadow: var(--shadow-medium), var(--shadow-glow);
+        transform: rotate(-5deg);
+        transition: transform 0.3s ease;
+    }
+
+    .sr-header-icon:hover {
+        transform: rotate(0deg) scale(1.05);
+    }
+
+    .sr-header-icon i {
+        font-size: 2.5rem;
+        color: white;
+    }
+
+    .sr-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+    }
+
+    .sr-header p {
+        color: #64748b;
+        font-size: 1rem;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    /* Progress Steps */
+    .sr-progress {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0;
+        margin-bottom: 2rem;
+        animation: fadeIn 0.6s ease-out 0.2s both;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .sr-step {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1.25rem;
+        background: var(--glass-bg);
+        border-radius: 50px;
+        box-shadow: var(--shadow-soft);
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    .sr-step.active {
+        background: var(--primary-gradient);
+        color: white;
+        box-shadow: var(--shadow-medium), 0 0 20px rgba(99, 102, 241, 0.3);
+    }
+
+    .sr-step.completed {
+        background: var(--success-gradient);
+        color: white;
+    }
+
+    .sr-step-number {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .sr-step.active .sr-step-number,
+    .sr-step.completed .sr-step-number {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    .sr-step-line {
+        width: 40px;
+        height: 3px;
+        background: #e2e8f0;
+        border-radius: 2px;
+        align-self: center;
+        margin: 0 12px;
+    }
+
+    .sr-step-line.active {
+        background: var(--primary-gradient);
+    }
+
+    /* Clickable steps */
+    .sr-step {
+        cursor: pointer;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    .sr-step:hover:not(.active) {
+        /* Keep original background to avoid white-on-white text */
+        border-color: #dbeafe; /* subtle, consistent tint */
+        box-shadow: var(--shadow-soft);
+        transform: translateY(-2px);
+    }
+
+    .sr-step.completed:hover {
+        /* Keep completed step stable on hover */
+        filter: none;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .sr-step.active:hover {
+        filter: none;
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-medium), 0 0 24px rgba(99, 102, 241, 0.32);
+    }
+
+    .sr-step.completed .sr-step-number::after {
+        content: '✓';
+        position: absolute;
+        font-size: 0.75rem;
+    }
+
+    .sr-step.completed .sr-step-number {
+        position: relative;
+        font-size: 0;
+    }
+
+    /* Step content wrapper */
+    .sr-step-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.125rem;
+    }
+
+    .sr-step-label {
+        font-weight: 500;
+        font-size: 0.875rem;
+    }
+
+    .sr-step-value {
+        font-size: 0.6875rem;
+        font-weight: 500;
+        max-width: 100px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        opacity: 0.85;
+    }
+
+    .sr-step:not(.active):not(.completed) .sr-step-value {
+        color: #94a3b8;
+    }
+
+    .sr-step.active .sr-step-value,
+    .sr-step.completed .sr-step-value {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Step Transitions */
+    .sr-section {
+        animation: stepFadeIn 0.35s ease-out;
+    }
+
+    @keyframes stepFadeIn {
+        from { 
+            opacity: 0; 
+            transform: translateX(20px);
+        }
+        to { 
+            opacity: 1; 
+            transform: translateX(0);
+        }
+    }
+
+    .sr-section.slide-out-left {
+        animation: slideOutLeft 0.25s ease-in forwards;
+    }
+
+    .sr-section.slide-out-right {
+        animation: slideOutRight 0.25s ease-in forwards;
+    }
+
+    @keyframes slideOutLeft {
+        from { opacity: 1; transform: translateX(0); }
+        to { opacity: 0; transform: translateX(-30px); }
+    }
+
+    @keyframes slideOutRight {
+        from { opacity: 1; transform: translateX(0); }
+        to { opacity: 0; transform: translateX(30px); }
+    }
+
+    /* Navigation Buttons */
+    .sr-nav {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 2px solid #f1f5f9;
+    }
+
+    .btn-nav {
+        padding: 0.875rem 1.75rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-nav-prev {
+        background: white;
+        color: #64748b;
+        border: 2px solid #e2e8f0 !important;
+    }
+
+    .btn-nav-prev:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1 !important;
+        color: #475569;
+    }
+
+    .btn-nav-next {
+        background: var(--primary-gradient);
+        color: white;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-nav-next:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-nav-submit {
+        background: var(--success-gradient);
+        color: white;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-nav-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-nav:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+
+    /* Toast Notifications */
+    .sr-toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+    }
+
+    .sr-toast {
+        background: white;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        animation: toastSlideIn 0.3s ease-out;
+        pointer-events: auto;
+        max-width: 360px;
+    }
+
+    .sr-toast.warning {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .sr-toast.error {
+        border-left: 4px solid #ef4444;
+    }
+
+    .sr-toast.success {
+        border-left: 4px solid #10b981;
+    }
+
+    .sr-toast-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .sr-toast.warning .sr-toast-icon {
+        background: #fef3c7;
+        color: #f59e0b;
+    }
+
+    .sr-toast.error .sr-toast-icon {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .sr-toast.success .sr-toast-icon {
+        background: #d1fae5;
+        color: #10b981;
+    }
+
+    .sr-toast-content {
+        flex: 1;
+    }
+
+    .sr-toast-title {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.9375rem;
+    }
+
+    .sr-toast-message {
+        color: #64748b;
+        font-size: 0.8125rem;
+        margin-top: 2px;
+    }
+
+    @keyframes toastSlideIn {
+        from { opacity: 0; transform: translateX(100%); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes toastSlideOut {
+        from { opacity: 1; transform: translateX(0); }
+        to { opacity: 0; transform: translateX(100%); }
+    }
+
+    /* Step indicator pulse effect */
+    .sr-step.active::before {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border-radius: 54px;
+        background: var(--primary-gradient);
+        opacity: 0.2;
+        animation: stepPulse 2s ease-in-out infinite;
+    }
+
+    .sr-step {
+        position: relative;
+    }
+
+    @keyframes stepPulse {
+        0%, 100% { transform: scale(1); opacity: 0.2; }
+        50% { transform: scale(1.05); opacity: 0.1; }
+    }
+
+    /* Shake animation for validation */
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+
+    .equipment-selector-card.shake {
+        animation: shake 0.5s ease;
+    }
+
+    /* Service Type Cards */
+    .service-type-cards {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .service-type-cards {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .service-type-card {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 20px;
+        padding: 1.75rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .service-type-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: transparent;
+        transition: background 0.3s ease;
+    }
+
+    .service-type-card:hover {
+        border-color: #c7d2fe;
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(99, 102, 241, 0.15);
+    }
+
+    .service-type-card.selected {
+        border-color: #6366f1;
+        background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
+        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+    }
+
+    .service-type-card.selected::before {
+        background: var(--primary-gradient);
+    }
+
+    .service-type-card[data-type="repair"].selected {
+        border-color: #f59e0b;
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2);
+    }
+
+    .service-type-card[data-type="repair"].selected::before {
+        background: var(--warning-gradient);
+    }
+
+    .service-type-card-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .service-type-card-icon.appointment {
+        background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+        color: #6366f1;
+    }
+
+    .service-type-card.selected .service-type-card-icon.appointment {
+        background: var(--primary-gradient);
+        color: white;
+    }
+
+    .service-type-card-icon.repair {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #f59e0b;
+    }
+
+    .service-type-card[data-type="repair"].selected .service-type-card-icon.repair {
+        background: var(--warning-gradient);
+        color: white;
+    }
+
+    .service-type-card-content h4 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .service-type-card-content p {
+        color: #64748b;
+        font-size: 0.9375rem;
+        margin: 0 0 1rem 0;
+        line-height: 1.5;
+    }
+
+    .service-type-features {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .service-type-features li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #475569;
+        font-size: 0.875rem;
+        padding: 0.375rem 0;
+    }
+
+    .service-type-features li i {
+        color: #10b981;
+        font-size: 0.875rem;
+    }
+
+    .service-type-card-select {
+        position: absolute;
+        top: 1.25rem;
+        right: 1.25rem;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .service-type-card-select i {
+        font-size: 0.875rem;
+        color: #cbd5e1;
+    }
+
+    .service-type-card.selected .service-type-card-select {
+        border-color: #6366f1;
+        background: var(--primary-gradient);
+    }
+
+    .service-type-card.selected .service-type-card-select i {
+        color: white;
+    }
+
+    .service-type-card.selected .service-type-card-select i::before {
+        content: "\F26B";
+    }
+
+    .service-type-card[data-type="repair"].selected .service-type-card-select {
+        border-color: #f59e0b;
+        background: var(--warning-gradient);
+    }
+
+    /* Mobile improvements */
+    @media (max-width: 576px) {
+        .sr-nav {
+            flex-direction: column;
+        }
+        
+        .sr-nav .btn-nav {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .sr-toast-container {
+            left: 10px;
+            right: 10px;
+        }
+        
+        .sr-toast {
+            max-width: 100%;
+        }
+    }
+
+    /* Main Form Card */
+    .sr-card {
+        background: var(--glass-bg);
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+        border-radius: 24px;
+        box-shadow: var(--shadow-medium);
+        overflow: hidden;
+        animation: fadeInUp 0.6s ease-out 0.3s both;
+        border: 1px solid var(--glass-border);
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .sr-card-body {
+        padding: 2.5rem;
+    }
+
+    /* Form Sections */
+    .sr-section {
+        margin-bottom: 2.5rem;
+    }
+
+    .sr-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .sr-section-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .sr-section-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--primary-gradient);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+    }
+
+    .sr-section-icon.secondary {
+        background: var(--secondary-gradient);
+        box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+    }
+
+    .sr-section-icon.success {
+        background: var(--success-gradient);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+
+    .sr-section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .sr-section-subtitle {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin: 0;
+    }
+
+    /* Equipment Selector Card */
+    .equipment-selector-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border: 2px dashed #cbd5e1;
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .equipment-selector-card:hover {
+        border-color: #6366f1;
+        background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
+        transform: translateY(-2px);
+    }
+
+    .equipment-selector-card.selected {
+        border-style: solid;
+        border-color: #10b981;
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    }
+
+    .equipment-selector-icon {
+        width: 64px;
+        height: 64px;
+        background: var(--primary-gradient);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        color: white;
+        font-size: 1.75rem;
+    }
+
+    .equipment-selector-card.selected .equipment-selector-icon {
+        background: var(--success-gradient);
+    }
+
+    /* ==================== Section 2: Equipment - New Design ==================== */
+    
+    .equipment-selection-area {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    /* Quick Search Bar */
+    .equipment-quick-search {
+        position: relative;
+    }
+
+    .equipment-search-input-wrapper {
+        display: flex;
+        align-items: center;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 0.875rem 1.25rem;
+        transition: all 0.3s ease;
+        gap: 0.75rem;
+    }
+
+    .equipment-search-input-wrapper:focus-within {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    .equipment-search-input-wrapper > i {
+        color: #94a3b8;
+        font-size: 1.125rem;
+        flex-shrink: 0;
+    }
+
+    .equipment-search-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 1rem;
+        color: #1e293b;
+        background: transparent;
+    }
+
+    .equipment-search-input::placeholder {
+        color: #94a3b8;
+    }
+
+    .equipment-search-clear {
+        background: none;
+        border: none;
+        padding: 0.25rem;
+        cursor: pointer;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+    }
+
+    .equipment-search-clear:hover {
+        color: #ef4444;
+        background: #fef2f2;
+    }
+
+    /* Search Results Dropdown */
+    .equipment-search-results {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        max-height: 320px;
+        overflow-y: auto;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+        z-index: 100;
+    }
+
+    .equipment-search-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .equipment-search-item:last-child {
+        border-bottom: none;
+    }
+
+    .equipment-search-item:hover {
+        background: #f8fafc;
+    }
+
+    .equipment-search-item-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--primary-gradient);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .equipment-search-item-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .equipment-search-item-code {
+        font-weight: 700;
+        font-size: 0.9375rem;
+        color: #4f46e5;
+    }
+
+    .equipment-search-item-name {
+        font-size: 0.8125rem;
+        color: #64748b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .equipment-search-item-meta {
+        font-size: 0.75rem;
+        color: #9ca3af;
+        margin-top: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Due date badge - modal */
+    .equipment-item-due-badge {
+        display: inline-block;
+        background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
+        padding: 0.18rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        margin-left: 0.5rem;
+    }
+
+    /* Due date badge - inline search */
+    .equipment-search-item-due-badge {
+        display: inline-block;
+        background: #eef2ff;
+        color: #3730a3;
+        padding: 0.12rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+
+    .equipment-search-empty {
+        padding: 2rem;
+        text-align: center;
+        color: #94a3b8;
+    }
+
+    .equipment-search-empty i {
+        font-size: 2.5rem;
+        display: block;
+        margin-bottom: 0.75rem;
+        opacity: 0.5;
+    }
+
+    /* Quick Action Buttons */
+    .equipment-quick-actions {
+        gap: 0.75rem;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .equipment-quick-btn {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        width: 100%;
+        padding: 1rem 1.25rem;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: left;
+    }
+
+    .equipment-quick-btn:hover {
+        border-color: #6366f1;
+        background: #fafaff;
+        transform: translateX(4px);
+    }
+
+    .equipment-quick-btn > .bi-chevron-right {
+        color: #cbd5e1;
+        font-size: 1.125rem;
+        margin-left: auto;
+        transition: color 0.2s ease;
+    }
+
+    .equipment-quick-btn:hover > .bi-chevron-right {
+        color: #6366f1;
+    }
+
+    .equipment-quick-btn-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .equipment-quick-btn.pm-cal .equipment-quick-btn-icon {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #b45309;
+    }
+
+    .equipment-quick-btn.all .equipment-quick-btn-icon {
+        background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+        color: #4f46e5;
+    }
+
+    .equipment-quick-btn.no-code .equipment-quick-btn-icon {
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        color: #64748b;
+    }
+
+    .equipment-quick-btn-content {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+
+    .equipment-quick-btn-title {
+        font-weight: 600;
+        font-size: 0.9375rem;
+        color: #1e293b;
+    }
+
+    .equipment-quick-btn-subtitle {
+        font-size: 0.8125rem;
+        color: #64748b;
+    }
+
+    .equipment-quick-btn-badge {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        color: white;
+        padding: 0.25rem 0.625rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .equipment-quick-btn.pm-cal:hover {
+        border-color: #f59e0b;
+        background: #fffbeb;
+    }
+
+    .equipment-quick-btn.pm-cal:hover > .bi-chevron-right {
+        color: #f59e0b;
+    }
+
+    /* Selected Equipment Card - Modern Glass Design */
+    .equipment-selected-card {
+        background: linear-gradient(145deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.04) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        border-radius: 20px;
+        padding: 0;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 
+            0 4px 24px rgba(16, 185, 129, 0.12),
+            0 1px 3px rgba(0, 0, 0, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        animation: cardAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes cardAppear {
+        from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .equipment-selected-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #6ee7b7 100%);
+    }
+
+    .equipment-selected-card::after {
+        content: '';
+        position: absolute;
+        top: 5px;
+        right: -50px;
+        width: 150px;
+        height: 150px;
+        background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .equipment-selected-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.25rem 1.5rem 1rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .equipment-selected-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+        animation: badgePulse 2s ease-in-out infinite;
+    }
+
+    @keyframes badgePulse {
+        0%, 100% { box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35); }
+        50% { box-shadow: 0 2px 16px rgba(16, 185, 129, 0.5); }
+    }
+
+    .equipment-selected-badge i {
+        font-size: 1rem;
+    }
+
+    .equipment-change-btn {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #6366f1;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    }
+
+    .equipment-change-btn:hover {
+        background: #6366f1;
+        color: white;
+        border-color: #6366f1;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .equipment-clear-btn {
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #6b7280;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .equipment-clear-btn:hover {
+        border-color: #ef4444;
+        color: #ef4444;
+        background: #fff7f7;
+    }
+
+    .equipment-selected-main {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        padding: 0 1.5rem 1.25rem;
+        margin: 0 1rem;
+        border-bottom: 1px dashed rgba(16, 185, 129, 0.25);
+        position: relative;
+        z-index: 1;
+    }
+
+    .equipment-selected-image {
+        width: 90px;
+        height: 90px;
+        border-radius: 16px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border: 2px solid rgba(16, 185, 129, 0.3);
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+        transition: transform 0.3s ease;
+    }
+
+    .equipment-selected-image:hover {
+        transform: scale(1.05);
+    }
+
+    .equipment-selected-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .equipment-selected-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .equipment-selected-code {
+        font-size: 1.375rem;
+        font-weight: 800;
+        color: #047857;
+        margin-bottom: 0.375rem;
+        letter-spacing: -0.01em;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .equipment-selected-code::before {
+        content: '';
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #10b981;
+        border-radius: 50%;
+        animation: statusPulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes statusPulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.6; transform: scale(1.2); }
+    }
+
+    .equipment-selected-name {
+        font-size: 1.0625rem;
+        color: #1e293b;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .equipment-selected-details {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0;
+        padding: 1rem 1.5rem 1.5rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .equipment-detail-row {
+        display: contents;
+    }
+
+    @media (max-width: 576px) {
+        .equipment-selected-details {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .equipment-detail-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+        padding: 0.875rem 1rem;
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(16, 185, 129, 0.1);
+        margin: -1px 0 0 -1px;
+        transition: all 0.2s ease;
+    }
+
+    .equipment-detail-cell:first-child {
+        border-top-left-radius: 12px;
+    }
+
+    .equipment-detail-cell:nth-child(2) {
+        border-top-right-radius: 12px;
+    }
+
+    .equipment-detail-cell:nth-last-child(2) {
+        border-bottom-left-radius: 12px;
+    }
+
+    .equipment-detail-cell:last-child {
+        border-bottom-right-radius: 12px;
+    }
+
+    .equipment-detail-cell:hover {
+        background: rgba(255, 255, 255, 0.9);
+        border-color: rgba(16, 185, 129, 0.3);
+        z-index: 1;
+    }
+
+    .detail-label {
+        font-size: 0.6875rem;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-weight: 600;
+    }
+
+    .detail-label i {
+        color: #10b981;
+        font-size: 0.75rem;
+        opacity: 0.8;
+    }
+
+    .detail-value {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: #1e293b;
+        line-height: 1.4;
+    }
+
+    /* Parent chain styling */
+    .detail-parents {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-weight: 400;
+    }
+
+    /* Manual Entry Form */
+    .equipment-manual-entry {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border: 2px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 1.5rem;
+    }
+
+    .equipment-manual-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e2e8f0;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .equipment-manual-header i {
+        font-size: 1.25rem;
+        color: #6366f1;
+    }
+
+    .equipment-manual-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .equipment-manual-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .equipment-manual-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #475569;
+    }
+
+    .equipment-manual-label .required {
+        color: #ef4444;
+    }
+
+    .equipment-manual-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    @media (max-width: 576px) {
+        .equipment-manual-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .equipment-manual-back {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .equipment-manual-back:hover {
+        border-color: #6366f1;
+        color: #6366f1;
+        background: #eef2ff;
+    }
+
+    .equipment-preview-img:hover {
+        transform: scale(1.02);
+        cursor: zoom-in;
+    }
+
+    .equipment-detail-item {
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        border: 1px solid rgba(16, 185, 129, 0.15);
+        transition: all 0.2s ease;
+    }
+
+    .equipment-detail-item:hover {
+        background: rgba(255, 255, 255, 1);
+        border-color: rgba(16, 185, 129, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .equipment-detail-value {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: #1e293b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .equipment-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-equipment {
+        padding: 0.875rem 1.75rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-equipment-primary {
+        background: var(--primary-gradient);
+        color: white;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-equipment-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        color: white;
+    }
+
+    .btn-equipment-secondary {
+        background: white;
+        color: #64748b;
+        border: 2px solid #e2e8f0 !important;
+    }
+
+    .btn-equipment-secondary:hover {
+        border-color: #f59e0b !important;
+        color: #f59e0b;
+        background: #fffbeb;
+    }
+
+    /* Equipment Name Input */
+    .equipment-name-input {
+        margin-top: 1.5rem;
+        padding: 1.25rem;
+        background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%);
+        border-radius: 12px;
+        border: 2px solid #fbbf24;
+        animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; max-height: 0; }
+        to { opacity: 1; max-height: 200px; }
+    }
+
+    /* Work Type Pills */
+    .worktype-container {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+    }
+
+    .worktype-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .worktype-pill {
+        padding: 0.75rem 1.25rem;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 50px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .worktype-pill:hover {
+        border-color: #6366f1;
+        background: #eef2ff;
+    }
+
+    .worktype-pill.selected {
+        background: var(--primary-gradient);
+        border-color: transparent;
+        color: white;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .worktype-pill i {
+        font-size: 1rem;
+    }
+
+    .selected-types-display {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        min-height: 40px;
+        padding: 1rem;
+        background: white;
+        border-radius: 12px;
+        border: 2px dashed #e2e8f0;
+    }
+
+    .selected-type-tag {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        animation: scaleIn 0.2s ease-out;
+    }
+
+    @keyframes scaleIn {
+        from { transform: scale(0.8); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .selected-type-tag .remove-tag {
+        cursor: pointer;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+    }
+
+    .selected-type-tag .remove-tag:hover {
+        opacity: 1;
+    }
+
+    /* Form Inputs */
+    .sr-form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .sr-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        font-size: 0.9375rem;
+    }
+
+    .sr-label i {
+        color: #6366f1;
+    }
+
+    .sr-label .required {
+        color: #ef4444;
+        font-size: 0.75rem;
+    }
+
+    .sr-input {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 0.9375rem;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .sr-input:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    .sr-input::placeholder {
+        color: #9ca3af;
+    }
+
+    textarea.sr-input {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    /* Contact Info Grid */
+    .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+    }
+
+    @media (max-width: 768px) {
+        .contact-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* File Upload */
+    .file-upload-zone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 16px;
+        padding: 1rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    }
+
+    .file-upload-zone:hover {
+        border-color: #6366f1;
+        background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
+    }
+
+    .file-upload-zone.dragging {
+        border-color: #6366f1;
+        background: #eef2ff;
+        transform: scale(1.01);
+    }
+
+    .file-upload-icon {
+        width: 56px;
+        height: 56px;
+        background: var(--secondary-gradient);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .file-preview {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: white;
+        border-radius: 12px;
+        margin-top: 1rem;
+        border: 2px solid #10b981;
+    }
+
+    .file-preview-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--success-gradient);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
+
+    .file-preview-info {
+        flex: 1;
+    }
+
+    .file-preview-name {
+        font-weight: 500;
+        color: #1e293b;
+    }
+
+    .file-preview-size {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+
+    .file-preview-remove {
+        color: #ef4444;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 8px;
+        transition: background 0.2s;
+    }
+
+    .file-preview-remove:hover {
+        background: #fef2f2;
+    }
+
+    /* Submit Button */
+    .sr-submit-section {
+        margin-top: 2.5rem;
+        padding-top: 2rem;
+        border-top: 2px solid #f1f5f9;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 1.125rem 2rem;
+        background: var(--primary-gradient);
+        border: none;
+        border-radius: 14px;
+        color: white;
+        font-size: 1.125rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-submit:active {
+        transform: translateY(0);
+    }
+
+    .btn-submit:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-submit i {
+        font-size: 1.25rem;
+    }
+
+    /* Equipment Modal - Redesigned */
+    .equipment-modal .modal-dialog {
+        max-width: 900px;
+    }
+
+    .equipment-modal .modal-content {
+        border-radius: 20px;
+        border: none;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    .equipment-modal .modal-header {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 1rem 1.25rem;
+        border: none;
+        position: relative;
+    }
+
+    .equipment-modal .modal-header::after {
+        content: '';
+        position: absolute;
+        bottom: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 4px;
+        background: rgba(255,255,255,0.3);
+        border-radius: 2px;
+    }
+
+    .equipment-modal .modal-title {
+        font-weight: 600;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .equipment-modal .modal-body {
+        padding: 1rem 1.25rem 0.75rem;
+        background: #f8fafc;
+    }
+
+    .equipment-modal .equipment-search-wrapper {
+        position: relative;
+        margin-bottom: 0.75rem;
+    }
+
+    .equipment-modal .equipment-search-wrapper i {
+        position: absolute;
+        left: 0.875rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.875rem;
+    }
+
+    .equipment-modal .equipment-search-wrapper input {
+        width: 100%;
+        padding: 0.625rem 0.875rem 0.625rem 2.5rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+        background: white;
+    }
+
+    .equipment-modal .equipment-search-wrapper input:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .equipment-modal .equipment-list {
+        max-height: 340px;
+        overflow-y: auto;
+        padding: 0.25rem;
+        margin: 0 -0.25rem;
+    }
+
+    .equipment-modal .equipment-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .equipment-modal .equipment-list::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .equipment-modal .equipment-list::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+
+    .equipment-modal .equipment-item {
+        display: flex;
+        align-items: stretch;
+        padding: 0;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        gap: 0;
+        overflow: hidden;
+    }
+
+    .equipment-modal .equipment-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .equipment-modal .equipment-item:hover {
+        border-color: #a5b4fc;
+        background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+    }
+
+    .equipment-modal .equipment-item.selected {
+        border-color: #10b981;
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+    }
+
+    .equipment-modal .equipment-item-icon {
+        width: 48px;
+        min-width: 48px;
+        background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6366f1;
+        font-size: 1.125rem;
+        flex-shrink: 0;
+    }
+
+    .equipment-modal .equipment-item.selected .equipment-item-icon {
+        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        color: white;
+    }
+
+    .equipment-modal .equipment-item-info {
+        flex: 1;
+        min-width: 0;
+        line-height: 1.3;
+        padding: 0.625rem 0.75rem;
+    }
+
+    .equipment-modal .equipment-item-code {
+        font-weight: 700;
+        font-size: 0.8125rem;
+        color: #4f46e5;
+        letter-spacing: 0.02em;
+    }
+
+    .equipment-modal .equipment-item.selected .equipment-item-code {
+        color: #047857;
+    }
+
+    .equipment-modal .equipment-item-name-en {
+        font-size: 0.75rem !important;
+        color: #64748b !important;
+        margin: 0.125rem 0 !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .equipment-modal .equipment-item-name {
+        font-size: 0.75rem;
+        color: #1e293b;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .equipment-modal .equipment-item-meta {
+        font-size: 0.6875rem !important;
+        color: #94a3b8 !important;
+        margin-top: 0.125rem !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Due date section in modal */
+    .equipment-item-due-section {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0.5rem 0.75rem;
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border-left: 2px solid #f59e0b;
+        min-width: 100px;
+        gap: 0.25rem;
+    }
+
+    .equipment-item-due-label {
+        font-size: 0.625rem;
+        font-weight: 700;
+        color: #78350f;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .equipment-item-due-value {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #92400e;
+        white-space: nowrap;
+    }
+
+    .equipment-item-due-pm {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        border-left-color: #3b82f6;
+    }
+
+    .equipment-item-due-pm .equipment-item-due-label {
+        color: #1e3a8a;
+    }
+
+    .equipment-item-due-pm .equipment-item-due-value {
+        color: #1e40af;
+    }
+
+    .equipment-item-due-cal {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        border-left-color: #3b82f6;
+    }
+
+    .equipment-item-due-cal .equipment-item-due-label {
+        color: #1e3a8a;
+    }
+
+    .equipment-item-due-cal .equipment-item-due-value {
+        color: #1e3a8a;
+    }
+
+    /* Overdue (ครบกำหนด) styling - red indicator */
+    .equipment-item-due-section.overdue {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        border-left-color: #ef4444;
+    }
+
+    .equipment-item-due-section.overdue .equipment-item-due-label {
+        color: #7f1d1d;
+    }
+
+    .equipment-item-due-section.overdue .equipment-item-due-value {
+        color: #b91c1c;
+    }
+
+    .equipment-item-overdue-badge {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #ef4444;
+        border-radius: 50%;
+        margin-left: 0.4rem;
+        box-shadow: 0 0 0 3px rgba(239,68,68,0.08);
+        vertical-align: middle;
+    }
+
+    .equipment-modal .equipment-item-select {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 0 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        border-left: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .equipment-modal .equipment-item-select:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .equipment-modal .equipment-item.selected .equipment-item-select {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .equipment-modal .modal-footer {
+        padding: 0.75rem 1.25rem 1rem;
+        border: none;
+        background: #f8fafc;
+        gap: 0.5rem;
+        display: none;
+    }
+
+    .equipment-modal .equipment-count {
+        font-size: 0.75rem;
+        color: #64748b;
+        padding: 0.5rem 0;
+        text-align: center;
+        border-top: 1px solid #e2e8f0;
+        margin-top: 0.5rem;
+    }
+
+    /* Alert Messages */
+    .sr-alert {
+        padding: 1rem 1.25rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(-10px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    .sr-alert-success {
+        background: #ecfdf5;
+        border: 2px solid #10b981;
+        color: #047857;
+    }
+
+    .sr-alert-error {
+        background: #fef2f2;
+        border: 2px solid #ef4444;
+        color: #b91c1c;
+    }
+
+    .sr-alert i {
+        font-size: 1.25rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .sr-page-wrapper {
+            padding: 1rem;
+        }
+
+        .sr-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .sr-header-icon {
+            width: 64px;
+            height: 64px;
+        }
+
+        .sr-header-icon i {
+            font-size: 2rem;
+        }
+
+        .sr-card-body {
+            padding: 1.5rem;
+        }
+
+        .sr-progress {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .sr-step {
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+        }
+
+        .sr-step-line {
+            display: none;
+        }
+
+        .equipment-actions {
+            flex-direction: column;
+        }
+
+        .btn-equipment {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* Add Equipment Link */
+    .add-equipment-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #6366f1;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        margin-top: 0.75rem;
+        transition: color 0.2s;
+    }
+
+    .add-equipment-link:hover {
+        color: #4f46e5;
+    }
+
+    /* Department Hierarchy */
+    .dept-hierarchy {
+        margin-top: 0.5rem;
+        padding: 0.625rem 1rem;
+        background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
+        border: 1px solid #c7d2fe;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        color: #4f46e5;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Source Banner - shows when prefilled from equipment schedule */
+    .sr-source-banner {
+        background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+        border: 2px solid #93c5fd;
+        border-radius: 16px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        animation: bannerSlideIn 0.4s ease-out;
+    }
+    @keyframes bannerSlideIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .sr-source-banner-content {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .sr-source-banner-icon {
+        width: 44px;
+        height: 44px;
+        background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+    .sr-source-banner-text h6 {
+        color: #1e40af;
+        font-weight: 700;
+        font-size: 0.9375rem;
+        margin: 0 0 0.25rem 0;
+    }
+    .sr-source-banner-text p {
+        color: #3b82f6;
+        font-size: 0.8125rem;
+        margin: 0;
+    }
+    .sr-source-banner-back {
+        background: white;
+        color: #3b82f6;
+        border: 2px solid #93c5fd;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.8125rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .sr-source-banner-back:hover {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+    }
+    .sr-source-banner-dismiss {
+        background: none;
+        border: none;
+        color: #64748b;
+        padding: 0.25rem;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+    .sr-source-banner-dismiss:hover {
+        background: rgba(0,0,0,0.05);
+        color: #1e293b;
+    }
+
+    /* Prefilled indicator badge */
+    .prefilled-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        animation: badgePop 0.3s ease-out;
+    }
+    @keyframes badgePop {
+        from { transform: scale(0.8); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+</style>
+
+<div class="sr-page-wrapper">
+    <!-- Toast Container -->
+    <div class="sr-toast-container" id="toastContainer"></div>
+    
+    <!-- Source Banner (shown when prefilled from equipment schedule) -->
+    <div class="sr-source-banner" id="sourceBanner" style="display: none;">
+        <div class="sr-source-banner-content">
+            <div class="sr-source-banner-icon">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+            <div class="sr-source-banner-text">
+                <h6>สร้างคำร้องจากหน้าบำรุงรักษาตามกำหนด</h6>
+                <p>ข้อมูลเครื่องมือและวันที่ถูกกรอกให้อัตโนมัติแล้ว กรุณาตรวจสอบและกรอกข้อมูลผู้แจ้ง</p>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <a href="#" class="sr-source-banner-back" id="backToScheduleBtn">
+                <i class="bi bi-arrow-left"></i> กลับไปหน้าบำรุงรักษา
+            </a>
+            <button type="button" class="sr-source-banner-dismiss" id="dismissBannerBtn" title="ปิด">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="sr-container">
+        <!-- Header -->
+        <div class="sr-header">
+            <div class="sr-header-icon">
+                <i class="bi bi-headset"></i>
+            </div>
+            <h1>แจ้งขอรับบริการ</h1>
+            <p>กรอกข้อมูลด้านล่างเพื่อส่งคำขอ ทีมงานจะติดต่อกลับโดยเร็วที่สุด</p>
+        </div>
+
+        <!-- Progress Steps (3 steps: Equipment → Details → Contact) -->
+        <div class="sr-progress">
+            <div class="sr-step active" data-step="1">
+                <span class="sr-step-number">1</span>
+                <div class="sr-step-content">
+                    <span class="sr-step-label">เครื่องมือ</span>
+                    <span class="sr-step-value" id="stepValue1">—</span>
+                </div>
+            </div>
+            <div class="sr-step-line"></div>
+            <div class="sr-step" data-step="2">
+                <span class="sr-step-number">2</span>
+                <div class="sr-step-content">
+                    <span class="sr-step-label">รายละเอียด</span>
+                    <span class="sr-step-value" id="stepValue2">—</span>
+                </div>
+            </div>
+            <div class="sr-step-line"></div>
+            <div class="sr-step" data-step="3">
+                <span class="sr-step-number">3</span>
+                <div class="sr-step-content">
+                    <span class="sr-step-label">ข้อมูลผู้แจ้ง</span>
+                    <span class="sr-step-value" id="stepValue3">—</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Card -->
+        <div class="sr-card">
+            <div class="sr-card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="sr-alert sr-alert-{{ message.tags }}">
+                            <i class="bi bi-{% if message.tags == 'success' %}check-circle-fill{% else %}exclamation-circle-fill{% endif %}"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" enctype="multipart/form-data" id="serviceRequestForm">
+                    {% csrf_token %}
+
+                    <!-- Section 1: Equipment -->
+                    <div class="sr-section" id="sr-section-1" data-step="1">
+                        <div class="sr-section-header">
+                            <div class="sr-section-icon secondary">
+                                <i class="bi bi-cpu"></i>
+                            </div>
+                            <div>
+                                <h3 class="sr-section-title">เลือกเครื่องมือ</h3>
+                                <p class="sr-section-subtitle">ค้นหาหรือเลือกเครื่องมือที่ต้องการแจ้งบริการ</p>
+                            </div>
+                            <button type="button" class="equipment-clear-btn" id="clearEquipmentBtn" title="ล้างการเลือกเครื่องมือ" style="margin-left:auto;">
+                                <i class="bi bi-trash"></i>
+                                ล้าง
+                            </button>
+                        </div>
+
+                        <input type="hidden" name="equipment_id" id="id_equipment_id" value="{{ form.equipment_id.value }}">
+                        <input type="hidden" name="equipment_code" id="id_equipment" value="{{ form.equipment_code.value }}">
+
+                        <!-- Equipment Selection Area -->
+                        <div class="equipment-selection-area" id="equipmentSelectionArea">
+                            
+                            <!-- Quick Search Bar -->
+                            <div class="equipment-quick-search" id="equipmentQuickSearch">
+                                <div class="equipment-search-input-wrapper">
+                                    <i class="bi bi-search"></i>
+                                    <input type="text" id="equipmentInlineSearch" class="equipment-search-input" placeholder="พิมพ์รหัสหรือชื่อเครื่องมือเพื่อค้นหา...">
+                                    <button type="button" class="equipment-search-clear" id="inlineSearchClear" style="display: none;">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                                <div class="equipment-search-results" id="inlineSearchResults" style="display: none;"></div>
+                            </div>
+
+                            <!-- Quick Actions -->
+                            <div class="equipment-quick-actions">
+                                <button type="button" class="equipment-quick-btn pm-cal" id="pmCalEquipmentCard" style="display:none;">
+                                    <div class="equipment-quick-btn-icon">
+                                        <i class="bi bi-calendar-exclamation"></i>
+                                    </div>
+                                    <div class="equipment-quick-btn-content">
+                                        <span class="equipment-quick-btn-title">เครื่องมือครบกำหนดบำรุงรักษา / สอบเทียบ</span>
+                                        <span class="equipment-quick-btn-badge" id="pmCalBadge">
+                                            <span id="pmCalCount">-</span>
+                                        </span>
+                                    </div>
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                                
+                                <button type="button" class="equipment-quick-btn all" id="allEquipmentCard">
+                                    <div class="equipment-quick-btn-icon">
+                                        <i class="bi bi-grid-3x3-gap"></i>
+                                    </div>
+                                    <div class="equipment-quick-btn-content">
+                                        <span class="equipment-quick-btn-title">เรียกดูเครื่องมือในทะเบียน</span>
+                                        <span class="equipment-quick-btn-subtitle">สำหรับเครื่องมือที่ขึ้นทะเบียนแล้ว</span>
+                                    </div>
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+
+                                <button type="button" class="equipment-quick-btn no-code" id="noEquipmentBtn">
+                                    <div class="equipment-quick-btn-icon">
+                                        <i class="bi bi-question-circle"></i>
+                                    </div>
+                                    <div class="equipment-quick-btn-content">
+                                        <span class="equipment-quick-btn-title">ไม่มีรหัสเครื่องมือ</span>
+                                        <span class="equipment-quick-btn-subtitle">กรอกข้อมูลเอง</span>
+                                    </div>
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Selected Equipment Display -->
+                        <div class="equipment-selected-card" id="equipmentSelectedCard" style="display: none;">
+                            <div class="equipment-selected-header">
+                                <div class="equipment-selected-badge">
+                                    <i class="bi bi-patch-check-fill"></i>
+                                    เลือกเครื่องมือแล้ว
+                                </div>
+                                <button type="button" class="equipment-change-btn" id="changeEquipmentBtn">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                    เปลี่ยนเครื่องมือ
+                                </button>
+                            </div>
+                            
+                            <div class="equipment-selected-main">
+                                <div class="equipment-selected-image" id="equipmentImagePreview" style="display: none;">
+                                    <img src="" alt="" id="equipment_image_tag">
+                                </div>
+                                <div class="equipment-selected-info">
+                                    <div class="equipment-selected-code" id="equipment_id">-</div>
+                                    <div class="equipment-selected-name" id="equipment_name">-</div>
+                                    <div class="equipment-selected-name-en" id="equipment_name_en" style="font-size:0.8125rem; color:#64748b; margin-top:0.25rem; font-weight:500;">&nbsp;</div>
+                                </div>
+                            </div>
+
+                            <div class="equipment-selected-details">
+                                <div class="equipment-detail-cell">
+                                    <span class="detail-label"><i class="bi bi-award"></i> ยี่ห้อ</span>
+                                    <span class="detail-value" id="equipment_brand">-</span>
+                                </div>
+                                <div class="equipment-detail-cell">
+                                    <span class="detail-label"><i class="bi bi-cpu"></i> รุ่น</span>
+                                    <span class="detail-value" id="equipment_model">-</span>
+                                </div>
+                                <div class="equipment-detail-cell">
+                                    <span class="detail-label"><i class="bi bi-upc-scan"></i> S/N</span>
+                                    <span class="detail-value" id="equipment_sn">-</span>
+                                </div>
+                                <div class="equipment-detail-cell">
+                                    <span class="detail-label"><i class="bi bi-hash"></i> เลขครุภัณฑ์</span>
+                                    <span class="detail-value" id="equipment_gov">-</span>
+                                </div>
+                                <div class="equipment-detail-cell">
+                                    <span class="detail-label"><i class="bi bi-geo-alt"></i> ผู้ใช้งาน</span>
+                                    <span class="detail-value" id="equipment_user_customer">-</span>
+                                </div>
+                                <div class="equipment-detail-cell">
+                                    <span class="detail-label"><i class="bi bi-person-badge"></i> เจ้าของ</span>
+                                    <span class="detail-value" id="equipment_owner_customer">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manual Entry (when no code) -->
+                        <div class="equipment-manual-entry" id="equipmentNameWrapper" style="display: none;">
+                            <div class="equipment-manual-header">
+                                <i class="bi bi-pencil-square"></i>
+                                <span>กรอกข้อมูลเครื่องมือด้วยตนเอง</span>
+                            </div>
+                            <div class="equipment-manual-form">
+                                <div class="equipment-manual-row">
+                                    <label class="equipment-manual-label">ชื่อเครื่องมือ <span class="required">*</span></label>
+                                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                                        <input type="text" id="id_equipment_name_text" name="equipment_name_text" class="sr-input" placeholder="โปรดเลือกจากรายการ" readonly>
+                                        <button type="button" class="btn btn-outline-secondary" id="openEquipmentNameModal">เลือกจากรายการ</button>
+                                    </div>
+                                </div>
+                                <div class="equipment-manual-grid">
+                                    <div class="equipment-manual-row">
+                                        <label class="equipment-manual-label">ยี่ห้อ</label>
+                                        <input type="text" id="id_equipment_brand_text" name="equipment_brand_text" class="sr-input" placeholder="เช่น OMRON">
+                                    </div>
+                                    <div class="equipment-manual-row">
+                                        <label class="equipment-manual-label">รุ่น</label>
+                                        <input type="text" id="id_equipment_model_text" name="equipment_model_text" class="sr-input" placeholder="เช่น HEM-7121">
+                                    </div>
+                                </div>
+                                <div class="equipment-manual-row">
+                                    <label class="equipment-manual-label">หมายเลข S/N</label>
+                                    <input type="text" id="id_equipment_sn_text" name="equipment_sn_text" class="sr-input" placeholder="หมายเลขซีเรียล (ถ้ามี)">
+                                </div>
+                                <div class="equipment-manual-row">
+                                    <label class="equipment-manual-label">เลขครุภัณฑ์</label>
+                                    <input type="text" id="id_equipment_gov_text" name="equipment_gov_number_text" class="sr-input" placeholder="หมายเลขครุภัณฑ์ (ถ้ามี)">
+                                </div>
+                             </div>
+                            <button type="button" class="equipment-manual-back" id="backToSearchBtn">
+                                <i class="bi bi-arrow-left"></i>
+                                กลับไปค้นหาเครื่องมือ
+                            </button>
+                        </div>
+
+                        <div class="sr-nav">
+                            <span></span>
+                            <button type="button" class="btn-nav btn-nav-next" id="nextTo2">
+                                <span>ถัดไป</span>
+                                <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Work Type & Description -->
+                    <div class="sr-section" id="sr-section-2" data-step="2" style="display:none;">
+                        <div class="sr-section-header">
+                            <div class="sr-section-icon">
+                                <i class="bi bi-list-check"></i>
+                            </div>
+                            <div>
+                                <h3 class="sr-section-title">ประเภทงานและรายละเอียด</h3>
+                                <p class="sr-section-subtitle">เลือกประเภทและอธิบายปัญหาหรือความต้องการ</p>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="title" id="id_title">
+
+                        <div class="worktype-container">
+                            <label class="sr-label">
+                                <i class="bi bi-tags"></i>
+                                ความต้องการ / ประเภทงาน
+                                <span class="required">*</span>
+                            </label>
+                            <div class="worktype-pills" id="workorderTypePills">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                            <div class="selected-types-display" id="selectedTypesDisplay" style="display: none;">
+                                <span style="color: #9ca3af; font-style: italic;">ยังไม่ได้เลือกประเภทงาน</span>
+                            </div>
+                        </div>
+
+                        <div class="sr-form-group" style="margin-top: 1.5rem;">
+                            <label class="sr-label" for="id_sr_description">
+                                <i class="bi bi-chat-left-text"></i>
+                                รายละเอียด / ปัญหาที่พบ
+                            </label>
+                            <textarea id="id_sr_description" name="description" class="sr-input" placeholder="อธิบายอาการ ปัญหา หรือความต้องการให้ชัดเจน..."></textarea>
+                        </div>
+
+                        <!-- Desired Service Date -->
+                        <div class="sr-form-group">
+                            <label class="sr-label" for="id_desired_service_date">
+                                <i class="bi bi-calendar-event"></i>
+                                วันที่ต้องการเข้ารับบริการ / นัดหมาย
+                            </label>
+                            <div style="display:flex; gap:0.5rem; align-items:center;">
+                        <input type="hidden" name="desired_service_date" id="id_desired_service_date" value="">
+                        <input type="hidden" name="appointment_id" id="id_appointment_id" value="">
+                        <button type="button" id="checkAvailableDatesBtn" class="btn-equipment btn-equipment-secondary" title="ตรวจสอบวันที่ที่ช่างว่าง">
+                            <i class="bi bi-search"></i>
+                            เลือกวันที่
+                        </button>
+                        <div id="selectedDateDisplay" style="display:none; align-items:center; gap:0.5rem; flex:1;">
+                            <span id="selectedDateLabel" style="font-size:0.9rem; font-weight:600; color:#047857;"></span>
+                            <button type="button" id="clearDateBtn" style="background:none; border:none; color:#94a3b8; cursor:pointer; padding:0.2rem;" title="เลือกวันใหม่">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </div>
+                            </div>
+                            <div style="font-size: 0.8125rem; color: #64748b; margin-top: 0.25rem; display: none;">
+                                เลือกจากวันที่ที่มีช่างปฏิบัติการได้
+                            </div>
+                            <div id="availableDatesContainer" style="margin-top:0.5rem; display:none;">
+                                <div id="availableDatesStatus" style="font-size:0.875rem; color:#64748b; margin-bottom:0.5rem;"></div>
+                                <div id="availableDatesList" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
+                            </div>
+                        </div>
+
+                        <!-- File Upload -->
+                        <div class="sr-form-group">
+                            <label class="sr-label">
+                                <i class="bi bi-paperclip"></i>
+                                ไฟล์แนบ (ถ้ามี)
+                            </label>
+                            <div class="file-upload-zone" id="fileUploadZone">
+                                <div class="file-upload-icon">
+                                    <i class="bi bi-cloud-arrow-up"></i>
+                                </div>
+                                <div style="font-weight: 500; color: #374151;">คลิกหรือลากไฟล์มาวางที่นี่</div>
+                                <div style="font-size: 0.875rem; color: #9ca3af; margin-top: 0.1rem;">รองรับ: รูปภาพ, PDF, Word, Excel (สูงสุด 10MB)</div>
+                                <input type="file" id="id_attachment" name="attachment" style="display: none;">
+                            </div>
+                            <div class="file-preview" id="filePreview" style="display: none;">
+                                <div class="file-preview-icon">
+                                    <i class="bi bi-file-earmark"></i>
+                                </div>
+                                <div class="file-preview-info">
+                                    <div class="file-preview-name" id="fileName"></div>
+                                    <div class="file-preview-size" id="fileSize"></div>
+                                </div>
+                                <div class="file-preview-remove" id="removeFile">
+                                    <i class="bi bi-x-lg"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sr-nav">
+                            <button type="button" class="btn-nav btn-nav-prev" id="prevTo1">
+                                <i class="bi bi-arrow-left"></i>
+                                <span>ย้อนกลับ</span>
+                            </button>
+                            <button type="button" class="btn-nav btn-nav-next" id="nextTo3">
+                                <span>ถัดไป</span>
+                                <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Contact Info -->
+                    <div class="sr-section" id="sr-section-3" data-step="3" style="display:none;">
+                        <div class="sr-section-header">
+                            <div class="sr-section-icon success">
+                                <i class="bi bi-person-badge"></i>
+                            </div>
+                            <div>
+                                <h3 class="sr-section-title">ข้อมูลผู้แจ้ง</h3>
+                                <p class="sr-section-subtitle">เพื่อให้เราติดต่อกลับได้</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-grid">
+                            <div class="sr-form-group">
+                                <label class="sr-label" for="id_customer_name">
+                                    <i class="bi bi-person"></i>
+                                    ชื่อผู้แจ้ง
+                                    <span class="required">*</span>
+                                </label>
+                                <input type="text" id="id_customer_name" name="customer_name" class="sr-input" required 
+                                       value="{% if request.user.is_authenticated %}{{ request.user.get_full_name|default:request.user.username }}{% endif %}">
+                            </div>
+
+                            <div class="sr-form-group">
+                                <label class="sr-label" for="id_customer_position">
+                                    <i class="bi bi-briefcase"></i>
+                                    ตำแหน่งงาน
+                                    <span class="required">*</span>
+                                </label>
+                                <input type="text" id="id_customer_position" name="customer_position" class="sr-input" required
+                                       value="{% if profile %}{{ profile.position|default:'' }}{% endif %}">
+                            </div>
+
+                            <div class="sr-form-group">
+                                <label class="sr-label" for="id_customer_telephone">
+                                    <i class="bi bi-telephone"></i>
+                                    โทรศัพท์
+                                    <span class="required">*</span>
+                                </label>
+                                <input type="text" id="id_customer_telephone" name="customer_telephone" class="sr-input" required
+                                       value="{% if profile %}{{ profile.telephone|default:'' }}{% endif %}" placeholder="0xx-xxx-xxxx">
+                            </div>
+
+                            <div class="sr-form-group">
+                                <label class="sr-label" for="id_customer_email">
+                                    <i class="bi bi-envelope"></i>
+                                    อีเมล
+                                    <span class="required">*</span>
+                                </label>
+                                <input type="email" id="id_customer_email" name="customer_email" class="sr-input" required
+                                       value="{% if request.user.is_authenticated %}{{ request.user.email }}{% endif %}" placeholder="email@example.com">
+                            </div>
+
+                            <div class="sr-form-group" style="grid-column: 1 / -1;">
+                                <label class="sr-label" for="id_customer_department">
+                                    <i class="bi bi-building"></i>
+                                    หน่วยงาน
+                                    <span class="required">*</span>
+                                </label>
+                                <input type="text" id="id_customer_department" name="customer_department" class="sr-input" required
+                                       value="{% if profile %}{{ profile.department|default:'' }}{% endif %}">
+                                {% if profile.department and master_customers %}
+                                    {% for item in master_customers %}
+                                        {% if item.label == profile.department and item.ancestors %}
+                                            <div class="dept-hierarchy">
+                                                <i class="bi bi-diagram-3"></i>
+                                                <span>{{ item.ancestors }}</span>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="sr-form-group" style="margin-top: 3rem;">
+                            <label class="sr-label" style="display:flex; align-items:center; gap:0.5rem;">
+                                <input type="checkbox" id="id_accept_terms" name="accept_terms" style="width:18px; height:18px;">
+                                <span>ฉันได้อ่านและยอมรับเงื่อนไขการเข้ารับบริการ</span>
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#serviceTermsModal" style="margin-left:auto; font-size:0.875rem; color:#6366f1; text-decoration:none;">ดูรายละเอียด</a>
+                            </label>
+                        </div>
+                        <div class="sr-nav">
+                            <button type="button" class="btn-nav btn-nav-prev" id="prevTo2">
+                                <i class="bi bi-arrow-left"></i>
+                                <span>ย้อนกลับ</span>
+                            </button>
+                            <button type="submit" class="btn-nav btn-nav-submit" id="submitBtn">
+                                <i class="bi bi-send-fill"></i>
+                                <span>ส่งคำขอรับบริการ</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Equipment Modal - Redesigned -->
+<div class="modal fade equipment-modal" id="equipmentModal" tabindex="-1" aria-labelledby="equipmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="equipmentModalLabel">
+                    <i class="bi bi-cpu-fill"></i>
+                    เลือกเครื่องมือ
+                </h5>
+                <div style="margin-left:auto; display:flex; gap:0.5rem; align-items:center;">
+                    <div class="btn-group" role="group" aria-label="กรองเครื่องมือ">
+                        <button type="button" class="btn btn-sm btn-light" id="filterAllBtn">ทั้งหมด</button>
+                        <button type="button" class="btn btn-sm btn-outline-warning text-light" id="filterDueBtn">ครบกำหนด
+                            <span id="modalPmCalCount" class="badge bg-danger" style="margin-left:0.4rem;">-</span>
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="equipment-search-wrapper">
+                    <i class="bi bi-search"></i>
+                    <input type="search" id="equipmentSearch" placeholder="พิมพ์เพื่อค้นหาด่วน">
+                </div>
+                <div class="equipment-list" id="equipmentResults">
+                    <div style="text-align: center; padding: 2rem; color: #94a3b8;">
+                        <i class="bi bi-box-seam" style="font-size: 2rem; opacity: 0.4; display: block; margin-bottom: 0.5rem;"></i>
+                        <span style="font-size: 0.8125rem;">กำลังโหลดข้อมูล...</span>
+                    </div>
+                </div>
+                <div class="equipment-count" id="equipmentCount"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">
+                    ยกเลิก
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" id="confirmEquipmentBtn" style="background: var(--primary-gradient); border: none;">
+                    <i class="bi bi-check2"></i> ยืนยัน
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Service Terms Modal -->
+<div class="modal fade equipment-modal" id="serviceTermsModal" tabindex="-1" aria-labelledby="serviceTermsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="serviceTermsModalLabel">
+                    <i class="bi bi-shield-check"></i>
+                    เงื่อนไขการเข้ารับบริการ
+                </h5>
+                {% if request.user.is_superuser %}
+                <a href="{% url 'service_terms_edit' %}" class="btn btn-outline-light btn-sm" style="margin-right:0.5rem;" target="_blank">
+                    <i class="bi bi-pencil-square"></i> แก้ไขเงื่อนไข
+                </a>
+                {% endif %}
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="serviceTermsContent" style="color:#475569; font-size:0.95rem; line-height:1.7;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">ปิด</button>
+                <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal" style="background: var(--primary-gradient); border: none;">
+                    <i class="bi bi-check2"></i> รับทราบเงื่อนไข
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+<!-- Equipment Name Modal (select from master data) -->
+<div class="modal fade" id="equipmentNameModal" tabindex="-1" aria-labelledby="equipmentNameModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="equipmentNameModalLabel"><i class="bi bi-list-check"></i> เลือกชื่อเครื่องมือ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="equipment-search-wrapper" style="margin-bottom:0.75rem;">
+                    <i class="bi bi-search"></i>
+                    <input type="search" id="equipmentNameSearch" placeholder="ค้นหาชื่อเครื่องมือ..." style="width:100%; padding:0.5rem 0.75rem 0.5rem 2.5rem; border:2px solid #e2e8f0; border-radius:8px;">
+                </div>
+                <div id="equipmentNameResults" style="max-height:340px; overflow:auto; padding:0.25rem;">
+                    <div style="text-align:center; padding:2rem; color:#94a3b8;"><i class="bi bi-hourglass-split"></i> กำลังโหลด...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elements
+    const form = document.getElementById('serviceRequestForm');
+    const hiddenEquipment = document.getElementById('id_equipment_id');
+    const hiddenTitle = document.getElementById('id_title');
+    const equipmentNameWrapper = document.getElementById('equipmentNameWrapper');
+    const equipmentNameInput = document.getElementById('id_equipment_name_text');
+    const noEquipmentBtn = document.getElementById('noEquipmentBtn');
+    const confirmBtn = document.getElementById('confirmEquipmentBtn');
+    const equipmentModal = document.getElementById('equipmentModal');
+    const equipmentSearch = document.getElementById('equipmentSearch');
+    const equipmentResults = document.getElementById('equipmentResults');
+    const selectedTypesDisplay = document.getElementById('selectedTypesDisplay');
+    const workorderTypePills = document.getElementById('workorderTypePills');
+    const fileUploadZone = document.getElementById('fileUploadZone');
+    const fileInput = document.getElementById('id_attachment');
+    const filePreview = document.getElementById('filePreview');
+    const submitBtn = document.getElementById('submitBtn');
+    const acceptTermsCheckbox = document.getElementById('id_accept_terms');
+    const steps = document.querySelectorAll('.sr-step');
+    const stepLines = document.querySelectorAll('.sr-step-line');
+    const desiredDateInput = document.getElementById('id_desired_service_date');
+    const appointmentIdInput = document.getElementById('id_appointment_id');
+    const checkAvailableDatesBtn = document.getElementById('checkAvailableDatesBtn');
+    const availableDatesContainer = document.getElementById('availableDatesContainer');
+    const availableDatesStatus = document.getElementById('availableDatesStatus');
+    const availableDatesList = document.getElementById('availableDatesList');
+    const selectedDateDisplay = document.getElementById('selectedDateDisplay');
+    const selectedDateLabel = document.getElementById('selectedDateLabel');
+    const clearDateBtn = document.getElementById('clearDateBtn');
+
+    let currentAppointmentId = null;  // tracks the pre-created appointment
+
+    let selectedEquipment = null;
+    let selectedTypes = [];
+    let allEquipments = [];
+    let bootstrapModal = null;
+    let currentModalFilter = 'all';
+    // Equipment-name (manual/no-code) modal selector
+    const openEquipmentNameModalBtn = document.getElementById('openEquipmentNameModal');
+    const equipmentNameModalEl = document.getElementById('equipmentNameModal');
+    const equipmentNameSearch = document.getElementById('equipmentNameSearch');
+    const equipmentNameResults = document.getElementById('equipmentNameResults');
+    let masterEquipmentNames = [];
+    let equipmentNameBootstrap = null;
+    if (equipmentNameModalEl && typeof bootstrap !== 'undefined') {
+        try { equipmentNameBootstrap = new bootstrap.Modal(equipmentNameModalEl); } catch (e) { equipmentNameBootstrap = null; }
+    }
+
+    function renderEquipmentNameResults(items) {
+        if (!equipmentNameResults) return;
+        if (!items || items.length === 0) {
+            equipmentNameResults.innerHTML = '<div style="padding:1rem;color:#94a3b8;">ไม่พบรายการ</div>';
+            return;
+        }
+        equipmentNameResults.innerHTML = items.map(it => `
+            <div class="equipment-name-item" data-label="${escapeHtml(it.label||it.name||'')}" style="padding:0.5rem; border-bottom:1px solid #eef2ff; cursor:pointer;">
+                <div style="font-weight:600;">${escapeHtml(it.label||it.name||'')}</div>
+                ${it.description ? `<div style="font-size:0.8rem;color:#64748b;">${escapeHtml(it.description)}</div>` : ''}
+            </div>
+        `).join('');
+
+        equipmentNameResults.querySelectorAll('.equipment-name-item').forEach(el => {
+            el.addEventListener('click', () => {
+                const label = el.dataset.label || '';
+                if (equipmentNameInput) equipmentNameInput.value = label;
+                if (equipmentNameBootstrap) equipmentNameBootstrap.hide();
+                updateProgress();
+            });
+        });
+    }
+
+    function loadEquipmentNames(force = false) {
+        if (masterEquipmentNames.length > 0 && !force) {
+            renderEquipmentNameResults(masterEquipmentNames);
+            return Promise.resolve(masterEquipmentNames);
+        }
+        if (!equipmentNameResults) return Promise.resolve([]);
+        equipmentNameResults.innerHTML = '<div style="text-align:center; padding:1rem; color:#94a3b8;"><i class="bi bi-hourglass-split"></i> กำลังโหลด...</div>';
+
+        // Try several possible master endpoints until one returns results
+        const endpoints = [
+            '/api/master/items?category=equipments',
+            '/api/master/category/equipments',
+            '/api/master/items?category=equipment_name',
+            '/api/master/items?category=equipment'
+        ];
+
+        const tryFetch = (idx) => {
+            if (idx >= endpoints.length) {
+                equipmentNameResults.innerHTML = '<div style="padding:1rem;color:#ef4444;">ไม่พบรายการ</div>';
+                masterEquipmentNames = [];
+                return Promise.resolve([]);
+            }
+            return fetch(endpoints[idx])
+                .then(r => {
+                    if (!r.ok) throw new Error('bad_status');
+                    return r.json();
+                })
+                .then(data => {
+                    const arr = (data && data.results) ? data.results : (Array.isArray(data) ? data : []);
+                    if (Array.isArray(arr) && arr.length > 0) {
+                        masterEquipmentNames = arr.map(i => ({ label: i.label || i.name || i.value || '', description: i.description || (i.meta && i.meta.description) || '' }));
+                        renderEquipmentNameResults(masterEquipmentNames);
+                        return masterEquipmentNames;
+                    }
+                    return tryFetch(idx + 1);
+                })
+                .catch(() => tryFetch(idx + 1));
+        };
+
+        return tryFetch(0);
+    }
+
+    if (openEquipmentNameModalBtn) {
+        openEquipmentNameModalBtn.addEventListener('click', () => {
+            loadEquipmentNames().then(() => {
+                if (equipmentNameBootstrap) equipmentNameBootstrap.show();
+            });
+        });
+    }
+
+    if (equipmentNameSearch) {
+        equipmentNameSearch.addEventListener('input', (e) => {
+            const q = (e.target.value || '').trim().toLowerCase();
+            if (!q) return renderEquipmentNameResults(masterEquipmentNames);
+            renderEquipmentNameResults(masterEquipmentNames.filter(i => (i.label||'').toLowerCase().includes(q) || (i.description||'').toLowerCase().includes(q)));
+        });
+    }
+    // Helper: get equipment type for capacity lookup
+    function getSelectedEquipmentType() {
+        if (selectedEquipment && selectedEquipment.equipment_type) {
+            return String(selectedEquipment.equipment_type).trim();
+        }
+        return '';
+    }
+
+    // Fetch available dates using SMART API that considers:
+    // 1. Equipment type → matching technician skills
+    // 2. Technician availability (working/overtime)
+    // 3. Configured capacity limits
+    // 4. Existing appointments
+    // 5. Holidays and weekends
+    async function fetchAvailableDates(equipmentType, startDate, days = 21) {
+        try {
+            const url = new URL('/api/appointment/available-dates/', window.location.origin);
+            url.searchParams.set('equipment_type', equipmentType);
+            url.searchParams.set('start_date', startDate);
+            url.searchParams.set('days', days);
+            
+            const resp = await fetch(url.toString());
+            if (!resp.ok) return [];
+            
+            const data = await resp.json();
+            if (data && data.success && data.dates) {
+                return data.dates;
+            }
+            return [];
+        } catch (e) {
+            console.error('Error fetching available dates:', e);
+            return [];
+        }
+    }
+
+    // ── helper: get CSRF token ────────────────────────────────────────────────
+    function getCsrfToken() {
+        const el = document.querySelector('[name=csrfmiddlewaretoken]');
+        return el ? el.value : '';
+    }
+
+    // ── helper: cancel a pending auto-assigned appointment ────────────────────
+    async function cancelPendingAppointment(id) {
+        if (!id) return;
+        try {
+            await fetch('/api/maintenance/appointments/auto-assign/', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                body: JSON.stringify({ appointment_id: id }),
+            });
+        } catch (e) { /* best-effort */ }
+    }
+
+    function renderAvailableDates(dates, techCount) {
+        availableDatesList.innerHTML = '';
+        if (!dates || !dates.length) {
+            availableDatesStatus.innerHTML = '<span style="color:#ef4444;">ไม่พบวันที่ว่างในช่วง 3 สัปดาห์ข้างหน้า</span>';
+            return;
+        }
+        
+        const techInfo = techCount ? `<span style="color:#10b981;">(พบช่าง ${techCount} คนที่มีทักษะตรง)</span>` : '';
+        availableDatesStatus.innerHTML = `พบวันที่ว่าง <strong>${dates.length}</strong> วัน ${techInfo} — <span style="color:#6366f1; font-weight:600;">คลิกเลือกวันที่ต้องการ</span>`;
+        
+        dates.forEach(item => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'worktype-pill';
+            btn.dataset.date = item.date;
+            btn.dataset.remaining = item.remaining;
+            btn.style.cssText = 'border-radius:8px; display:flex; flex-direction:column; align-items:center; padding:0.5rem 0.75rem; min-width:100px; transition: all 0.2s;';
+            
+            // Format date display
+            const dateObj = new Date(item.date);
+            const dayName = item.weekday || ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'][dateObj.getDay()];
+            const dayNum = dateObj.getDate();
+            const monthNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            const monthName = monthNames[dateObj.getMonth()];
+
+            function setIdleUI(remaining) {
+                btn.innerHTML = `
+                    <span style="font-size:0.7rem; color:#64748b;">${dayName}</span>
+                    <span style="font-size:1rem; font-weight:600;">${dayNum} ${monthName}</span>
+                    <span style="font-size:0.65rem; color:#10b981;">ว่าง ${remaining} งาน</span>
+                `;
+            }
+            function setLoadingUI() {
+                btn.innerHTML = `
+                    <span style="font-size:0.7rem; color:#64748b;">${dayName}</span>
+                    <span style="font-size:1rem; font-weight:600;">${dayNum} ${monthName}</span>
+                    <span style="font-size:0.65rem; color:#6366f1;">⏳ กำลังจ่ายงาน…</span>
+                `;
+                btn.disabled = true;
+            }
+            function setAssignedUI(techName, remaining) {
+                btn.innerHTML = `
+                    <span style="font-size:0.7rem; color:#064e3b;">${dayName}</span>
+                    <span style="font-size:1rem; font-weight:700; color:#047857;">${dayNum} ${monthName}</span>
+                    <span style="font-size:0.65rem; color:#059669; font-weight:600;">✓ ${escapeHtml(techName)}</span>
+                    <span style="font-size:0.6rem; color:#94a3b8;">ว่าง ${remaining} งาน</span>
+                `;
+                btn.style.background = 'linear-gradient(135deg,#d1fae5,#a7f3d0)';
+                btn.style.borderColor = '#10b981';
+                btn.disabled = false;
+            }
+            function setErrorUI(errMsg) {
+                btn.innerHTML = `
+                    <span style="font-size:0.7rem; color:#64748b;">${dayName}</span>
+                    <span style="font-size:1rem; font-weight:600;">${dayNum} ${monthName}</span>
+                    <span style="font-size:0.6rem; color:#ef4444;">${escapeHtml(errMsg)}</span>
+                `;
+                btn.style.background = '#fef2f2';
+                btn.style.borderColor = '#fca5a5';
+                btn.disabled = false;
+            }
+
+            setIdleUI(item.remaining);
+            btn.title = `${item.date}\nช่างว่าง: ${item.available_technicians} คน\nรับได้: ${item.remaining}/${item.total_capacity} งาน`;
+            
+            btn.addEventListener('click', async () => {
+                if (btn.disabled) return;
+
+                // Un-highlight all buttons
+                availableDatesList.querySelectorAll('.worktype-pill').forEach(b => {
+                    b.classList.remove('selected');
+                    b.style.background = '';
+                    b.style.borderColor = '';
+                });
+                btn.classList.add('selected');
+
+                setLoadingUI();
+
+                const eqId = selectedEquipment ? (selectedEquipment.id || selectedEquipment.code) : '';
+                const eqType = getSelectedEquipmentType();
+
+                try {
+                    const resp = await fetch('/api/maintenance/appointments/auto-assign/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCsrfToken(),
+                        },
+                        body: JSON.stringify({
+                            equipment_id: eqId,
+                            equipment_type: eqType,
+                            date: item.date,
+                            previous_appointment_id: currentAppointmentId,
+                        }),
+                    });
+
+                    const data = await resp.json();
+
+                    if (data.success) {
+                        currentAppointmentId = data.appointment_id;
+                        if (appointmentIdInput) appointmentIdInput.value = data.appointment_id;
+                        if (desiredDateInput) desiredDateInput.value = item.date;
+
+                        setAssignedUI(data.technician_name, data.remaining);
+
+                        // Update selected-date display above the date picker button
+                        if (selectedDateDisplay && selectedDateLabel) {
+                            selectedDateLabel.textContent = `${dayNum} ${monthName} — มอบหมายให้: ${data.technician_name}`;
+                            selectedDateDisplay.style.display = 'flex';
+                            checkAvailableDatesBtn.style.display = 'none';
+                        }
+
+                        // Update other date buttons' remaining count
+                        availableDatesList.querySelectorAll('.worktype-pill').forEach(b => {
+                            if (b !== btn && !b.classList.contains('selected')) {
+                                const bRemaining = parseInt(b.dataset.remaining || '0', 10) || 0;
+                                const newR = Math.max(0, bRemaining - 1);
+                                const bDate = b.dataset.date || '';
+                                const bDateObj = bDate ? new Date(bDate) : null;
+                                const bDay = bDateObj ? bDateObj.getDate() : '';
+                                const bMonth = bDateObj ? monthNames[bDateObj.getMonth()] : '';
+                                const bDayName = bDateObj ? ['อา','จ','อ','พ','พฤ','ศ','ส'][bDateObj.getDay()] : '';
+                                b.innerHTML = `
+                                    <span style="font-size:0.7rem; color:#64748b;">${bDayName}</span>
+                                    <span style="font-size:1rem; font-weight:600;">${bDay} ${bMonth}</span>
+                                    <span style="font-size:0.65rem; color:#10b981;">ว่าง ${newR} งาน</span>
+                                `;
+                                b.dataset.remaining = newR;
+                            }
+                        });
+
+                        showToast('success', 'จ่ายงานสำเร็จ', `มอบหมายให้ ${data.technician_name} — ${dayNum} ${monthName}`);
+                    } else {
+                        setErrorUI(data.error || 'ไม่สามารถจ่ายงานได้');
+                        showToast('error', 'ไม่สามารถจ่ายงานได้', data.error || 'กรุณาลองวันอื่น');
+                    }
+                } catch (e) {
+                    setIdleUI(item.remaining);
+                    btn.disabled = false;
+                    showToast('error', 'เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+                }
+
+                updateProgress();
+            });
+            availableDatesList.appendChild(btn);
+        });
+    }
+
+    async function checkAvailableDates() {
+        const eqType = getSelectedEquipmentType();
+        const eqId = selectedEquipment ? (selectedEquipment.id || selectedEquipment.code) : '';
+        
+        if (!eqType && !eqId) {
+            availableDatesContainer.style.display = 'block';
+            availableDatesStatus.innerHTML = '<i class="bi bi-info-circle"></i> กรุณาเลือกเครื่องมือก่อน เพื่อดูวันที่ที่ช่างว่างตามประเภทเครื่องมือ';
+            availableDatesList.innerHTML = '';
+            return;
+        }
+        
+        availableDatesContainer.style.display = 'block';
+        availableDatesStatus.innerHTML = '<i class="bi bi-hourglass-split"></i> กำลังตรวจสอบวันที่ที่ช่างว่าง…';
+        availableDatesList.innerHTML = '';
+        
+        const today = new Date();
+        const startIso = today.toISOString().slice(0, 10);
+        
+        // Use smart API
+        try {
+            const url = new URL('/api/appointment/available-dates/', window.location.origin);
+            if (eqType) url.searchParams.set('equipment_type', eqType);
+            if (eqId) url.searchParams.set('equipment_id', eqId);
+            url.searchParams.set('start_date', startIso);
+            url.searchParams.set('days', '21');
+            
+            const resp = await fetch(url.toString());
+            const data = await resp.json();
+            
+            if (data.success) {
+                if (data.dates && data.dates.length > 0) {
+                    renderAvailableDates(data.dates, data.technicians_with_skill);
+                } else if (data.technicians_with_skill === 0) {
+                    availableDatesStatus.innerHTML = `<span style="color:#f59e0b;"><i class="bi bi-exclamation-triangle"></i> ไม่พบช่างที่มีทักษะตรงกับประเภท "${eqType || 'ไม่ระบุ'}"</span>`;
+                } else {
+                    availableDatesStatus.innerHTML = '<span style="color:#ef4444;">ไม่พบวันที่ว่างในช่วง 3 สัปดาห์ข้างหน้า</span>';
+                }
+            } else {
+                availableDatesStatus.innerHTML = `<span style="color:#ef4444;"><i class="bi bi-x-circle"></i> ${data.error || 'เกิดข้อผิดพลาด'}</span>`;
+            }
+        } catch (e) {
+            console.error('Error:', e);
+            availableDatesStatus.innerHTML = '<span style="color:#ef4444;">เกิดข้อผิดพลาดในการเชื่อมต่อ</span>';
+        }
+    }
+
+    if (checkAvailableDatesBtn) {
+        checkAvailableDatesBtn.addEventListener('click', checkAvailableDates);
+    }
+
+    // ── Clear date: delete pre-created appointment and reset UI ─────────────
+    if (clearDateBtn) {
+        clearDateBtn.addEventListener('click', async () => {
+            if (currentAppointmentId) {
+                try {
+                    await fetch('/api/maintenance/appointments/auto-assign/', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                        body: JSON.stringify({ appointment_id: currentAppointmentId }),
+                    });
+                } catch (e) { /* best-effort */ }
+                currentAppointmentId = null;
+            }
+            if (appointmentIdInput) appointmentIdInput.value = '';
+            if (desiredDateInput) desiredDateInput.value = '';
+            if (selectedDateDisplay) selectedDateDisplay.style.display = 'none';
+            if (checkAvailableDatesBtn) checkAvailableDatesBtn.style.display = '';
+            availableDatesContainer.style.display = 'none';
+            availableDatesList.innerHTML = '';
+            updateProgress();
+        });
+    }
+
+    const masterCustomersMap = {};
+    {% if master_customers %}
+        {% for item in master_customers %}
+            masterCustomersMap["{{ item.label|escapejs }}"] = "{{ item.ancestors|default:''|escapejs }}";
+        {% endfor %}
+    {% endif %}
+
+    if (equipmentModal && typeof bootstrap !== 'undefined') {
+        bootstrapModal = new bootstrap.Modal(equipmentModal);
+    }
+
+    // Load Service Terms from MasterItem(category='service_terms') for admin-editable content
+    (function loadServiceTerms(){
+        const container = document.getElementById('serviceTermsContent');
+        if (!container) return;
+        fetch('/api/master/items?category=service_terms')
+            .then(r => r.json())
+            .then(data => {
+                const items = Array.isArray(data?.results) ? data.results : (Array.isArray(data) ? data : []);
+                if (!items || items.length === 0) return; // keep fallback content
+                const item = items[0];
+                const html = (item.meta && item.meta.html) ? String(item.meta.html) : '';
+                const text = String(item.description || item.label || '').trim();
+                if (html) {
+                    container.innerHTML = html;
+                } else if (text) {
+                    const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                    if (lines.length > 1) {
+                        container.innerHTML = '<ul style="margin:0 0 1rem 1rem; padding:0;">' + lines.map(l => '<li style="margin:0.375rem 0;">' + escapeHtml(l) + '</li>').join('') + '</ul>';
+                    } else {
+                        container.innerHTML = '<p>' + escapeHtml(text) + '</p>';
+                    }
+                }
+                // Append assets if available
+                const assets = (item.meta && item.meta.assets) ? item.meta.assets : [];
+                if (Array.isArray(assets) && assets.length) {
+                    const assetsHtml = '<div style="margin-top:0.75rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:0.75rem;">'
+                        + '<div style="display:flex; align-items:center; gap:0.5rem; color:#334155; font-weight:600;"><i class="bi bi-paperclip"></i> ไฟล์ประกอบ</div>'
+                        + '<ul style="margin:0.5rem 0 0 1rem;">'
+                        + assets.map(a => '<li><a href="' + a.url + '" target="_blank">' + escapeHtml(a.name || a.url) + '</a></li>').join('')
+                        + '</ul>'
+                        + '</div>';
+                    container.insertAdjacentHTML('beforeend', assetsHtml);
+                }
+            })
+            .catch(() => {/* ignore errors, keep fallback */});
+    })();
+
+    // Update progress steps based on form completion (3-step flow)
+    function updateProgress() {
+        // Reset all steps first
+        steps.forEach(s => s.classList.remove('completed'));
+        stepLines.forEach(l => l.classList.remove('active'));
+
+        // Step 1: Equipment
+        if (hiddenEquipment && hiddenEquipment.value && hiddenEquipment.value !== '') {
+            steps[0].classList.add('completed');
+            if (stepLines[0]) stepLines[0].classList.add('active');
+        }
+
+        // Step 2: Details
+        if (hiddenTitle && hiddenTitle.value && hiddenTitle.value.trim() !== '') {
+            steps[1].classList.add('completed');
+            if (stepLines[1]) stepLines[1].classList.add('active');
+        }
+
+        // Step 3: Contact
+        const nameEl = document.getElementById('id_customer_name');
+        const telEl = document.getElementById('id_customer_telephone');
+        const name = nameEl ? nameEl.value : '';
+        const tel = telEl ? telEl.value : '';
+        if (name && tel) {
+            steps[2].classList.add('completed');
+        }
+    }
+
+    // Load workorder types
+    fetch('/api/master/items?category=workorder_type')
+        .then(response => response.json())
+        .then(data => {
+            if (data.results && data.results.length > 0) {
+                data.results.forEach(item => {
+                    const pill = document.createElement('div');
+                    pill.className = 'worktype-pill';
+                    pill.dataset.value = item.label;
+                    pill.innerHTML = `<i class="bi bi-circle"></i> ${escapeHtml(item.label)}`;
+                    pill.addEventListener('click', () => toggleWorkType(pill, item.label));
+                    workorderTypePills.appendChild(pill);
+                });
+                // If prefill provided workorder types, select matching pills
+                if (window._prefill_workorder_types && Array.isArray(window._prefill_workorder_types)) {
+                    const pills = workorderTypePills.querySelectorAll('.worktype-pill');
+                    pills.forEach(p => {
+                        const val = p.dataset.value || p.textContent.trim();
+                        if (window._prefill_workorder_types.includes(val)) {
+                            if (!p.classList.contains('selected')) toggleWorkType(p, val);
+                        }
+                    });
+                    // clear temporary holder
+                    window._prefill_workorder_types = null;
+                }
+            }
+        })
+        .catch(console.error);
+
+    function toggleWorkType(pill, value) {
+        const idx = selectedTypes.indexOf(value);
+        if (idx === -1) {
+            selectedTypes.push(value);
+            pill.classList.add('selected');
+            pill.querySelector('i').className = 'bi bi-check-circle-fill';
+        } else {
+            selectedTypes.splice(idx, 1);
+            pill.classList.remove('selected');
+            pill.querySelector('i').className = 'bi bi-circle';
+        }
+        updateSelectedTypesDisplay();
+        updateProgress();
+    }
+
+    function updateSelectedTypesDisplay() {
+        hiddenTitle.value = selectedTypes.join(', ');
+        
+        if (selectedTypes.length === 0) {
+            selectedTypesDisplay.innerHTML = '<span style="color: #9ca3af; font-style: italic;">ยังไม่ได้เลือกประเภทงาน</span>';
+        } else {
+            selectedTypesDisplay.innerHTML = selectedTypes.map(type => `
+                <span class="selected-type-tag">
+                    <i class="bi bi-check-circle-fill"></i>
+                    ${escapeHtml(type)}
+                    <span class="remove-tag" onclick="removeWorkType('${escapeHtml(type)}')">
+                        <i class="bi bi-x"></i>
+                    </span>
+                </span>
+            `).join('');
+        }
+    }
+
+    window.removeWorkType = function(type) {
+        const idx = selectedTypes.indexOf(type);
+        if (idx !== -1) {
+            selectedTypes.splice(idx, 1);
+            const pills = workorderTypePills.querySelectorAll('.worktype-pill');
+            pills.forEach(p => {
+                if (p.dataset.value === type) {
+                    p.classList.remove('selected');
+                    p.querySelector('i').className = 'bi bi-circle';
+                }
+            });
+            updateSelectedTypesDisplay();
+            updateProgress();
+        }
+    };
+
+    // Equipment handling - New Design
+    const equipmentSelectionArea = document.getElementById('equipmentSelectionArea');
+    const equipmentSelectedCard = document.getElementById('equipmentSelectedCard');
+    const changeEquipmentBtn = document.getElementById('changeEquipmentBtn');
+    const equipmentImagePreview = document.getElementById('equipmentImagePreview');
+    const equipmentImageTag = document.getElementById('equipment_image_tag');
+    const equipmentInlineSearch = document.getElementById('equipmentInlineSearch');
+    const inlineSearchResults = document.getElementById('inlineSearchResults');
+    const inlineSearchClear = document.getElementById('inlineSearchClear');
+    const backToSearchBtn = document.getElementById('backToSearchBtn');
+    
+    function updateEquipmentDisplay() {
+        if (selectedEquipment) {
+            hiddenEquipment.value = selectedEquipment.id || selectedEquipment.code;
+            // also set the form field expected by ServiceRequestForm
+            const codeEl = document.getElementById('id_equipment');
+            if (codeEl) codeEl.value = selectedEquipment.code || selectedEquipment.id || '';
+            
+            if (selectedEquipment.code === 'ไม่มีรหัส') {
+                // Show manual entry form
+                equipmentSelectionArea.style.display = 'none';
+                equipmentSelectedCard.style.display = 'none';
+                equipmentNameWrapper.style.display = 'block';
+                equipmentNameInput.focus();
+            } else {
+                // Show selected equipment card
+                equipmentSelectionArea.style.display = 'none';
+                equipmentSelectedCard.style.display = 'block';
+                equipmentNameWrapper.style.display = 'none';
+                equipmentNameInput.value = '';
+                
+                // Populate details using consistent keys
+                const eq = selectedEquipment;
+                document.getElementById('equipment_id').textContent = eq.id || eq.code || '-';
+                document.getElementById('equipment_name').textContent = eq.name || '-';
+                const nameEnEl = document.getElementById('equipment_name_en');
+                if (nameEnEl) nameEnEl.textContent = eq.name_EN || '';
+                document.getElementById('equipment_brand').textContent = eq.equipment_brand || '-';
+                document.getElementById('equipment_model').textContent = eq.equipment_model || '-';
+                document.getElementById('equipment_sn').textContent = eq.equipment_sn || '-';
+                document.getElementById('equipment_gov').textContent = eq.equipment_gov || '-';
+
+                // small helper to avoid injecting HTML (shared for user & owner)
+                function escapeHtml(str){
+                    return String(str).replace(/[&<>\"']/g, function (m) {
+                        return ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":"&#39;"})[m];
+                    });
+                }
+
+                // Show user and its parent chain (if available in masterCustomersMap)
+                const userEl = document.getElementById('equipment_user_customer');
+                const userVal = eq.equipment_user_customer || '-';
+                const userAnc = masterCustomersMap[userVal] || '';
+                if (userAnc) {
+                    const parts = userAnc.split('→').map(s => s.trim()).filter(Boolean).reverse();
+                    const parents = parts.join(' → ');
+                    userEl.innerHTML = escapeHtml(userVal) + '<br><span class="detail-parents">' + escapeHtml(parents) + '</span>';
+                } else {
+                    userEl.textContent = userVal;
+                }
+
+                // Show owner and its parent chain (if available in masterCustomersMap)
+                const ownerEl = document.getElementById('equipment_owner_customer');
+                const ownerVal = eq.equipment_owner_customer || '-';
+                const ownerAnc = masterCustomersMap[ownerVal] || '';
+                if (ownerAnc) {
+                    // reverse ancestor chain so highest-level parent appears first
+                    const parts = ownerAnc.split('→').map(s => s.trim()).filter(Boolean).reverse();
+                    const parents = parts.join(' → ');
+                    // show Owner on first line, parents on second line
+                    ownerEl.innerHTML = escapeHtml(ownerVal) + '<br><span class="detail-parents">' + escapeHtml(parents) + '</span>';
+                } else {
+                    ownerEl.textContent = ownerVal;
+                }
+                
+                // Handle image preview
+                if (eq.equipment_image && equipmentImagePreview && equipmentImageTag) {
+                    equipmentImageTag.src = eq.equipment_image;
+                    equipmentImagePreview.style.display = 'flex';
+                } else if (equipmentImagePreview) {
+                    equipmentImagePreview.style.display = 'none';
+                }
+            }
+        } else {
+            // Show default selection area
+            if (equipmentSelectionArea) equipmentSelectionArea.style.display = 'flex';
+            if (equipmentSelectedCard) equipmentSelectedCard.style.display = 'none';
+            if (equipmentNameWrapper) equipmentNameWrapper.style.display = 'none';
+            if (hiddenEquipment) hiddenEquipment.value = '';
+            if (equipmentInlineSearch) equipmentInlineSearch.value = '';
+            if (inlineSearchResults) inlineSearchResults.style.display = 'none';
+            if (inlineSearchClear) inlineSearchClear.style.display = 'none';
+        }
+        updateProgress();
+    }
+    
+    // Inline search functionality
+    let searchTimeout = null;
+    
+    if (equipmentInlineSearch) {
+        equipmentInlineSearch.addEventListener('input', () => {
+            const query = equipmentInlineSearch.value.trim();
+            
+            // Show/hide clear button
+            inlineSearchClear.style.display = query.length > 0 ? 'flex' : 'none';
+            
+            // Clear existing timeout
+            if (searchTimeout) clearTimeout(searchTimeout);
+            
+            if (query.length < 2) {
+                inlineSearchResults.style.display = 'none';
+                return;
+            }
+            
+            // Debounce search
+            searchTimeout = setTimeout(() => {
+                performInlineSearch(query);
+            }, 300);
+        });
+        
+        equipmentInlineSearch.addEventListener('focus', () => {
+            if (equipmentInlineSearch.value.trim().length >= 2) {
+                performInlineSearch(equipmentInlineSearch.value.trim());
+            }
+        });
+    }
+    
+    if (inlineSearchClear) {
+        inlineSearchClear.addEventListener('click', () => {
+            equipmentInlineSearch.value = '';
+            inlineSearchResults.style.display = 'none';
+            inlineSearchClear.style.display = 'none';
+            equipmentInlineSearch.focus();
+        });
+    }
+    
+    function performInlineSearch(query) {
+        // First check if we have cached equipment
+        if (allEquipments.length > 0) {
+            const filtered = allEquipments.filter(eq => {
+                const searchStr = `${eq.equipment_id || eq.equipment_code} ${eq.equipment_name_EN} ${eq.equipment_name} ${eq.equipment_brand || ''} ${eq.equipment_model || ''}`.toLowerCase();
+                return searchStr.includes(query.toLowerCase());
+            });
+            renderInlineSearchResults(filtered);
+        } else {
+            // Load from API
+            fetch('/api/equipment_list/')
+                .then(response => response.json())
+                .then(data => {
+                    // Normalize API results to expected keys (works with various sqlite/serializer shapes)
+                    allEquipments = (Array.isArray(data) ? data : []).map(normalizeEquipment);
+                    const filtered = allEquipments.filter(eq => {
+                        const searchStr = `${eq.equipment_id || eq.equipment_code} ${eq.equipment_name_EN} ${eq.equipment_name} ${eq.equipment_brand || ''} ${eq.equipment_model || ''}`.toLowerCase();
+                        return searchStr.includes(query.toLowerCase());
+                    });
+                    renderInlineSearchResults(filtered);
+                })
+                .catch(() => {
+                    inlineSearchResults.innerHTML = '<div class="equipment-search-empty"><i class="bi bi-exclamation-triangle"></i>เกิดข้อผิดพลาด</div>';
+                    inlineSearchResults.style.display = 'block';
+                });
+        }
+    }
+    
+    function renderInlineSearchResults(items) {
+        if (!items || items.length === 0) {
+            inlineSearchResults.innerHTML = '<div class="equipment-search-empty"><i class="bi bi-search"></i>ไม่พบเครื่องมือที่ค้นหา</div>';
+            inlineSearchResults.style.display = 'block';
+            return;
+        }
+
+        const limitedItems = items.slice(0, 8);
+        let html = limitedItems.map(eq => {
+            // Build meta line
+            const metaParts = [];
+            if (eq.equipment_brand || eq.equipment_model) {
+                metaParts.push([eq.equipment_brand, eq.equipment_model].filter(Boolean).join(' • '));
+            }
+            if (eq.equipment_sn || eq.equipment_gov) {
+                metaParts.push([eq.equipment_sn ? 'SN: ' + eq.equipment_sn : '', eq.equipment_gov].filter(Boolean).join(' • '));
+            }
+
+                    return `
+                <div class="equipment-search-item" data-id="${escapeHtml(eq.equipment_id || eq.equipment_code)}">
+                    <div class="equipment-search-item-icon"><i class="bi bi-cpu"></i></div>
+                    <div class="equipment-search-item-info">
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <div class="equipment-search-item-code">${escapeHtml(eq.equipment_id || eq.equipment_code)}</div>
+                            ${eq.equipment_due_date ? `<span class="equipment-search-item-due-badge">ครบกำหนด: ${escapeHtml(formatDateString(eq.equipment_due_date))}</span>` : ''}
+                        </div>
+                        ${eq.equipment_name_EN ? `<div class="equipment-search-item-name-en" style="font-size:0.8125rem; color:#64748b; margin-bottom:0.125rem;">${escapeHtml(eq.equipment_name_EN)}</div>` : ''}
+                        <div class="equipment-search-item-name" style="font-weight:600; color:#1e293b;">${escapeHtml(eq.equipment_name || '-')}</div>
+                        ${metaParts.length ? `<div class="equipment-search-item-meta">${escapeHtml(metaParts.join(' • '))}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        if (items.length > 8) {
+            html += `<div class="equipment-search-empty" style="padding: 0.75rem; font-size: 0.8125rem;">และอีก ${items.length - 8} รายการ - พิมพ์เพิ่มเพื่อกรอง</div>`;
+        }
+
+        inlineSearchResults.innerHTML = html;
+        inlineSearchResults.style.display = 'block';
+
+        // Click handler - find normalized eq and convert to selectedEquipment
+        inlineSearchResults.querySelectorAll('.equipment-search-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const eq = allEquipments.find(e => (e.equipment_id || e.equipment_code) === item.dataset.id);
+                if (eq) {
+                    selectedEquipment = toSelectedEquipment(eq);
+                    updateEquipmentDisplay();
+                }
+                inlineSearchResults.style.display = 'none';
+            });
+        });
+    }
+
+    // ========================================
+    // EQUIPMENT DATA UTILITIES (Single Source of Truth)
+    // ========================================
+    
+    // Helper: get first non-empty value from multiple keys
+    // Helper: normalize a raw value to a display string
+    function formatValue(v) {
+        if (v === undefined || v === null) return '';
+        if (typeof v === 'string' || typeof v === 'number') return String(v).trim();
+        if (typeof v === 'object') {
+            const keys = ['label', 'name', 'title', 'full_name', 'display', 'value', 'username'];
+            for (const k of keys) {
+                if (v[k] !== undefined && v[k] !== null && String(v[k]).trim() !== '') {
+                    return String(v[k]).trim();
+                }
+            }
+            // If object has a nested 'fields' (DRF) try common nested keys
+            if (v.fields) {
+                for (const k of keys) {
+                    if (v.fields[k]) return String(v.fields[k]).trim();
+                }
+            }
+            // Fallback to JSON-ish string if meaningful
+            try {
+                const s = JSON.stringify(v);
+                if (s && s !== '{}' ) return s;
+            } catch (e) {}
+        }
+        return '';
+    }
+
+    function getFirst(obj, ...keys) {
+        if (!obj) return '';
+        for (const k of keys) {
+            const v = obj[k];
+            const fv = formatValue(v);
+            if (fv) return fv;
+        }
+        return '';
+    }
+
+    // Format a date string (ISO or timestamp) to a readable local date
+    // Display month as Thai abbreviated name (e.g. 8 ก.ค. 2569)
+    function formatDateString(s) {
+        if (!s) return '';
+        try {
+            // Try native Date first
+            let d = new Date(s);
+            // If invalid, try the page's robust parser if available
+            if (isNaN(d.getTime()) && typeof parseDateStringToDate === 'function') {
+                const parsed = parseDateStringToDate(s);
+                if (parsed && !isNaN(parsed.getTime())) d = parsed;
+            }
+            if (isNaN(d.getTime())) return String(s);
+
+            const day = d.getDate();
+            const monthNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            const month = monthNames[d.getMonth()] || '';
+            const year = d.getFullYear();
+            // Convert to Buddhist year for Thai display when year looks like AD
+            // Coerce to Number first to avoid string concatenation (e.g. '2026'+543)
+            const buddhistYear = (Number(year) < 2400) ? (Number(year) + 543) : Number(year);
+            return `${day} ${month} ${buddhistYear}`;
+        } catch (e) {
+            return String(s);
+        }
+    }
+
+    // Normalize equipment from ANY source (API, DRF serializer, sqlite)
+    // This is the ONLY place we handle different key names
+    function normalizeEquipment(eq) {
+        if (!eq) return { equipment_id: '', equipment_code: '', equipment_name: '' };
+        const f = eq.fields || {}; // DRF serializer shape
+        const src = { ...f, ...eq }; // merge fields into top level
+        
+        console.log('🔍 Normalizing equipment:', eq);
+        console.log('  - fields:', f);
+        console.log('  - merged src:', src);
+        
+        // Extract PM/CAL due dates - check all possible locations
+        const pmDue = src.equipment_pm_due || f.equipment_pm_due || src.pm_due || f.pm_due || 
+                      eq.equipment_pm_due || (eq.fields && eq.fields.equipment_pm_due) || '';
+        const calDue = src.equipment_cal_due || f.equipment_cal_due || src.cal_due || f.cal_due || 
+                       eq.equipment_cal_due || (eq.fields && eq.fields.equipment_cal_due) || '';
+        
+        console.log('  - PM Due found:', pmDue);
+        console.log('  - CAL Due found:', calDue);
+        
+        // Pick earliest due date to display
+        let displayDue = '';
+        if (pmDue && calDue) {
+            try {
+                displayDue = new Date(pmDue) < new Date(calDue) ? pmDue : calDue;
+            } catch (e) {
+                displayDue = pmDue || calDue;
+            }
+        } else {
+            displayDue = pmDue || calDue;
+        }
+        
+        const normalized = {
+            equipment_id: getFirst(src, 'equipment_id', 'id', 'pk'),
+            equipment_code: getFirst(src, 'equipment_code', 'code', 'legacy_code'),
+            equipment_name: getFirst(src, 'equipment_name', 'equipment_name_TH', 'name'),
+            equipment_name_EN: getFirst(src, 'equipment_name_EN', 'name_EN', 'name_en'),
+            equipment_brand: getFirst(src, 'equipment_brand', 'brand'),
+            equipment_model: getFirst(src, 'equipment_model', 'model'),
+            equipment_sn: getFirst(src, 'equipment_sn', 'serial_number', 'sn'),
+            equipment_gov: getFirst(src, 'equipment_gov', 'gov'),
+            equipment_type: getFirst(src, 'equipment_type', 'type', 'equipmentType'),
+            equipment_user_customer: getFirst(src, 'equipment_user_customer', 'user_customer', 'location'),
+            equipment_owner_customer: getFirst(src, 'equipment_owner_customer', 'owner_customer', 'equipment_owner', 'owner'),
+            equipment_image: getFirst(src, 'equipment_image', 'equipment_photo', 'image'),
+            equipment_pm_due: pmDue,
+            equipment_cal_due: calDue,
+            equipment_due_date: displayDue
+        };
+        
+        console.log('✅ Normalized result:', normalized);
+        return normalized;
+    }
+
+    // Convert normalized equipment to selectedEquipment format
+    function toSelectedEquipment(eq) {
+        return {
+            id: eq.equipment_id || eq.equipment_code,
+            code: eq.equipment_code,
+            name: eq.equipment_name,
+            name_EN: eq.equipment_name_EN,
+            equipment_type: eq.equipment_type,
+            equipment_brand: eq.equipment_brand,
+            equipment_model: eq.equipment_model,
+            equipment_sn: eq.equipment_sn,
+            equipment_gov: eq.equipment_gov,
+            equipment_user_customer: eq.equipment_user_customer,
+            equipment_owner_customer: eq.equipment_owner_customer,
+            equipment_image: eq.equipment_image
+        };
+    }
+
+    // Search helper: check if equipment matches query
+    function equipmentMatchesQuery(eq, query) {
+        const q = query.toLowerCase();
+        const searchFields = [
+            (eq.equipment_id || eq.equipment_code), eq.equipment_name, eq.equipment_name_EN,
+            eq.equipment_brand, eq.equipment_model, eq.equipment_sn,
+            eq.equipment_gov, eq.equipment_user_customer, eq.equipment_owner_customer
+        ];
+        return searchFields.some(f => f && f.toLowerCase().includes(q));
+    }
+    
+    // Hide search results when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.equipment-quick-search')) {
+            inlineSearchResults.style.display = 'none';
+        }
+    });
+    
+    // Back to search button
+    if (backToSearchBtn) {
+        backToSearchBtn.addEventListener('click', () => {
+            selectedEquipment = null;
+            updateEquipmentDisplay();
+        });
+    }
+    
+    // Change equipment button
+    if (changeEquipmentBtn) {
+        changeEquipmentBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (bootstrapModal) {
+                loadEquipments();
+                bootstrapModal.show();
+            }
+        });
+    }
+
+    // PM/CAL and All Equipment card elements
+    const pmCalEquipmentCard = document.getElementById('pmCalEquipmentCard');
+    const allEquipmentCard = document.getElementById('allEquipmentCard');
+    const pmCalBadge = document.getElementById('pmCalBadge');
+    const pmCalCount = document.getElementById('pmCalCount');
+    const modalPmCalCount = document.getElementById('modalPmCalCount');
+    
+    // Track PM/CAL due equipment
+    let pmCalEquipments = [];
+    let pmCalEquipmentsDue = [];
+    
+    // Load PM/CAL due equipment count on page load
+    function loadPmCalCount() {
+        fetch('/api/maintenance/equipment/due/?pm_cal_due=1')
+            .then(response => response.json())
+            .then(data => {
+                const arr = (data && data.data) ? data.data : (Array.isArray(data) ? data : []);
+                console.log('🔍 PM/CAL API Response (first item):', arr[0]);
+                pmCalEquipments = arr.map(normalizeEquipment);
+                // compute only items that are truly due (<= today)
+                pmCalEquipmentsDue = pmCalEquipments.filter(eq => equipmentHasDue(eq));
+                console.log('✅ Normalized PM/CAL (first item):', pmCalEquipments[0]);
+                console.log('🔎 PM/CAL due items count:', pmCalEquipmentsDue.length);
+                if (pmCalCount) pmCalCount.textContent = String(arr.length || 0);
+                if (modalPmCalCount) modalPmCalCount.textContent = String(pmCalEquipmentsDue.length || 0);
+            })
+            .catch(() => {
+                if (pmCalCount) pmCalCount.textContent = '-';
+                if (modalPmCalCount) modalPmCalCount.textContent = '-';
+            });
+    }
+    
+    // Call on page load
+    loadPmCalCount();
+
+    // PM/CAL Equipment Card click
+    if (pmCalEquipmentCard) {
+        pmCalEquipmentCard.addEventListener('click', () => {
+            if (bootstrapModal) {
+                // Set active filter to due and show only PM/CAL due equipment (filter client-side if cached)
+                currentModalFilter = 'due';
+                setModalFilterActive('due');
+                if (pmCalEquipments.length > 0) {
+                    const due = pmCalEquipmentsDue.length > 0 ? pmCalEquipmentsDue : pmCalEquipments.filter(eq => equipmentHasDue(eq));
+                    if (modalPmCalCount) modalPmCalCount.textContent = String(due.length || 0);
+                    renderEquipmentItems(due);
+                } else {
+                    loadEquipments('pm_cal');
+                }
+                bootstrapModal.show();
+            }
+        });
+    }
+
+    // All Equipment Card click
+    if (allEquipmentCard) {
+        allEquipmentCard.addEventListener('click', () => {
+            if (bootstrapModal) {
+                // open modal with "all" filter active
+                currentModalFilter = 'all';
+                setTimeout(() => { try { setModalFilterActive('all'); } catch(e){} }, 0);
+                loadEquipments();
+                bootstrapModal.show();
+            }
+        });
+    }
+
+    // Modal filter buttons (All / Due)
+    const filterAllBtn = document.getElementById('filterAllBtn');
+    const filterDueBtn = document.getElementById('filterDueBtn');
+
+    function setModalFilterActive(f) {
+        // visual active state + bootstrap style toggles
+        if (filterAllBtn) {
+            filterAllBtn.classList.toggle('active', f === 'all');
+            filterAllBtn.classList.toggle('btn-primary', f === 'all');
+            filterAllBtn.classList.toggle('btn-light', f !== 'all');
+        }
+        if (filterDueBtn) {
+            filterDueBtn.classList.toggle('active', f === 'due');
+            filterDueBtn.classList.toggle('btn-warning', f === 'due');
+            filterDueBtn.classList.toggle('btn-outline-warning', f !== 'due');
+        }
+    }
+
+    // Helper: check if equipment has PM or CAL due value
+    function parseDateStringToDate(s) {
+        if (!s && s !== 0) return null;
+        try {
+            if (s instanceof Date) return isNaN(s.getTime()) ? null : new Date(s.getTime());
+            const str = String(s).trim();
+            // Numeric timestamps
+            if (/^\d+$/.test(str)) {
+                const n = parseInt(str, 10);
+                // seconds -> ms
+                if (n < 1e12) return new Date(n * 1000);
+                return new Date(n);
+            }
+
+            // ISO-like 2023-12-31 or 2023/12/31
+            const isoMatch = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+            if (isoMatch) {
+                const y = parseInt(isoMatch[1], 10);
+                const m = parseInt(isoMatch[2], 10);
+                const d = parseInt(isoMatch[3], 10);
+                return new Date(y, m - 1, d);
+            }
+
+            // dd/mm/yyyy or dd-mm-yyyy (Thai year possibly)
+            const dm = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+            if (dm) {
+                let day = parseInt(dm[1], 10);
+                let mon = parseInt(dm[2], 10);
+                let yr = parseInt(dm[3], 10);
+                if (yr > 2500) yr = yr - 543; // convert BE to AD
+                if (yr < 100) yr += 2000;
+                return new Date(yr, mon - 1, day);
+            }
+
+            // Fallback to Date parser
+            const d = new Date(str);
+            return isNaN(d.getTime()) ? null : d;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function equipmentHasDue(eq) {
+        if (!eq) return false;
+        const pm = eq.equipment_pm_due;
+        const cal = eq.equipment_cal_due;
+        const now = new Date();
+        now.setHours(0,0,0,0);
+
+        const check = (dateVal) => {
+            if (!dateVal && dateVal !== 0) return false;
+            const d = parseDateStringToDate(dateVal);
+            if (!d) return false;
+            d.setHours(0,0,0,0);
+            return d <= now;
+        };
+
+        return check(pm) || check(cal);
+    }
+
+    if (filterAllBtn) {
+        filterAllBtn.addEventListener('click', () => {
+            currentModalFilter = 'all';
+            setModalFilterActive('all');
+            loadEquipments();
+            if (bootstrapModal) bootstrapModal.show();
+        });
+    }
+
+    if (filterDueBtn) {
+        filterDueBtn.addEventListener('click', () => {
+            currentModalFilter = 'due';
+            setModalFilterActive('due');
+            try {
+                console.log('🔎 filterDueBtn clicked — allEquipments:', allEquipments.length, 'pmCalEquipments:', pmCalEquipments.length);
+                if (allEquipments.length > 0) {
+                    const filtered = allEquipments.filter(eq => equipmentHasDue(eq));
+                    console.log('🔎 filtered due items (from allEquipments):', filtered.length);
+                    if (modalPmCalCount) modalPmCalCount.textContent = String(filtered.length || 0);
+                    renderEquipmentItems(filtered);
+                } else if (pmCalEquipments.length > 0) {
+                    console.log('🔎 rendering cached pmCalEquipmentsDue:', pmCalEquipmentsDue.length);
+                    if (modalPmCalCount) modalPmCalCount.textContent = String(pmCalEquipmentsDue.length || 0);
+                    renderEquipmentItems(pmCalEquipmentsDue);
+                } else {
+                    console.log('🔎 loading pm_cal items from server');
+                    loadEquipments('pm_cal');
+                }
+            } catch (err) {
+                console.error('Error in filterDueBtn handler:', err);
+                loadEquipments('pm_cal');
+            }
+            if (bootstrapModal) bootstrapModal.show();
+        });
+    }
+
+    // No equipment button - show manual entry
+    if (noEquipmentBtn) {
+        noEquipmentBtn.addEventListener('click', () => {
+            selectedEquipment = { code: 'ไม่มีรหัส', name: 'ไม่มีรหัส' };
+            updateEquipmentDisplay();
+        });
+    }
+
+    // Clear equipment selection button
+    const clearEquipmentBtn = document.getElementById('clearEquipmentBtn');
+    if (clearEquipmentBtn) {
+        clearEquipmentBtn.addEventListener('click', () => {
+            selectedEquipment = null;
+            if (hiddenEquipment) hiddenEquipment.value = '';
+            if (equipmentInlineSearch) equipmentInlineSearch.value = '';
+            if (inlineSearchResults) inlineSearchResults.style.display = 'none';
+            if (inlineSearchClear) inlineSearchClear.style.display = 'none';
+            if (equipmentNameInput) equipmentNameInput.value = '';
+            if (equipmentNameWrapper) equipmentNameWrapper.style.display = 'none';
+            updateEquipmentDisplay();
+            showToast('success', 'ล้างข้อมูล', 'ล้างการเลือกเครื่องมือเรียบร้อย');
+        });
+    }
+
+    function loadEquipments(filter) {
+        // If filter is 'pm_cal', load PM/CAL due equipment
+        if (filter === 'pm_cal') {
+            if (pmCalEquipments.length > 0) {
+                const due = (pmCalEquipmentsDue && pmCalEquipmentsDue.length > 0) ? pmCalEquipmentsDue : pmCalEquipments.filter(eq => equipmentHasDue(eq));
+                renderEquipmentItems(due);
+                return;
+            }
+            equipmentResults.innerHTML = '<div style="text-align: center; padding: 2rem;"><i class="bi bi-hourglass-split"></i> กำลังโหลด...</div>';
+            fetch('/api/maintenance/equipment/due/?pm_cal_due=1')
+                .then(response => response.json())
+                .then(data => {
+                    const arr = (data && data.data) ? data.data : (Array.isArray(data) ? data : []);
+                    console.log('🔍 Modal PM/CAL API Response (first 2 items):', arr.slice(0, 2));
+                    pmCalEquipments = arr.map(normalizeEquipment);
+                    // compute due subset and render only due items
+                    pmCalEquipmentsDue = pmCalEquipments.filter(eq => equipmentHasDue(eq));
+                    console.log('✅ Modal Normalized PM/CAL (first item):', pmCalEquipments[0]);
+                    console.log('🔎 Modal PM/CAL due count:', pmCalEquipmentsDue.length);
+                    renderEquipmentItems(pmCalEquipmentsDue);
+                })
+                .catch(error => {
+                    equipmentResults.innerHTML = '<div style="text-align: center; padding: 2rem; color: #ef4444;"><i class="bi bi-exclamation-triangle"></i> เกิดข้อผิดพลาด</div>';
+                });
+            return;
+        }
+        
+        // Default: load all equipment
+        if (allEquipments.length > 0) {
+            renderEquipmentItems(allEquipments);
+            return;
+        }
+        
+        equipmentResults.innerHTML = '<div style="text-align: center; padding: 2rem;"><i class="bi bi-hourglass-split"></i> กำลังโหลด...</div>';
+        
+        fetch('/api/equipment_list/')
+            .then(response => response.json())
+            .then(data => {
+                allEquipments = (Array.isArray(data) ? data : []).map(normalizeEquipment);
+                renderEquipmentItems(allEquipments);
+            })
+            .catch(error => {
+                equipmentResults.innerHTML = '<div style="text-align: center; padding: 2rem; color: #ef4444;"><i class="bi bi-exclamation-triangle"></i> เกิดข้อผิดพลาด</div>';
+            });
+    }
+
+    function renderEquipmentItems(items) {
+        const countEl = document.getElementById('equipmentCount');
+        // If modal is showing 'due' filter, update modal badge to match rendered items
+        try {
+            if (typeof currentModalFilter !== 'undefined' && currentModalFilter === 'due' && modalPmCalCount) {
+                modalPmCalCount.textContent = String(items.length || 0);
+            }
+        } catch (e) {
+            // ignore
+        }
+        
+        if (items.length === 0) {
+            equipmentResults.innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: #94a3b8;">
+                    <i class="bi bi-inbox" style="font-size: 2rem; opacity: 0.4; display: block; margin-bottom: 0.5rem;"></i>
+                    <span style="font-size: 0.8125rem;">ไม่พบเครื่องมือที่ค้นหา</span>
+                </div>`;
+            if (countEl) countEl.textContent = '';
+            return;
+        }
+        
+        if (countEl) countEl.textContent = `พบ ${items.length} รายการ`;
+        
+        // Build HTML from normalized equipment data
+        equipmentResults.innerHTML = items.map(eq => {
+            // Build meta line
+            const metaParts = [];
+            if (eq.equipment_brand || eq.equipment_model) {
+                metaParts.push(['ยี่ห้อ: ' + eq.equipment_brand, 'รุ่น: ' + eq.equipment_model].filter(Boolean).join(' • '));
+            }
+            if (eq.equipment_sn || eq.equipment_gov) {
+                metaParts.push([eq.equipment_sn ? 'SN: ' + eq.equipment_sn : '', 'เลขครุภัณฑ์ ' + eq.equipment_gov].filter(Boolean).join(' • '));
+            }
+            const metaHtml = metaParts.length ? `<div class="equipment-item-meta">${escapeHtml(metaParts.join(' • '))}</div>` : '';
+
+            // User/Owner line
+            const userVal = eq.equipment_user_customer || '';
+            const ownerVal = eq.equipment_owner_customer || '';
+            const userOwnerParts = [];
+            if (userVal) userOwnerParts.push(`ผู้ใช้งาน: ${escapeHtml(userVal)}`);
+            if (ownerVal) userOwnerParts.push(`เจ้าของ: ${escapeHtml(ownerVal)}`);
+            const userOwnerHtml = userOwnerParts.length ? `<div class="equipment-item-meta">${userOwnerParts.join(' <br> ')}</div>` : '';
+
+            // Build due date sections - show both PM and CAL if available
+            // Also mark overdue (ครบกำหนด) items with a red badge/class
+            function isDueDate(dateStr) {
+                if (!dateStr) return false;
+                const d = new Date(dateStr);
+                if (isNaN(d)) return false;
+                const today = new Date();
+                d.setHours(0,0,0,0);
+                today.setHours(0,0,0,0);
+                return d <= today;
+            }
+
+            const pmOverdue = eq.equipment_pm_due && isDueDate(eq.equipment_pm_due);
+            const calOverdue = eq.equipment_cal_due && isDueDate(eq.equipment_cal_due);
+
+            let dueSection = '';
+            if (eq.equipment_pm_due || eq.equipment_cal_due) {
+                if (eq.equipment_pm_due && eq.equipment_cal_due) {
+                    // Both PM and CAL due - stack them
+                    dueSection = `
+                        <div style="display: flex; flex-direction: column; gap: 0;">
+                            <div class="equipment-item-due-section equipment-item-due-pm ${pmOverdue ? 'overdue' : ''}" style="border-bottom: 1px solid rgba(255,255,255,0.5);">
+                                <div class="equipment-item-due-label">PM ${pmOverdue ? '<span class="equipment-item-overdue-badge" title="ครบกำหนด"></span>' : ''}</div>
+                                <div class="equipment-item-due-value">${escapeHtml(formatDateString(eq.equipment_pm_due))}</div>
+                            </div>
+                            <div class="equipment-item-due-section equipment-item-due-cal ${calOverdue ? 'overdue' : ''}">
+                                <div class="equipment-item-due-label">CAL ${calOverdue ? '<span class="equipment-item-overdue-badge" title="ครบกำหนด"></span>' : ''}</div>
+                                <div class="equipment-item-due-value">${escapeHtml(formatDateString(eq.equipment_cal_due))}</div>
+                            </div>
+                        </div>`;
+                } else if (eq.equipment_pm_due) {
+                    // Only PM due
+                    dueSection = `
+                        <div class="equipment-item-due-section equipment-item-due-pm ${pmOverdue ? 'overdue' : ''}">
+                            <div class="equipment-item-due-label">PM Due ${pmOverdue ? '<span class="equipment-item-overdue-badge" title="ครบกำหนด"></span>' : ''}</div>
+                            <div class="equipment-item-due-value">${escapeHtml(formatDateString(eq.equipment_pm_due))}</div>
+                        </div>`;
+                } else if (eq.equipment_cal_due) {
+                    // Only CAL due
+                    dueSection = `
+                        <div class="equipment-item-due-section equipment-item-due-cal ${calOverdue ? 'overdue' : ''}">
+                            <div class="equipment-item-due-label">CAL Due ${calOverdue ? '<span class="equipment-item-overdue-badge" title="ครบกำหนด"></span>' : ''}</div>
+                            <div class="equipment-item-due-value">${escapeHtml(formatDateString(eq.equipment_cal_due))}</div>
+                        </div>`;
+                }
+            }
+
+            return `
+                <div class="equipment-item" data-id="${escapeHtml(eq.equipment_id || eq.equipment_code)}">
+                    <div class="equipment-item-icon"><i class="bi bi-cpu"></i></div>
+                    <div class="equipment-item-info">
+                        <div class="equipment-item-code">${escapeHtml(eq.equipment_id || eq.equipment_code)}</div>
+                        ${eq.equipment_name_EN ? `<div class="equipment-item-name-en">${escapeHtml(eq.equipment_name_EN)}</div>` : ''}
+                        ${eq.equipment_name ? `<div class="equipment-item-name">${escapeHtml(eq.equipment_name)}</div>` : ''}
+                        ${metaHtml}
+                        ${userOwnerHtml}
+                    </div>
+                    ${dueSection}
+                    <div class="equipment-item-select">เลือก</div>
+                </div>
+            `;
+        }).join('');
+
+        // Event handlers - find normalized eq by code
+        equipmentResults.querySelectorAll('.equipment-item').forEach(item => {
+            item.addEventListener('click', () => {
+                equipmentResults.querySelectorAll('.equipment-item').forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+                // Find equipment from the currently rendered items first, then fallback to other caches
+                const eq = (items || []).find(e => (e.equipment_id || e.equipment_code) === item.dataset.id)
+                    || (allEquipments || []).find(e => (e.equipment_id || e.equipment_code) === item.dataset.id)
+                    || (pmCalEquipments || []).find(e => (e.equipment_id || e.equipment_code) === item.dataset.id);
+                if (eq) selectedEquipment = toSelectedEquipment(eq);
+            });
+
+            // Quick select button
+            const selectBtn = item.querySelector('.equipment-item-select');
+            if (selectBtn) {
+                selectBtn.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    item.click();
+                    if (confirmBtn) confirmBtn.click();
+                });
+            }
+        });
+    }
+
+    // Modal search - uses simplified equipmentMatchesQuery
+    equipmentSearch.addEventListener('input', (e) => {
+        const query = (e.target.value || '').trim();
+        if (!query) {
+            renderEquipmentItems(allEquipments);
+            return;
+        }
+        renderEquipmentItems(allEquipments.filter(eq => equipmentMatchesQuery(eq, query)));
+    });
+
+    confirmBtn.addEventListener('click', () => {
+        if (selectedEquipment) {
+            updateEquipmentDisplay();
+            bootstrapModal.hide();
+        }
+    });
+
+    // File upload
+    fileUploadZone.addEventListener('click', () => fileInput.click());
+    
+    fileUploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileUploadZone.classList.add('dragging');
+    });
+    
+    fileUploadZone.addEventListener('dragleave', () => {
+        fileUploadZone.classList.remove('dragging');
+    });
+    
+    fileUploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileUploadZone.classList.remove('dragging');
+        if (e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            showFilePreview(e.dataTransfer.files[0]);
+        }
+    });
+    
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            showFilePreview(e.target.files[0]);
+        }
+    });
+
+    function showFilePreview(file) {
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = formatFileSize(file.size);
+        fileUploadZone.style.display = 'none';
+        filePreview.style.display = 'flex';
+    }
+
+    document.getElementById('removeFile').addEventListener('click', () => {
+        fileInput.value = '';
+        fileUploadZone.style.display = 'block';
+        filePreview.style.display = 'none';
+    });
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Form validation and submit
+    form.addEventListener('submit', (e) => {
+        // Enforce equipment selection
+        if (!hiddenEquipment.value || hiddenEquipment.value.trim() === '') {
+            e.preventDefault();
+            showToast('error', 'ไม่สามารถส่งแบบฟอร์มได้', 'กรุณาเลือกเครื่องมือก่อนส่งแบบฟอร์ม');
+            showStep(1, 'prev');
+            return false;
+        }
+
+        if (!hiddenTitle.value.trim()) {
+            e.preventDefault();
+            showToast('error', 'ไม่สามารถส่งแบบฟอร์มได้', 'กรุณาเลือกประเภทงานอย่างน้อย 1 ประเภท');
+            showStep(2, 'prev');
+            return false;
+        }
+
+        // Description is optional; no client-side requirement enforced here.
+
+        if (hiddenEquipment.value === 'ไม่มีรหัส' && !equipmentNameInput.value.trim()) {
+            e.preventDefault();
+            showToast('error', 'ข้อมูลไม่ครบ', 'กรุณาระบุชื่อเครื่องมือ เมื่อแจ้งโดยไม่มีรหัส');
+            showStep(1, 'prev');
+            equipmentNameInput.focus();
+            return false;
+        }
+
+        // Check required contact fields
+        const requiredFields = [
+            { id: 'id_customer_name', label: 'ชื่อผู้แจ้ง' },
+            { id: 'id_customer_position', label: 'ตำแหน่งงาน' },
+            { id: 'id_customer_telephone', label: 'โทรศัพท์' },
+            { id: 'id_customer_email', label: 'อีเมล' },
+            { id: 'id_customer_department', label: 'หน่วยงาน' }
+        ];
+
+        for (const field of requiredFields) {
+            const el = document.getElementById(field.id);
+            if (el && !el.value.trim()) {
+                e.preventDefault();
+                showToast('error', 'ข้อมูลไม่ครบ', `กรุณากรอก${field.label}`);
+                el.focus();
+                return false;
+            }
+        }
+
+        // Require accepting service terms
+        if (acceptTermsCheckbox && !acceptTermsCheckbox.checked) {
+            e.preventDefault();
+            showToast('error', 'ต้องยอมรับเงื่อนไข', 'กรุณาติ๊กยอมรับเงื่อนไขการเข้ารับบริการ');
+            const openBtn = document.getElementById('openServiceTerms');
+            if (openBtn) {
+                openBtn.style.animation = 'shake 0.5s ease';
+                setTimeout(() => openBtn.style.animation = '', 600);
+            }
+            return false;
+        }
+
+        // Add equipment name to description if no code
+        if (hiddenEquipment.value === 'ไม่มีรหัส' && equipmentNameInput.value.trim()) {
+            const desc = document.getElementById('id_sr_description');
+            const nameLine = `ชื่อเครื่อง: ${equipmentNameInput.value.trim()}`;
+            if (desc && !desc.value.includes(nameLine)) {
+                desc.value = nameLine + (desc.value ? '\n' + desc.value : '');
+            }
+        }
+
+        showToast('success', 'กำลังส่งคำขอ', 'โปรดรอสักครู่...');
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> <span>กำลังส่ง...</span>';
+        submitBtn.disabled = true;
+    });
+
+    // Listen for input changes to update progress
+    document.querySelectorAll('input, textarea').forEach(el => {
+        el.addEventListener('input', updateProgress);
+    });
+
+    // Initially disable submit until terms accepted
+    if (acceptTermsCheckbox && submitBtn) {
+        submitBtn.disabled = !acceptTermsCheckbox.checked;
+        acceptTermsCheckbox.addEventListener('change', () => {
+            submitBtn.disabled = !acceptTermsCheckbox.checked;
+        });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Initial progress update
+    updateProgress();
+
+    // Toast notification system
+    function showToast(type, title, message) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `sr-toast ${type}`;
+        
+        const iconMap = {
+            'warning': 'bi-exclamation-triangle-fill',
+            'error': 'bi-x-circle-fill',
+            'success': 'bi-check-circle-fill'
+        };
+        
+        toast.innerHTML = `
+            <div class="sr-toast-icon">
+                <i class="bi ${iconMap[type] || iconMap.warning}"></i>
+            </div>
+            <div class="sr-toast-content">
+                <div class="sr-toast-title">${title}</div>
+                <div class="sr-toast-message">${message}</div>
+            </div>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+            toast.style.animation = 'toastSlideOut 0.3s ease-in forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
+    // Multi-step navigation
+    let currentStep = 1;
+    const maxStep = 3;
+
+    function showStep(n, direction = 'next') {
+        const oldStep = currentStep;
+        currentStep = Math.max(1, Math.min(maxStep, n));
+        
+        if (oldStep === currentStep) return;
+        
+        const oldSection = document.getElementById('sr-section-' + oldStep);
+        const newSection = document.getElementById('sr-section-' + currentStep);
+        
+        if (oldSection && newSection) {
+            // Add slide out animation
+            const slideClass = direction === 'next' ? 'slide-out-left' : 'slide-out-right';
+            oldSection.classList.add(slideClass);
+            
+            setTimeout(() => {
+                oldSection.style.display = 'none';
+                oldSection.classList.remove(slideClass);
+                newSection.style.display = '';
+                
+                // Scroll to top of form smoothly
+                document.querySelector('.sr-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                // Focus first input in new section
+                setTimeout(() => {
+                    const focusable = newSection.querySelector('input:not([type="hidden"]), textarea, select, button');
+                    if (focusable && focusable.type !== 'submit') {
+                        focusable.focus();
+                    }
+                }, 100);
+            }, 250);
+        }
+        
+        // Update step header active classes
+        steps.forEach(s => s.classList.remove('active'));
+        const activeStep = document.querySelector('.sr-step[data-step="' + currentStep + '"]');
+        if (activeStep) activeStep.classList.add('active');
+        
+        updateProgress();
+    }
+
+    // Make progress steps clickable
+    steps.forEach(step => {
+        step.addEventListener('click', () => {
+            const targetStep = parseInt(step.dataset.step);
+            if (targetStep === currentStep) return;
+
+            // Validate before allowing forward navigation
+            if (targetStep > currentStep) {
+                // Check all steps between current and target
+                for (let i = currentStep; i < targetStep; i++) {
+                    if (i === 1 && (!hiddenEquipment.value || !hiddenEquipment.value.trim())) {
+                        showToast('warning', 'กรุณาเลือกเครื่องมือ', 'ต้องเลือกเครื่องมือก่อนไปขั้นตอนถัดไป');
+                        return;
+                    }
+                    if (i === 2 && (!hiddenTitle.value || !hiddenTitle.value.trim())) {
+                        showToast('warning', 'กรุณาเลือกประเภทงาน', 'ต้องเลือกประเภทงานอย่างน้อย 1 ประเภท');
+                        return;
+                    }
+                }
+            }
+
+            const direction = targetStep > currentStep ? 'next' : 'prev';
+            showStep(targetStep, direction);
+        });
+    });
+
+    // Wire nav buttons (3-step flow)
+    const nextTo2 = document.getElementById('nextTo2');
+    const nextTo3 = document.getElementById('nextTo3');
+    const prevTo1 = document.getElementById('prevTo1');
+    const prevTo2 = document.getElementById('prevTo2');
+
+    if (nextTo2) nextTo2.addEventListener('click', () => {
+        // basic validation for step1 - equipment
+        if (!hiddenEquipment.value || !hiddenEquipment.value.trim()) {
+            showToast('warning', 'กรุณาเลือกเครื่องมือ', 'คลิกที่การ์ดหรือปุ่มค้นหาเพื่อเลือกเครื่องมือ');
+            const searchWrapper = document.querySelector('.equipment-search-input-wrapper');
+            if (searchWrapper) {
+                searchWrapper.style.animation = 'none';
+                searchWrapper.offsetHeight;
+                searchWrapper.style.animation = 'shake 0.5s ease';
+            }
+            return;
+        }
+        showStep(2, 'next');
+    });
+
+    if (nextTo3) nextTo3.addEventListener('click', () => {
+        // basic validation for step2 - work type
+        if (!hiddenTitle.value || !hiddenTitle.value.trim()) {
+            showToast('warning', 'กรุณาเลือกประเภทงาน', 'คลิกที่ประเภทงานที่ต้องการอย่างน้อย 1 ประเภท');
+            return;
+        }
+        showStep(3, 'next');
+    });
+
+    if (prevTo1) prevTo1.addEventListener('click', () => showStep(1, 'prev'));
+    if (prevTo2) prevTo2.addEventListener('click', () => showStep(2, 'prev'));
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        if (e.key === 'ArrowRight' && currentStep < maxStep) {
+            const nextBtnMap = { 1: 'nextTo2', 2: 'nextTo3' };
+            const nextBtn = document.getElementById(nextBtnMap[currentStep]);
+            if (nextBtn) nextBtn.click();
+        } else if (e.key === 'ArrowLeft' && currentStep > 1) {
+            const prevBtnMap = { 2: 'prevTo1', 3: 'prevTo2' };
+            const prevBtn = document.getElementById(prevBtnMap[currentStep]);
+            if (prevBtn) prevBtn.click();
+        }
+    });
+
+    // Summary updater: update step values in Progress Steps
+    function getServiceTypeLabel() {
+        const v = (document.getElementById('id_service_type') || {}).value || '';
+        if (!v) return '—';
+        const map = { appointment: 'นัดหมาย', repair: 'แจ้งซ่อม' };
+        return map[v] || v;
+    }
+
+    function getEquipmentLabel() {
+        // First try to get equipment code from display element (e.g., MEDCMU-000110)
+        const codeDisplay = document.getElementById('equipment_id');
+        const displayCode = codeDisplay ? (codeDisplay.textContent || '').trim() : '';
+        if (displayCode && displayCode !== '-') return displayCode;
+        
+        // Fallback: check if hidden input has value (means equipment selected)
+        const codeInput = document.getElementById('id_equipment_id');
+        const code = codeInput ? (codeInput.value || '').trim() : '';
+        
+        // Check manual entry name
+        const noCodeName = (document.getElementById('id_equipment_name_text') || {}).value || '';
+        if (noCodeName) return noCodeName.substring(0, 15) + (noCodeName.length > 15 ? '…' : '');
+        
+        // If hidden input has value but no display code yet, show placeholder
+        if (code) return '✓';
+        
+        return '—';
+    }
+
+    function getWorkTypesLabel() {
+        const selected = Array.from(document.querySelectorAll('.worktype-pill.selected')).map(el => el.textContent.trim());
+        if (selected.length) {
+            const joined = selected.join(', ');
+            return joined.length > 18 ? joined.substring(0, 15) + '…' : joined;
+        }
+        return '—';
+    }
+
+    function getContactLabel() {
+        const v = (document.getElementById('id_customer_name') || {}).value || '';
+        const name = v.trim();
+        if (!name) return '—';
+        return name.length > 12 ? name.substring(0, 10) + '…' : name;
+    }
+
+    function updateSummaryUI() {
+        const sEquip = getEquipmentLabel();
+        const sWork = getWorkTypesLabel();
+        const sContact = getContactLabel();
+
+        // Update step value elements (3-step)
+        const stepVal1 = document.getElementById('stepValue1');
+        const stepVal2 = document.getElementById('stepValue2');
+        const stepVal3 = document.getElementById('stepValue3');
+
+        if (stepVal1 && stepVal1.textContent !== sEquip) stepVal1.textContent = sEquip;
+        if (stepVal2 && stepVal2.textContent !== sWork) stepVal2.textContent = sWork;
+        if (stepVal3 && stepVal3.textContent !== sContact) stepVal3.textContent = sContact;
+    }
+
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('.worktype-pill') || e.target.closest('#openEquipmentModal') || e.target.closest('#noEquipmentBtn')) {
+            setTimeout(updateSummaryUI, 120);
+        }
+    });
+
+    document.addEventListener('input', function (e) {
+        if (e.target && (e.target.id === 'id_customer_name' || e.target.id === 'id_equipment_name_text')) updateSummaryUI();
+    });
+
+    // Periodic sync to catch other code paths
+    setInterval(updateSummaryUI, 700);
+
+    // initial render
+    updateSummaryUI();
+
+    // Start at step 1
+    showStep(1, 'next');
+
+    // Prefill handler: read sessionStorage prefill data (from equipment list) and populate form
+    (function prefillFromSession() {
+        try {
+            const raw = sessionStorage.getItem('prefill_service_request');
+            if (!raw) return;
+            const data = JSON.parse(raw);
+
+            // 1. Service Type - set hidden input and click the card
+            if (data.service_type) {
+                const stInput = document.getElementById('id_service_type');
+                if (stInput) stInput.value = data.service_type;
+                // Click the service type card to activate UI
+                const stCard = document.querySelector(`.service-type-card[data-type="${data.service_type}"]`);
+                if (stCard) stCard.click();
+            }
+
+            // 2. Equipment - set hidden inputs and update all display elements
+            if (data.equipment_id) {
+                const eqIdInput = document.getElementById('id_equipment_id');
+                if (eqIdInput) eqIdInput.value = data.equipment_id;
+                const eqCodeInput = document.getElementById('id_equipment');
+                if (eqCodeInput) eqCodeInput.value = data.equipment_code || data.equipment_id;
+
+                // Update display elements
+                const setTextById = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '-'; };
+                setTextById('equipment_id', data.equipment_code || data.equipment_id);
+                setTextById('equipment_name', data.equipment_name || '');
+                setTextById('equipment_name_en', data.equipment_name_en || '');
+                setTextById('equipment_brand', data.equipment_brand || '-');
+                setTextById('equipment_model', data.equipment_model || '-');
+                setTextById('equipment_sn', data.equipment_sn || '-');
+                setTextById('equipment_gov', data.equipment_gov || '-');
+                setTextById('equipment_user_customer', data.equipment_user_customer || data.equipment_department || '-');
+                setTextById('equipment_owner_customer', data.equipment_owner_customer || '-');
+
+                // Show selected card and hide selection area
+                const selCard = document.getElementById('equipmentSelectedCard');
+                const selArea = document.getElementById('equipmentSelectionArea');
+                if (selCard) selCard.style.display = 'block';
+                if (selArea) selArea.style.display = 'none';
+
+                // Set selectedEquipment so checkAvailableDates() and other JS functions work correctly
+                selectedEquipment = {
+                    id:   data.equipment_id,
+                    code: data.equipment_code || data.equipment_id,
+                    name: data.equipment_name || '',
+                    name_EN: data.equipment_name_en || '',
+                    equipment_type:           data.equipment_type || '',
+                    equipment_brand:          data.equipment_brand || '',
+                    equipment_model:          data.equipment_model || '',
+                    equipment_sn:             data.equipment_sn || '',
+                    equipment_gov:            data.equipment_gov || '',
+                    equipment_user_customer:  data.equipment_user_customer || '',
+                    equipment_owner_customer: data.equipment_owner_customer || ''
+                };
+            }
+
+            // 3. Equipment text fields (manual entry fallback)
+            if (data.equipment_name) {
+                const nameText = document.getElementById('id_equipment_name_text');
+                if (nameText) nameText.value = data.equipment_name;
+            }
+            if (data.equipment_brand) {
+                const brandText = document.getElementById('id_equipment_brand_text');
+                if (brandText) brandText.value = data.equipment_brand;
+            }
+            if (data.equipment_model) {
+                const modelText = document.getElementById('id_equipment_model_text');
+                if (modelText) modelText.value = data.equipment_model;
+            }
+            if (data.equipment_sn) {
+                const snText = document.getElementById('id_equipment_sn_text');
+                if (snText) snText.value = data.equipment_sn;
+            }
+            if (data.equipment_gov) {
+                const govText = document.getElementById('id_equipment_gov_text');
+                if (govText) govText.value = data.equipment_gov;
+            }
+
+            // 4. Request details
+            if (data.title) {
+                const titleInput = document.getElementById('id_title');
+                if (titleInput) titleInput.value = data.title;
+            }
+            if (data.description) {
+                const descInput = document.getElementById('id_sr_description');
+                if (descInput) descInput.value = data.description;
+            }
+            if (data.desired_service_date) {
+                const dateInput = document.getElementById('id_desired_service_date');
+                if (dateInput) dateInput.value = data.desired_service_date;
+            }
+
+            // 5. Contact info
+            if (data.customer_name) {
+                const nameInput = document.getElementById('id_customer_name');
+                if (nameInput) nameInput.value = data.customer_name;
+            }
+            if (data.customer_position) {
+                const posInput = document.getElementById('id_customer_position');
+                if (posInput) posInput.value = data.customer_position;
+            }
+            if (data.customer_telephone) {
+                const telInput = document.getElementById('id_customer_telephone');
+                if (telInput) telInput.value = data.customer_telephone;
+            }
+            if (data.customer_email) {
+                const emailInput = document.getElementById('id_customer_email');
+                if (emailInput) emailInput.value = data.customer_email;
+            }
+            if (data.customer_department || data.equipment_department) {
+                const deptInput = document.getElementById('id_customer_department');
+                if (deptInput) deptInput.value = data.customer_department || data.equipment_department;
+            }
+
+            // Update progress summary values
+            try { updateSummaryUI(); } catch (e) { /* ignore */ }
+
+            // 6. Show source banner and handle back navigation
+            if (data.source === 'equipment_maintenance_schedule') {
+                const banner = document.getElementById('sourceBanner');
+                if (banner) {
+                    banner.style.display = 'flex';
+                    
+                    // Set back button URL
+                    const backBtn = document.getElementById('backToScheduleBtn');
+                    if (backBtn && data.source_url) {
+                        backBtn.href = data.source_url;
+                    } else if (backBtn) {
+                        backBtn.href = '/maintenance/equipment-maintenance-schedule/';
+                    }
+                    
+                    // Dismiss button
+                    const dismissBtn = document.getElementById('dismissBannerBtn');
+                    if (dismissBtn) {
+                        dismissBtn.addEventListener('click', function() {
+                            banner.style.display = 'none';
+                        });
+                    }
+                }
+                
+                // Auto-skip to step 2 (details) since equipment is already filled
+                setTimeout(function() {
+                    // Mark step 1 as completed
+                    const step1 = document.querySelector('.sr-step[data-step="1"]');
+                    const line1 = step1 ? step1.nextElementSibling : null;
+                    
+                    if (step1) { step1.classList.remove('active'); step1.classList.add('completed'); }
+                    if (line1 && line1.classList.contains('sr-step-line')) line1.classList.add('active');
+                    
+                    // Show step 2
+                    showStep(2, 'next');
+                    
+                    // Update summary
+                    updateSummaryUI();
+                }, 300);
+                
+                // Add prefilled badge to equipment card
+                const eqBadge = document.querySelector('.equipment-selected-badge');
+                if (eqBadge) {
+                    const prefilledBadge = document.createElement('span');
+                    prefilledBadge.className = 'prefilled-badge ms-2';
+                    prefilledBadge.innerHTML = '<i class="bi bi-check2"></i> กรอกอัตโนมัติ';
+                    eqBadge.appendChild(prefilledBadge);
+                }
+            } else {
+                // Normal toast for other sources
+                const tcont = document.getElementById('toastContainer');
+                if (tcont) {
+                    const el = document.createElement('div');
+                    el.className = 'sr-toast success';
+                    el.innerHTML = `<div class="sr-toast-icon">✓</div><div class="sr-toast-content"><div class="sr-toast-title">ข้อมูลถูกเติมให้แล้ว</div><div class="sr-toast-message">กรุณาตรวจสอบข้อมูลก่อนกดส่ง</div></div>`;
+                    tcont.appendChild(el);
+                    setTimeout(() => el.remove(), 4500);
+                }
+            }
+
+            // If prefilled workorder types were provided, expose them for the pill loader
+            if (data.prefill_workorder_types) {
+                window._prefill_workorder_types = data.prefill_workorder_types;
+            }
+
+            // remove stored prefill
+            sessionStorage.removeItem('prefill_service_request');
+        } catch (err) {
+            console.error('Prefill error:', err);
+        }
+    })();
+});
+</script>
+{% endblock %}

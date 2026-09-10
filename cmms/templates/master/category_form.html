@@ -1,0 +1,1385 @@
+{% extends 'base.html' %}
+{% load master_extras %}
+{% block title %}<title>{% if create %}เพิ่มหมวดใหม่{% else %}แก้ไขหมวด{% endif %}</title>{% endblock %}
+
+
+{% block content %}
+
+
+<div class="container-fluid py-4" style="max-width: 1400px; margin: 0 auto;">
+  
+  <!-- ============================================
+       HEADER SECTION
+       ============================================ -->
+  <div class="card-modern">
+    <div class="card-header-modern">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+          <h3>
+            {% if create %}
+              <i class="bi bi-plus-circle me-2"></i>เพิ่มหมวดหมู่ Master Data ใหม่
+            {% else %}
+              <i class="bi bi-pencil-square me-2"></i>แก้ไขหมวดหมู่ Master Data
+            {% endif %}
+          </h3>
+          <p>
+            {% if create %}
+              กำหนด Schema และ Meta Fields สำหรับหมวดหมู่ข้อมูลใหม่
+            {% else %}
+              แก้ไข Schema และ Meta Fields ของหมวด: <strong>{{ category.label }}</strong>
+            {% endif %}
+          </p>
+        </div>
+        <div>
+          <a href="{% url 'category_list' %}" class="btn-modern btn-outline-modern" style="background: rgba(255,255,255,0.2); color: white; border-color: rgba(255,255,255,0.3);">
+            <i class="bi bi-arrow-left"></i> กลับ
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       FORM CONTENT
+       ============================================ -->
+  <div class="card-modern">
+    <div class="card-body-modern">
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- ========================================
+             SECTION 1: Category Basic Info
+             ======================================== -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="bi bi-info-circle"></i>
+            ข้อมูลพื้นฐานหมวดหมู่
+          </div>
+          
+          <div class="row g-4">
+            <!-- Category Key -->
+            <div class="col-md-6">
+              <div class="form-group-modern">
+                <label for="{{ form.key.id_for_label }}">
+                  <i class="bi bi-key me-1"></i>รหัสหมวด (Category Key)
+                </label>
+                {{ form.key }}
+                {% if form.key.errors %}
+                  <div class="invalid-feedback d-block">{{ form.key.errors }}</div>
+                {% endif %}
+                <div class="form-text-modern">
+                  รหัสสำหรับใช้ในโค้ด เช่น "equipments", "customers" (ตัวพิมพ์เล็ก ไม่มีช่องว่าง)
+                </div>
+              </div>
+            </div>
+
+            <!-- Category Label -->
+            <div class="col-md-6">
+              <div class="form-group-modern">
+                <label for="{{ form.label.id_for_label }}">
+                  <i class="bi bi-tag me-1"></i>ชื่อหมวด (Label)
+                </label>
+                {{ form.label }}
+                {% if form.label.errors %}
+                  <div class="invalid-feedback d-block">{{ form.label.errors }}</div>
+                {% endif %}
+                <div class="form-text-modern">
+                  ชื่อหมวดที่แสดงใน UI (ภาษาไทย)
+                </div>
+              </div>
+            </div>
+
+            <!-- Category Description -->
+            <div class="col-12">
+              <div class="form-group-modern">
+                <label for="{{ form.description.id_for_label }}">
+                  <i class="bi bi-card-text me-1"></i>คำอธิบาย (Description)
+                </label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                  <div class="invalid-feedback d-block">{{ form.description.errors }}</div>
+                {% endif %}
+                <div class="form-text-modern">
+                  คำอธิบายเพิ่มเติมเกี่ยวกับหมวดนี้ (ไม่บังคับ)
+                </div>
+              </div>
+            </div>
+
+            <!-- Display Template -->
+            <div class="col-12">
+              <div class="form-group-modern">
+                <label for="{{ form.display_template.id_for_label }}">
+                  <i class="bi bi-code-square me-1"></i>Display Template (ไม่บังคับ)
+                </label>
+                {{ form.display_template }}
+                {% if form.display_template.errors %}
+                  <div class="invalid-feedback d-block">{{ form.display_template.errors }}</div>
+                {% endif %}
+                <div class="form-text-modern">
+                  Django template snippet สำหรับแสดง label ใน select/API — context: <code>label</code>, <code>code</code>, <code>meta</code><br>
+                  <strong>ตัวอย่าง:</strong> <code>{% verbatim %}{{ label }}{% if code %} ({{ code }}){% endif %}{% endverbatim %}</code>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================
+             SECTION 2: Meta Fields
+             ======================================== -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="bi bi-gear-fill"></i>
+            ฟิลด์เพิ่มเติม (Meta Fields)
+          </div>
+          
+          <p class="text-muted small mb-4">
+            <i class="bi bi-lightbulb me-1"></i>
+            ฟิลด์เหล่านี้จะปรากฎบนฟอร์มเมื่อสร้าง/แก้ไข MasterItem ในหมวดนี้ และค่าจะถูกเก็บใน <code>meta</code> JSON
+          </p>
+
+          {{ formset.management_form }}
+          
+          <!-- Meta Fields Table -->
+          <div class="meta-fields-wrapper">
+            <table class="meta-fields-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Label</th>
+                  <th>Type</th>
+                  <th class="text-center">Required</th>
+                  <th>Choices</th>
+                  <th>Default</th>
+                  <th >Order</th>
+                  <th >Help Text</th>
+                  <th class="text-center">Preview</th>
+                  {% if not create %}<th  class="text-center">ลบ</th>{% endif %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for field_form in formset %}
+                  <tr class="field-row">
+                    <!-- Name Field -->
+                    <td>
+                      {{ field_form.id }}
+                      {{ field_form.name }}
+                      {% if field_form.name.errors %}
+                        <div class="text-danger small mt-1">{{ field_form.name.errors }}</div>
+                      {% endif %}
+                    </td>
+                    
+                    <!-- Label Field -->
+                    <td>
+                      {{ field_form.label }}
+                      {% if field_form.label.errors %}
+                        <div class="text-danger small mt-1">{{ field_form.label.errors }}</div>
+                      {% endif %}
+                    </td>
+                    
+                    <!-- Type Field -->
+                    <td>
+                      {{ field_form.field_type }}
+                      {% if field_form.field_type.errors %}
+                        <div class="text-danger small mt-1">{{ field_form.field_type.errors }}</div>
+                      {% endif %}
+                    </td>
+                    
+                    <!-- Required Checkbox -->
+                    <td class="text-center">
+                      {{ field_form.required }}
+                    </td>
+                    
+                    <!-- Choices Field with Load Controls -->
+                    <td>
+                      <div class="choices-wrapper">
+                        <!-- Toggle Button -->
+                        <button type="button" class="btn btn-sm btn-outline-primary choices-toggle-btn" title="จัดการ Choices">
+                          <i class="bi bi-list-check"></i>
+                          <span class="choices-summary">--</span>
+                          <i class="bi bi-chevron-down toggle-icon"></i>
+                        </button>
+
+                        <!-- Hidden JSON Input -->
+                        <div style="display:none;">
+                          {{ field_form.choices }}
+                        </div>
+
+                        <!-- Collapsible Content -->
+                        <div class="choices-content" style="display:none;">
+                          
+                          <!-- Action Bar (master-only: load from master or clear) -->
+                          <div class="choices-action-bar">
+                            <div class="choices-action-group">
+                              <button type="button" class="btn btn-xs btn-success load-from-master-btn" title="โหลดจาก Master Data">
+                                <i class="bi bi-download"></i>
+                                โหลดจาก Master
+                              </button>
+                              <button type="button" class="btn btn-xs btn-warning edit-json-btn" title="แก้ไข JSON">
+                                <i class="bi bi-code-square"></i>
+                                แก้ไข JSON
+                              </button>
+                            </div>
+                            <div class="choices-action-group">
+                              <!-- Allow clearing selection (sets to no choices) -->
+                              <button type="button" class="btn btn-xs btn-outline-danger clear-choices-btn" title="Clear">
+                                <i class="bi bi-trash"></i>
+                              </button>
+                            </div>
+                          </div>
+
+                          <!-- JSON Editor (Initially Hidden) -->
+                          <div class="choices-json-editor" style="display:none;">
+                            <textarea class="choices-json-textarea" placeholder='["A", "B", "C"] หรือ [{"value":"a","label":"A"}]'></textarea>
+                            <div class="choices-json-editor-actions">
+                              <button type="button" class="btn btn-sm btn-success save-json-btn">
+                                <i class="bi bi-check-circle"></i> บันทึก
+                              </button>
+                              <button type="button" class="btn btn-sm btn-secondary cancel-json-btn">
+                                <i class="bi bi-x-circle"></i> ยกเลิก
+                              </button>
+                            </div>
+                          </div>
+
+                          <!-- Load from Master Panel (Initially Hidden) -->
+                          <div class="load-master-panel" style="display:none;">
+                            <div class="d-flex gap-2 align-items-center">
+                              <select class="form-select form-select-sm load-choices-from-category flex-grow-1" data-row-index="{{ forloop.counter0 }}">
+                                <option value="">-- เลือกหมวด Master Data --</option>
+                                {% for cat in master_categories %}
+                                  <option value="{{ cat.key }}">{{ cat.label }}</option>
+                                {% endfor %}
+                              </select>
+                                <!-- Master item selector (single select) -->
+                                <select class="form-select form-select-sm master-items-select flex-grow-1" data-row-index="{{ forloop.counter0 }}" style="display:none;">
+                                  <option value="">-- เลือกไอเท็มจาก Master --</option>
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary btn-sm close-load-panel-btn" title="ปิด">
+                                  <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                          </div>
+
+                          <!-- Choices Display (Unified) -->
+                          <div class="choices-display-unified">
+                            <div class="choices-empty-state">
+                              <i class="bi bi-inbox"></i>
+                              <p>ยังไม่มีตัวเลือก</p>
+                              <small>เลือกหมวด Master และเลือกไอเท็มเพื่ออ้างอิงเป็นแหล่งค่าของฟิลด์นี้</small>
+                            </div>
+                            <div class="choices-items-list" style="display:none;">
+                              <!-- Choices will be rendered here as list items -->
+                            </div>
+                          </div>
+
+                          <!-- Choices now must reference a single MasterItem (no inline JSON). -->
+
+                          <!-- Preview Area -->
+                          <div class="choices-preview" style="display:none;">
+                            <div class="choices-preview-title">
+                              <i class="bi bi-eye-fill"></i> ตัวอย่างการแสดงผล
+                            </div>
+                            <div class="choices-preview-content"></div>
+                          </div>
+
+                        </div>
+
+                        {% if field_form.choices.errors %}
+                          <div class="text-danger small mt-1">{{ field_form.choices.errors }}</div>
+                        {% endif %}
+                      </div>
+                    </td>
+
+                      
+
+                          <!-- Hidden choices value (for submission). Editing disabled in this UI. -->
+                          <div style="display:none;">
+                            {{ field_form.choices }}
+                          </div>
+
+                          {% if field_form.choices.errors %}
+                            <div class="text-danger small mt-1">{{ field_form.choices.errors }}</div>
+                          {% endif %}
+                        </div>
+
+                        <!-- Load Choices Controls (Hidden by default) -->
+                        <div class="load-choices-controls">
+                          <label class="load-choices-label">
+                            <i class="bi bi-database me-1"></i>โหลดจาก Master Data
+                          </label>
+                          <div class="d-flex gap-2">
+                            <select class="form-select form-select-sm load-choices-from-category" data-row-index="{{ forloop.counter0 }}">
+                              <option value="">-- เลือกหมวด --</option>
+                              {% for cat in master_categories %}
+                                <option value="{{ cat.key }}">{{ cat.label }}</option>
+                              {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-secondary btn-sm open-choices-modal-btn" data-row-index="{{ forloop.counter0 }}" title="เปิดหน้าต่างเลือก" style="display:none;">
+                              <i class="bi bi-grid-3x3-gap"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm clear-choices-btn" data-row-index="{{ forloop.counter0 }}" title="Clear choices">
+                              <i class="bi bi-x"></i>
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- Fine-grained choices UI (select multiple for dropdown, checkboxes for boolean) -->
+                        <div class="choices-ui-wrapper" style="margin-top:0.5rem; display:none;">
+                          <select multiple class="form-select form-select-sm choices-ui" style="min-height:100px; display:none;"></select>
+                          <div class="choices-ui-checkboxes" style="display:none; gap:0.5rem; margin-top:0.5rem;"></div>
+                        </div>
+                    
+                    <!-- Default Value Field -->
+                    <td>
+                      {{ field_form.default_value }}
+                    </td>
+                    
+                    <!-- Order Field -->
+                    <td>
+                      {{ field_form.order }}
+                    </td>
+                    
+                    <!-- Help Text Field -->
+                    <td>
+                      {{ field_form.help_text }}
+                    </td>
+                    
+                    <!-- Preview Checkbox -->
+                    <td class="text-center">
+                      {{ field_form.visible_in_preview }}
+                    </td>
+                    
+                    <!-- Delete Checkbox -->
+                    {% if not create %}
+                      <td class="text-center">
+                        {{ field_form.DELETE }}
+                      </td>
+                    {% endif %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Instructions Alert -->
+          <div class="alert-modern mt-4">
+            <strong><i class="bi bi-info-circle me-2"></i>คำแนะนำ:</strong>
+            <ul>
+              <li><strong>Name</strong> — ชื่อเชิงเทคนิค (machine key) ใช้เป็น key ใน JSON meta เช่น <code>floor</code>, <code>capacity</code></li>
+              <li><strong>Type</strong> — ประเภทข้อมูล: <code>string</code>, <code>text</code>, <code>integer</code>, <code>decimal</code>, <code>boolean</code>, <code>date</code>, <code>select</code></li>
+              <li><strong>Choices</strong> — สำหรับ type=<code>select</code> ใส่ JSON array เช่น <code>["A","B","C"]</code> หรือใช้ปุ่มโหลดจาก Master Data เท่านั้น</li>
+              <li><strong>Preview</strong> — ถ้าติ๊ก ค่าจะแสดงใน preview/option label (ต้องมี display_template รองรับ)</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- ========================================
+             ACTION BUTTONS
+             ======================================== -->
+        <div class="d-flex gap-3 justify-content-end flex-wrap">
+          <a href="{% url 'category_list' %}" class="btn-modern btn-outline-modern">
+            <i class="bi bi-x-circle"></i> ยกเลิก
+          </a>
+          <button type="submit" class="btn-modern btn-primary-modern">
+            <i class="bi bi-check-circle"></i>
+            {% if create %}สร้างหมวดใหม่{% else %}บันทึกการแก้ไข{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ============================================
+     EMBEDDED DATA & JAVASCRIPT
+     ============================================ -->
+
+<!-- NOTE: master items are fetched live from the API when the user opens the Load-from-Master panel/modal.
+     We intentionally do NOT embed a snapshot here to ensure the UI always shows current DB state. -->
+
+<script>
+(function() {
+  'use strict';
+
+  // ==========================================
+  // Constants and Initialization
+  // ==========================================
+
+  // Types that should show the choices loading UI
+  const TYPES_WITH_CHOICES = ['select', 'boolean', 'checkbox'];
+  const API_ENDPOINT = '{% url "api_master_items" %}';
+
+  // Note: we intentionally do NOT embed a snapshot of master items on page load.
+  // All master items are fetched live from the API when the user opens the Load-from-Master panel/modal
+  // so edits to master items in the DB are reflected immediately.
+
+  // ==========================================
+  // Utility Functions
+  // ==========================================
+
+  /**
+   * Find the choices input field within a wrapper
+   */
+  function findChoicesInput(wrapper) {
+    return wrapper.querySelector('input[type="hidden"], textarea, input[type="text"]');
+  }
+
+  /**
+   * Show/hide choices toggle button based on field type
+   */
+  function updateChoicesUI(row) {
+    const typeSelect = row.querySelector('[name$="-field_type"]');
+    const choicesWrapper = row.querySelector('.choices-wrapper');
+    
+    if (!typeSelect || !choicesWrapper) return;
+    
+    const toggleBtn = choicesWrapper.querySelector('.choices-toggle-btn');
+    const fieldType = typeSelect.value || '';
+    
+    // Show toggle button for supported types
+    if (toggleBtn) {
+      toggleBtn.style.display = (TYPES_WITH_CHOICES.indexOf(fieldType) !== -1) ? '' : 'none';
+    }
+  }
+
+  /**
+   * Transform master items to choices format
+   */
+  function transformItemsToChoices(items) {
+    return (items || []).map(function(item) {
+      return {
+        value: item.value || item.code || item.key || item.label || '',
+        label: item.label || item.name || item.value || item.code || ''
+      };
+    });
+  }
+
+  /**
+   * Apply choices to input field
+   */
+  function applyChoices(input, choices) {
+    if (!input) return;
+    input.value = JSON.stringify(choices, null, 2);
+    // Trigger display update
+    const wrapper = input.closest('.choices-wrapper');
+    if (wrapper) {
+      renderChoicesDisplay(wrapper, choices);
+    }
+  }
+
+  /**
+   * Parse choices from input (supports both simple arrays and object arrays)
+   */
+  function parseChoicesFromInput(input) {
+    if (!input) return [];
+    const val = (input.value || '').trim();
+    if (!val) return [];
+    
+    try {
+      const parsed = JSON.parse(val);
+      if (!Array.isArray(parsed)) return [];
+      
+      // Normalize to [{value, label}, ...]
+      return parsed.map(function(item) {
+        if (typeof item === 'string') {
+          return { value: item, label: item };
+        } else if (typeof item === 'object' && item !== null) {
+          return {
+            value: item.value || item.code || item.key || '',
+            label: item.label || item.name || item.value || item.code || ''
+          };
+        }
+        return { value: '', label: '' };
+      }).filter(function(it) { return it.value !== ''; });
+    } catch (e) {
+      console.warn('Failed to parse choices JSON:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Update toggle button summary text
+   */
+  function updateToggleSummary(wrapper) {
+    const toggleBtn = wrapper.querySelector('.choices-toggle-btn');
+    const summarySpan = toggleBtn ? toggleBtn.querySelector('.choices-summary') : null;
+    
+    if (!summarySpan) return;
+    
+    const input = findChoicesInput(wrapper);
+    const state = getChoicesState(input);
+
+    if (state.type === 'none') {
+      summarySpan.textContent = 'ไม่มีตัวเลือก';
+      if (toggleBtn) toggleBtn.classList.remove('has-choices');
+    } else if (state.type === 'array') {
+      const arr = state.items;
+      const summary = arr.slice(0, 3).map(function(c) { return c.label || c.value; }).join(', ');
+      const extra = arr.length > 3 ? ' +' + (arr.length - 3) : '';
+      summarySpan.textContent = summary + extra;
+      if (toggleBtn) toggleBtn.classList.add('has-choices');
+    } else if (state.type === 'master_ref') {
+      const lbl = (state.ref && state.ref.item && state.ref.item.label) || (state.ref && state.ref.item && state.ref.item.value) || '';
+      summarySpan.textContent = lbl || 'Master item selected';
+      if (toggleBtn) toggleBtn.classList.add('has-choices');
+    }
+  }
+
+  /**
+   * Toggle choices content visibility
+   */
+  function toggleChoicesContent(wrapper) {
+    const toggleBtn = wrapper.querySelector('.choices-toggle-btn');
+    const content = wrapper.querySelector('.choices-content');
+    
+    if (!toggleBtn || !content) return;
+    
+    const isVisible = content.style.display !== 'none';
+    
+    if (isVisible) {
+      content.style.display = 'none';
+      toggleBtn.classList.remove('active');
+    } else {
+      content.style.display = 'block';
+      toggleBtn.classList.add('active');
+    }
+  }
+
+  /**
+   * Render unified choices display as clean list
+   */
+  function renderChoicesDisplay(wrapper, choices) {
+    const displayUnified = wrapper.querySelector('.choices-display-unified');
+    if (!displayUnified) return;
+    
+    const emptyState = displayUnified.querySelector('.choices-empty-state');
+    const itemsList = displayUnified.querySelector('.choices-items-list');
+    // Support two modes: array of choices OR master reference object
+    if (!choices || (Array.isArray(choices) && choices.length === 0)) {
+      if (emptyState) emptyState.style.display = '';
+      if (itemsList) itemsList.style.display = 'none';
+    } else if (Array.isArray(choices)) {
+      // array mode
+      if (emptyState) emptyState.style.display = 'none';
+      if (itemsList) {
+        itemsList.style.display = 'block';
+        itemsList.innerHTML = '';
+
+        choices.forEach(function(item, index) {
+          const li = document.createElement('div');
+          li.className = 'choice-item';
+          li.dataset.index = index;
+
+          const info = document.createElement('div');
+          info.className = 'choice-item-info';
+
+          const valueSpan = document.createElement('div');
+          valueSpan.className = 'choice-item-value';
+          valueSpan.textContent = item.value || '';
+
+          const labelSpan = document.createElement('div');
+          labelSpan.className = 'choice-item-label';
+          labelSpan.textContent = item.label || item.value || '';
+
+          info.appendChild(valueSpan);
+          info.appendChild(labelSpan);
+
+          const removeBtn = document.createElement('i');
+          removeBtn.className = 'bi bi-x-circle choice-item-remove';
+          removeBtn.title = 'ลบตัวเลือกนี้';
+          removeBtn.addEventListener('click', function() {
+            removeChoiceItem(wrapper, index);
+          });
+
+          li.appendChild(info);
+          li.appendChild(removeBtn);
+          itemsList.appendChild(li);
+        });
+      }
+    } else if (choices && choices._master_ref) {
+      // master reference mode - display single referenced master item
+      if (emptyState) emptyState.style.display = 'none';
+      if (itemsList) {
+        itemsList.style.display = 'block';
+        itemsList.innerHTML = '';
+        const li = document.createElement('div');
+        li.className = 'choice-item';
+
+        const info = document.createElement('div');
+        info.className = 'choice-item-info';
+
+        const valueSpan = document.createElement('div');
+        valueSpan.className = 'choice-item-value';
+        valueSpan.textContent = (choices.item && (choices.item.value || choices.item.key)) || '';
+
+        const labelSpan = document.createElement('div');
+        labelSpan.className = 'choice-item-label';
+        labelSpan.textContent = (choices.item && choices.item.label) || '';
+
+        info.appendChild(valueSpan);
+        info.appendChild(labelSpan);
+
+        // no remove button for master ref; user must Clear if they want none
+        li.appendChild(info);
+        itemsList.appendChild(li);
+      }
+    }
+    
+    // Update toggle summary
+    updateToggleSummary(wrapper);
+  }
+
+  /**
+   * Remove a choice item by index
+   */
+  function removeChoiceItem(wrapper, index) {
+    const input = findChoicesInput(wrapper);
+    if (!input) return;
+    
+    const choices = parseChoicesFromInput(input);
+    choices.splice(index, 1);
+    
+    applyChoices(input, choices);
+    renderChoicesDisplay(wrapper, choices);
+  }
+
+  /**
+   * Toggle JSON editor view
+   */
+  function toggleJSONEditor(wrapper) {
+    const editor = wrapper.querySelector('.choices-json-editor');
+    const display = wrapper.querySelector('.choices-display-unified');
+    const editBtn = wrapper.querySelector('.edit-json-btn');
+    const textarea = wrapper.querySelector('.choices-json-textarea');
+    
+    if (!editor || !textarea) return;
+    
+    const isVisible = editor.style.display !== 'none';
+    
+    if (isVisible) {
+      // Hide editor
+      editor.style.display = 'none';
+      if (display) display.style.display = '';
+      if (editBtn) {
+        editBtn.classList.remove('btn-danger');
+        editBtn.classList.add('btn-warning');
+        editBtn.innerHTML = '<i class="bi bi-code-square"></i> แก้ไข JSON';
+      }
+    } else {
+      // Show editor and load current JSON
+      const input = findChoicesInput(wrapper);
+      if (input) {
+        const val = input.value.trim();
+        if (val) {
+          try {
+            const parsed = JSON.parse(val);
+            textarea.value = JSON.stringify(parsed, null, 2);
+          } catch (e) {
+            textarea.value = val;
+          }
+        } else {
+          textarea.value = '[]';
+        }
+      }
+      editor.style.display = 'block';
+      if (display) display.style.display = 'none';
+      if (editBtn) {
+        editBtn.classList.remove('btn-warning');
+        editBtn.classList.add('btn-danger');
+        editBtn.innerHTML = '<i class="bi bi-x-circle"></i> ปิด Editor';
+      }
+      textarea.focus();
+    }
+  }
+
+  /**
+   * Save JSON from editor
+   */
+  function saveJSONFromEditor(wrapper) {
+    const textarea = wrapper.querySelector('.choices-json-textarea');
+    const input = findChoicesInput(wrapper);
+    
+    if (!textarea || !input) return;
+    
+    const jsonText = textarea.value.trim();
+    
+    if (!jsonText) {
+      input.value = '';
+      renderChoicesDisplay(wrapper, []);
+      toggleJSONEditor(wrapper);
+      return;
+    }
+    
+    try {
+      const parsed = JSON.parse(jsonText);
+      
+      if (!Array.isArray(parsed)) {
+        alert('JSON ต้องเป็น Array เท่านั้น\nตัวอย่าง: ["A", "B", "C"]');
+        return;
+      }
+      
+      // Normalize to [{value, label}, ...]
+      const normalized = parsed.map(function(item) {
+        if (typeof item === 'string') {
+          return { value: item, label: item };
+        } else if (typeof item === 'object' && item !== null) {
+          return {
+            value: item.value || item.code || item.key || '',
+            label: item.label || item.name || item.value || item.code || ''
+          };
+        }
+        return null;
+      }).filter(function(it) { return it && it.value; });
+      
+      applyChoices(input, normalized);
+      
+      // Update fine-grained UI
+      const row = wrapper.closest('tr');
+      if (row) {
+        const typeSelect = row.querySelector('[name$="-field_type"]');
+        const fieldType = typeSelect ? (typeSelect.value || '') : '';
+        populateChoicesUI(row, normalized, fieldType);
+      }
+      
+      toggleJSONEditor(wrapper);
+      
+    } catch (e) {
+      alert('JSON ไม่ถูกต้อง: ' + e.message + '\n\nตัวอย่าง:\n["A", "B", "C"]\nหรือ\n[{"value":"a","label":"A"}]');
+    }
+  }
+
+  /**
+   * Cancel JSON editing
+   */
+  function cancelJSONEditor(wrapper) {
+    toggleJSONEditor(wrapper);
+  }
+
+  /**
+   * Toggle Load Master panel
+   */
+  function toggleLoadMasterPanel(wrapper) {
+    const panel = wrapper.querySelector('.load-master-panel');
+    if (!panel) return;
+    
+    const isVisible = panel.style.display !== 'none';
+    panel.style.display = isVisible ? 'none' : 'block';
+  }
+
+  /**
+   * Apply a master-item reference to the hidden choices input
+   * Stores a JSON object with _master_ref marker so backend can detect reference mode.
+   */
+  function applyMasterReference(input, categoryKey, item) {
+    if (!input) return;
+    const payload = {
+      _master_ref: true,
+      category: categoryKey,
+      item: {
+        key: item.key || item.id || item.value || item.code || '',
+        value: item.value || item.code || item.key || '',
+        label: item.label || item.name || item.value || ''
+      }
+    };
+    input.value = JSON.stringify(payload);
+    // update display
+    const wrapper = input.closest('.choices-wrapper');
+    if (wrapper) renderChoicesDisplay(wrapper, payload);
+  }
+
+  /**
+   * Return choice state: { type: 'none' } | { type: 'array', items: [...] } | { type: 'master_ref', ref: {...} }
+   */
+  function getChoicesState(input) {
+    if (!input) return { type: 'none' };
+    const val = (input.value || '').trim();
+    if (!val) return { type: 'none' };
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return { type: 'array', items: parsed };
+      if (parsed && parsed._master_ref) return { type: 'master_ref', ref: parsed };
+      return { type: 'none' };
+    } catch (e) {
+      return { type: 'none' };
+    }
+  }
+
+  /**
+   * Copy JSON to clipboard
+   */
+  function copyJSONToClipboard(wrapper) {
+    // Deprecated: copy-to-clipboard for inline JSON is disabled.
+    console.warn('Deprecated: copyJSONToClipboard called but inline editing is disabled.');
+    return;
+  }
+
+  /**
+   * Toggle preview mode
+   */
+  function togglePreview(wrapper) {
+    // Deprecated: preview mode for inline JSON is disabled.
+    console.warn('Deprecated: togglePreview called but inline preview is disabled.');
+    return;
+  }
+
+  /**
+   * Render preview of choices based on field type
+   */
+  function renderPreview(container, choices, fieldType) {
+    if (!container) return;
+    container.innerHTML = '';
+    
+    if (!Array.isArray(choices) || choices.length === 0) {
+      container.innerHTML = '<p class="text-muted small mb-0"><i>ไม่มีตัวเลือกให้แสดง</i></p>';
+      return;
+    }
+    
+    if (fieldType === 'select') {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'choices-preview-select';
+      
+      const label = document.createElement('label');
+      label.className = 'form-label small fw-bold';
+      label.textContent = 'แบบ Dropdown:';
+      
+      const select = document.createElement('select');
+      select.className = 'form-select';
+      
+      const defaultOpt = document.createElement('option');
+      defaultOpt.value = '';
+      defaultOpt.textContent = '-- เลือก --';
+      select.appendChild(defaultOpt);
+      
+      choices.forEach(function(item) {
+        const opt = document.createElement('option');
+        opt.value = item.value;
+        opt.textContent = item.label || item.value;
+        select.appendChild(opt);
+      });
+      
+      wrapper.appendChild(label);
+      wrapper.appendChild(select);
+      container.appendChild(wrapper);
+      
+    } else if (fieldType === 'boolean') {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'choices-preview-radio';
+      
+      const label = document.createElement('label');
+      label.className = 'form-label small fw-bold';
+      label.textContent = 'แบบ Radio (เลือกหนึ่งเดียว):';
+      wrapper.appendChild(label);
+      
+      choices.forEach(function(item) {
+        const div = document.createElement('div');
+        div.className = 'form-check';
+        
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.className = 'form-check-input';
+        input.name = 'preview_radio_' + Math.random();
+        input.value = item.value;
+        input.id = 'preview_radio_' + Math.random().toString(36).slice(2);
+        
+        const lbl = document.createElement('label');
+        lbl.className = 'form-check-label';
+        lbl.htmlFor = input.id;
+        lbl.textContent = item.label || item.value;
+        
+        div.appendChild(input);
+        div.appendChild(lbl);
+        wrapper.appendChild(div);
+      });
+      
+      container.appendChild(wrapper);
+      
+    } else if (fieldType === 'checkbox') {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'choices-preview-checkboxes';
+      
+      const label = document.createElement('label');
+      label.className = 'form-label small fw-bold';
+      label.textContent = 'แบบ Checkbox (เลือกได้หลายตัว):';
+      wrapper.appendChild(label);
+      
+      choices.forEach(function(item) {
+        const div = document.createElement('div');
+        div.className = 'form-check';
+        
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.className = 'form-check-input';
+        input.value = item.value;
+        input.id = 'preview_cb_' + Math.random().toString(36).slice(2);
+        
+        const lbl = document.createElement('label');
+        lbl.className = 'form-check-label';
+        lbl.htmlFor = input.id;
+        lbl.textContent = item.label || item.value;
+        
+        div.appendChild(input);
+        div.appendChild(lbl);
+        wrapper.appendChild(div);
+      });
+      
+      container.appendChild(wrapper);
+    } else {
+      container.innerHTML = '<p class="text-muted small mb-0"><i>ไม่รองรับการแสดงตัวอย่างสำหรับประเภทนี้</i></p>';
+    }
+  }
+
+  /**
+   * Populate the fine-grained UI (multi-select or checkboxes) and sync handlers
+   */
+  function populateChoicesUI(row, choices, fieldType) {
+    const wrapper = row.querySelector('.choices-ui-wrapper');
+    if (!wrapper) return;
+
+    const selectEl = wrapper.querySelector('.choices-ui');
+    const checkboxesEl = wrapper.querySelector('.choices-ui-checkboxes');
+
+    // Clear previous
+    if (selectEl) selectEl.innerHTML = '';
+    if (checkboxesEl) checkboxesEl.innerHTML = '';
+
+    if (!Array.isArray(choices)) choices = [];
+
+    // For both 'select' and boolean/checkbox types we render checkbox-style UI
+    if (fieldType === 'select' || fieldType === 'boolean' || fieldType === 'checkbox') {
+      if (checkboxesEl) {
+        choices.forEach(function(it, idx){
+          const id = 'choice_cb_' + Math.random().toString(36).slice(2,9);
+          const label = document.createElement('label');
+          label.className = 'd-flex align-items-center gap-2';
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.value = it.value;
+          cb.checked = true;
+          cb.className = 'form-check-input';
+          cb.dataset.choiceIndex = idx;
+          const span = document.createElement('span');
+          span.textContent = it.label || it.value;
+          label.appendChild(cb);
+          label.appendChild(span);
+          checkboxesEl.appendChild(label);
+        });
+        checkboxesEl.style.display = '';
+      }
+      // hide multi-select element
+      if (selectEl) selectEl.style.display = 'none';
+      if (wrapper) wrapper.style.display = '';
+    } else {
+      // hide both
+      if (selectEl) selectEl.style.display = 'none';
+      if (checkboxesEl) checkboxesEl.style.display = 'none';
+      if (wrapper) wrapper.style.display = 'none';
+    }
+
+    // Attach change handlers to sync UI back to underlying input
+    const input = row.querySelector('.choices-wrapper').querySelector('textarea, input[type="text"], input[type="hidden"], input');
+    if (!input) return;
+
+    if (selectEl) {
+      selectEl.addEventListener('change', function(){
+        const opts = Array.from(this.selectedOptions || []);
+        const arr = opts.map(function(o){ return { value: o.value, label: o.textContent }; });
+        applyChoices(input, arr);
+      });
+    }
+
+    if (checkboxesEl) {
+      // delegate
+      checkboxesEl.querySelectorAll('input[type="checkbox"]').forEach(function(cb){
+        cb.addEventListener('change', function(){
+          const checked = Array.from(checkboxesEl.querySelectorAll('input[type="checkbox"]:checked'));
+          const arr = checked.map(function(c){ return { value: c.value, label: c.nextSibling && c.nextSibling.textContent ? c.nextSibling.textContent : c.value }; });
+          applyChoices(input, arr);
+        });
+      });
+    }
+  }
+
+  /**
+   * Fetch master items from API
+   */
+  function fetchMasterItems(categoryKey) {
+    const url = API_ENDPOINT + '?category=' + encodeURIComponent(categoryKey);
+    
+    return fetch(url, {
+      credentials: 'same-origin',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(function(response) {
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
+      return response.json();
+    })
+    .then(function(data) {
+      return data.results || [];
+    });
+  }
+
+  // ==========================================
+  // Choices Modal Helpers
+  // ==========================================
+
+  function openChoicesModalForRow(row, items) {
+    currentRow = row;
+    currentChoices = transformItemsToChoices(items || []);
+    renderChoicesModal(currentChoices);
+    document.getElementById('choicesModal').classList.add('active');
+  }
+
+  function closeChoicesModal() {
+    document.getElementById('choicesModal').classList.remove('active');
+    // clear table body to avoid stale nodes
+    const tbody = document.getElementById('choicesModalTableBody');
+    if (tbody) tbody.innerHTML = '';
+    document.getElementById('choicesModalSearch').value = '';
+    const selAll = document.getElementById('choicesModalSelectAll');
+    if (selAll) selAll.checked = false;
+    const cnt = document.getElementById('choicesModalSelectedCount'); if (cnt) cnt.textContent = '0';
+  }
+
+  function renderChoicesModal(items) {
+    const tbody = document.getElementById('choicesModalTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    items.forEach(function(it, idx){
+      const tr = document.createElement('tr');
+      tr.dataset.idx = idx;
+      const tdc = document.createElement('td'); tdc.className = 'text-center';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'form-check-input modal-row-cb'; cb.dataset.idx = idx; tdc.appendChild(cb);
+      const tdv = document.createElement('td'); tdv.textContent = it.value || '';
+      const tdl = document.createElement('td'); tdl.textContent = it.label || '';
+      tr.appendChild(tdc); tr.appendChild(tdv); tr.appendChild(tdl);
+      tbody.appendChild(tr);
+
+      // row click toggles checkbox
+      tr.addEventListener('click', function(e){
+        if (e.target && e.target.tagName === 'INPUT') return; // let checkbox handle
+        const cbx = tr.querySelector('input[type="checkbox"]');
+        if (cbx) cbx.checked = !cbx.checked;
+        updateChoicesModalCount();
+      });
+      // checkbox change
+      cb.addEventListener('change', updateChoicesModalCount);
+    });
+    updateChoicesModalCount();
+  }
+
+  function updateChoicesModalCount(){
+    const tbody = document.getElementById('choicesModalTableBody');
+    if (!tbody) return;
+    const checked = tbody.querySelectorAll('input.modal-row-cb:checked').length;
+    const cnt = document.getElementById('choicesModalSelectedCount'); if (cnt) cnt.textContent = String(checked);
+    const selAll = document.getElementById('choicesModalSelectAll');
+    if (selAll) {
+      const total = tbody.querySelectorAll('input.modal-row-cb').length;
+      selAll.checked = (total > 0 && checked === total);
+    }
+  }
+
+  function getSelectedChoicesFromModal(){
+    const tbody = document.getElementById('choicesModalTableBody');
+    if (!tbody) return [];
+    const selected = [];
+    Array.from(tbody.querySelectorAll('input.modal-row-cb:checked')).forEach(function(cb){
+      const idx = Number(cb.dataset.idx);
+      if (Number.isFinite(idx) && currentChoices[idx]) selected.push(currentChoices[idx]);
+    });
+    return selected;
+  }
+
+  /**
+   * Show loading state
+   */
+  function showLoading(button, show) {
+    if (show) {
+      button.disabled = true;
+      button.dataset.originalHtml = button.innerHTML;
+      button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+    } else {
+      button.disabled = false;
+      if (button.dataset.originalHtml) {
+        button.innerHTML = button.dataset.originalHtml;
+      }
+    }
+  }
+
+  // ==========================================
+  // Event Handlers
+  // ==========================================
+
+  /**
+   * Handle category selection for loading choices
+   */
+  function handleCategorySelection(selectElement) {
+    const categoryKey = selectElement.value;
+    if (!categoryKey) return;
+
+    const row = selectElement.closest('tr');
+    const choicesWrapper = selectElement.closest('.choices-wrapper');
+    const choicesInput = findChoicesInput(choicesWrapper);
+    
+    if (!choicesInput) {
+      console.warn('Choices input not found');
+      return;
+    }
+
+    // Always fetch from API (do not rely on embedded snapshots)
+
+    // Fetch master items and populate the single-select dropdown for the user to pick one
+    const loadButton = selectElement.closest('.load-master-panel') ? selectElement.closest('.load-master-panel').querySelector('.master-items-select') : null;
+    const panelButton = selectElement.closest('.choices-wrapper') ? selectElement.closest('.choices-wrapper').querySelector('.load-from-master-btn') : null;
+    if (panelButton) showLoading(panelButton, true);
+
+    fetchMasterItems(categoryKey)
+      .then(function(items) {
+          // For this workflow: when a category is selected we import ALL master items
+          // as the choices array (no per-item selection). This keeps the Choices
+          // field tied to the chosen Master category but materializes the current
+          // set of items into the choices array for this meta-field.
+          const selectEl = selectElement.closest('.load-master-panel') ? selectElement.closest('.load-master-panel').querySelector('.master-items-select') : null;
+          const transformed = transformItemsToChoices(items || []);
+
+          // Apply the full set of choices to the hidden input
+          if (choicesInput) {
+            applyChoices(choicesInput, transformed);
+
+            // populate the fine-grained UI (checkboxes/multi-select) so the admin
+            // can still view/remove individual entries if needed
+            const typeSelect = row.querySelector('[name$="-field_type"]');
+            const fieldType = typeSelect ? (typeSelect.value || '') : '';
+            populateChoicesUI(row, transformed, fieldType);
+          }
+
+          // hide the one-item select (not used in "import all" mode)
+          if (selectEl) {
+            selectEl.innerHTML = '';
+            selectEl.style.display = 'none';
+          }
+        })
+      .catch(function(error) {
+        console.error('Failed to load master items:', error);
+        alert('ไม่สามารถโหลดข้อมูลจาก Master Data ได้\nกรุณาลองใหม่อีกครั้ง');
+      })
+      .finally(function() {
+        if (panelButton) showLoading(panelButton, false);
+      });
+  }
+
+  /**
+   * Handle clear choices button
+   */
+  function handleClearChoices(button) {
+    const row = button.closest('tr');
+    const choicesWrapper = button.closest('.choices-wrapper');
+    const choicesInput = findChoicesInput(choicesWrapper);
+    const categorySelect = row.querySelector('.load-choices-from-category');
+    
+    if (choicesInput) {
+      choicesInput.value = '';
+    }
+    
+    if (categorySelect) {
+      categorySelect.value = '';
+    }
+    // clear fine-grained UI
+    const wrapper = row.querySelector('.choices-ui-wrapper');
+    if (wrapper) {
+      const sel = wrapper.querySelector('.choices-ui');
+      const boxes = wrapper.querySelector('.choices-ui-checkboxes');
+      if (sel) sel.innerHTML = '';
+      if (boxes) boxes.innerHTML = '';
+      wrapper.style.display = 'none';
+    }
+  }
+
+  /**
+   * Handle field type change
+   */
+  function handleFieldTypeChange(typeSelect) {
+    const row = typeSelect.closest('tr');
+    updateChoicesUI(row);
+  }
+
+  // ==========================================
+  // Initialization
+  // ==========================================
+
+  document.addEventListener('DOMContentLoaded', function() {
+    
+    // Initialize all field type dropdowns
+    document.querySelectorAll('[name$="-field_type"]').forEach(function(typeSelect) {
+      const row = typeSelect.closest('tr');
+      
+      // Set initial UI state
+      updateChoicesUI(row);
+      
+      // Initialize display for existing choices and toggle summary
+      const choicesWrapper = row.querySelector('.choices-wrapper');
+      if (choicesWrapper) {
+        const input = findChoicesInput(choicesWrapper);
+        if (input) {
+          const choices = parseChoicesFromInput(input);
+          renderChoicesDisplay(choicesWrapper, choices);
+          updateToggleSummary(choicesWrapper);
+        }
+      }
+
+      // Listen for changes
+      typeSelect.addEventListener('change', function() {
+        handleFieldTypeChange(this);
+      });
+    });
+
+    // Setup Toggle Buttons
+    document.querySelectorAll('.choices-toggle-btn').forEach(function(toggleBtn) {
+      toggleBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const wrapper = this.closest('.choices-wrapper');
+        if (wrapper) {
+          toggleChoicesContent(wrapper);
+        }
+      });
+    });
+
+    // Setup Action Bar Buttons
+    document.querySelectorAll('.choices-wrapper').forEach(function(wrapper) {
+      
+      // Load from Master button
+      const loadBtn = wrapper.querySelector('.load-from-master-btn');
+      if (loadBtn) {
+        loadBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          toggleLoadMasterPanel(wrapper);
+        });
+      }
+      
+      // Close load panel button
+      const closeLoadBtn = wrapper.querySelector('.close-load-panel-btn');
+      if (closeLoadBtn) {
+        closeLoadBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          toggleLoadMasterPanel(wrapper);
+        });
+      }
+      
+      // Edit JSON button
+      const editJsonBtn = wrapper.querySelector('.edit-json-btn');
+      if (editJsonBtn) {
+        editJsonBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          toggleJSONEditor(wrapper);
+        });
+      }
+      
+      // Save JSON button
+      const saveJsonBtn = wrapper.querySelector('.save-json-btn');
+      if (saveJsonBtn) {
+        saveJsonBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          saveJSONFromEditor(wrapper);
+        });
+      }
+      
+      // Cancel JSON button
+      const cancelJsonBtn = wrapper.querySelector('.cancel-json-btn');
+      if (cancelJsonBtn) {
+        cancelJsonBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          cancelJSONEditor(wrapper);
+        });
+      }
+      
+      // Clear button
+      const clearBtn = wrapper.querySelector('.clear-choices-btn');
+      if (clearBtn) {
+        clearBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          handleClearChoices(this);
+        });
+      }
+    });
+
+    // Setup category selection handlers
+    // Setup category selection handlers
+    document.querySelectorAll('.load-choices-from-category').forEach(function(select) {
+      select.addEventListener('change', function() {
+        handleCategorySelection(this);
+      });
+    });
+
+    // Setup open modal buttons
+    // open-choices-modal-btn is no longer used in the forced-single-master flow
+    document.querySelectorAll('.open-choices-modal-btn').forEach(function(btn){
+      // hide any existing modal-open buttons
+      btn.style.display = 'none';
+    });
+
+    // Modal controls
+    const closeBtn = document.getElementById('closeChoicesModal');
+    const cancelBtn = document.getElementById('cancelChoicesModal');
+    const confirmBtn = document.getElementById('confirmChoicesModal');
+    const searchInput = document.getElementById('choicesModalSearch');
+    const selectAllCb = document.getElementById('choicesModalSelectAll');
+
+    if (closeBtn) closeBtn.addEventListener('click', closeChoicesModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeChoicesModal);
+
+    if (confirmBtn) confirmBtn.addEventListener('click', function(){
+      const selected = getSelectedChoicesFromModal();
+      if (!currentRow) return closeChoicesModal();
+      const choicesWrapper = currentRow.querySelector('.choices-wrapper');
+      const input = findChoicesInput(choicesWrapper);
+      if (input) applyChoices(input, selected);
+      // populate inline checkbox UI for select type as well
+      const typeSelect = currentRow.querySelector('[name$="-field_type"]');
+      const fieldType = typeSelect ? (typeSelect.value || '') : '';
+      populateChoicesUI(currentRow, selected, fieldType);
+      closeChoicesModal();
+    });
+
+    if (searchInput) {
+      searchInput.addEventListener('input', function(){
+        const q = (this.value || '').trim().toLowerCase();
+        const tbody = document.getElementById('choicesModalTableBody');
+        if (!tbody) return;
+        Array.from(tbody.querySelectorAll('tr')).forEach(function(tr){
+          const v = (tr.children[1] && tr.children[1].textContent || '').toLowerCase();
+          const l = (tr.children[2] && tr.children[2].textContent || '').toLowerCase();
+          tr.style.display = (v.indexOf(q) !== -1 || l.indexOf(q) !== -1) ? '' : 'none';
+        });
+      });
+    }
+
+    if (selectAllCb) {
+      selectAllCb.addEventListener('change', function(){
+        const tbody = document.getElementById('choicesModalTableBody');
+        if (!tbody) return;
+        const checkboxes = tbody.querySelectorAll('input.modal-row-cb');
+        checkboxes.forEach(function(cb){ if (cb.closest('tr').style.display !== 'none') cb.checked = selectAllCb.checked; });
+        updateChoicesModalCount();
+      });
+    }
+
+    // Setup clear button handlers
+    document.querySelectorAll('.clear-choices-btn').forEach(function(button) {
+      button.addEventListener('click', function() {
+        handleClearChoices(this);
+      });
+    });
+    
+    console.log('✓ Category form initialized successfully');
+  });
+
+})();
+</script>
+
+{% endblock %}

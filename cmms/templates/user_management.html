@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% block title %}<title>จัดการสิทธิ์ผู้ใช้งาน — CMMS</title>{% endblock %}
+{% block content %}
+<style>
+    .perms-page {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f0f9ff 0%, #f8fafe 50%, #eef6ff 100%);
+        padding: 1.5rem;
+    }
+    .perms-container { max-width: 1200px; margin: 0 auto; }
+    .perms-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;
+    }
+    .perms-title { display: flex; align-items: center; gap: 0.75rem; }
+    .perms-title-icon {
+        width: 48px; height: 48px; border-radius: 14px;
+        background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 1.25rem;
+        box-shadow: 0 4px 12px rgba(14,165,233,0.3);
+    }
+    .perms-title h1 { font-size: 1.4rem; font-weight: 700; color: #1e293b; margin: 0; }
+    .perms-title p { font-size: 0.85rem; color: #64748b; margin: 0; }
+    .perms-card {
+        background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+        overflow: hidden; margin-bottom: 1.5rem;
+    }
+    table.perms-table { width: 100%; margin-bottom: 0; }
+    table.perms-table th {
+        background: #f8fafc; font-size: 0.78rem; text-transform: uppercase; color: #64748b;
+        letter-spacing: 0.03em; padding: 0.85rem 1rem; border-bottom: 1px solid #e2e8f0;
+    }
+    table.perms-table td { padding: 0.85rem 1rem; vertical-align: middle; border-bottom: 1px solid #f1f5f9; }
+    .badge-group { padding: 0.3rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: #e0f2fe; color: #0369a1; margin: 0.1rem; display: inline-block; }
+    .badge-active { background: #dcfce7; color: #15803d; }
+    .badge-inactive { background: #fee2e2; color: #b91c1c; }
+    .badge-staff { background: #ede9fe; color: #6d28d9; }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
+    .group-ref-card { padding: 1rem 1.25rem; }
+    .group-ref-card h6 { font-weight: 700; color: #1e293b; margin-bottom: 0.35rem; }
+    .group-ref-card .perm-item { font-size: 0.78rem; color: #64748b; }
+</style>
+<div class="perms-page">
+    <div class="perms-container">
+        <div class="perms-header">
+            <div class="perms-title">
+                <div class="perms-title-icon"><i class="bi bi-shield-lock"></i></div>
+                <div>
+                    <h1>จัดการสิทธิ์การเข้าถึง/แก้ไขข้อมูลของผู้ใช้งาน</h1>
+                    <p>กำหนดกลุ่มสิทธิ์ (บทบาท) และสถานะการใช้งานของผู้ใช้แต่ละคน</p>
+                </div>
+            </div>
+            <form method="get" class="d-flex gap-2">
+                <input type="search" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="ค้นหาชื่อผู้ใช้/อีเมล">
+                <button type="submit" class="btn btn-sm btn-primary">ค้นหา</button>
+            </form>
+        </div>
+
+        <div class="perms-card">
+            {% if groups %}
+            <div class="row g-0">
+                {% for g in groups %}
+                <div class="col-md-3 group-ref-card border-end">
+                    <h6><i class="bi bi-people-fill me-1"></i>{{ g.name }}</h6>
+                    {% for p in g.permissions.all %}
+                    <div class="perm-item">{{ p.name }}</div>
+                    {% empty %}
+                    <div class="perm-item text-muted">— ไม่มีสิทธิ์กำหนดไว้ —</div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state py-3">ยังไม่มีกลุ่มสิทธิ์ (Group) ในระบบ กรุณาสร้างผ่าน Django admin ก่อน</div>
+            {% endif %}
+        </div>
+
+        <div class="perms-card">
+            {% if users %}
+            <div class="table-responsive">
+                <table class="perms-table">
+                    <thead>
+                        <tr>
+                            <th>ผู้ใช้</th>
+                            <th>ชื่อ-นามสกุล</th>
+                            <th>แผนก / ตำแหน่ง</th>
+                            <th>กลุ่มสิทธิ์ปัจจุบัน</th>
+                            <th>สถานะ</th>
+                            <th class="text-end">การดำเนินการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>{{ u.username }}{% if u.is_superuser %} <span class="badge-group badge-staff">superuser</span>{% endif %}</td>
+                            <td>{{ u.get_full_name|default:"-" }}<br><small class="text-muted">{{ u.email|default:"-" }}</small></td>
+                            <td>{{ u.profile.department|default:"-" }}<br><small class="text-muted">{{ u.profile.position|default:"-" }}</small></td>
+                            <td>
+                                {% for grp in u.groups.all %}
+                                <span class="badge-group">{{ grp.name }}</span>
+                                {% empty %}
+                                <span class="text-muted small">— ไม่มีกลุ่ม —</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% if u.is_active %}
+                                <span class="badge-group badge-active">ใช้งานอยู่</span>
+                                {% else %}
+                                <span class="badge-group badge-inactive">ระงับ/รอตรวจสอบ</span>
+                                {% endif %}
+                                {% if u.is_staff %}<span class="badge-group badge-staff">staff</span>{% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if not u.is_superuser or request.user.is_superuser %}
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#accessModal{{ u.id }}">
+                                    <i class="bi bi-pencil-square"></i> แก้ไขสิทธิ์
+                                </button>
+                                {% else %}
+                                <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <div class="modal fade" id="accessModal{{ u.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <form method="post" action="{% url 'user_update_access' u.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">แก้ไขสิทธิ์: {{ u.username }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p class="fw-semibold mb-2">กลุ่มสิทธิ์ (กำหนดสิทธิ์เข้าถึง/แก้ไขข้อมูลตามบทบาท)</p>
+                                            {% for g in groups %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="groups" value="{{ g.id }}"
+                                                    id="ugrp{{ u.id }}_{{ g.id }}" {% if g in u.groups.all %}checked{% endif %}>
+                                                <label class="form-check-label" for="ugrp{{ u.id }}_{{ g.id }}">{{ g.name }}</label>
+                                            </div>
+                                            {% empty %}
+                                            <p class="text-muted small">ยังไม่มีกลุ่มสิทธิ์ในระบบ</p>
+                                            {% endfor %}
+
+                                            <hr>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" name="is_active" id="uactive{{ u.id }}"
+                                                    {% if u.is_active %}checked{% endif %}
+                                                    {% if u.id == request.user.id %}disabled{% endif %}>
+                                                <label class="form-check-label" for="uactive{{ u.id }}">อนุญาตให้เข้าสู่ระบบ (Active)</label>
+                                            </div>
+                                            {% if u.id == request.user.id %}
+                                            <input type="hidden" name="is_active" value="on">
+                                            <small class="text-muted">ไม่สามารถระงับบัญชีของตัวเองได้</small>
+                                            {% endif %}
+
+                                            {% if request.user.is_superuser and u.id != request.user.id %}
+                                            <div class="form-check form-switch mt-2">
+                                                <input class="form-check-input" type="checkbox" name="is_staff" id="ustaff{{ u.id }}" {% if u.is_staff %}checked{% endif %}>
+                                                <label class="form-check-label" for="ustaff{{ u.id }}">สิทธิ์เข้าถึง Django admin (staff)</label>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                                            <button type="submit" class="btn btn-primary">บันทึกสิทธิ์</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">ไม่พบผู้ใช้งาน</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

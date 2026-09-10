@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}<title>Checklist ใบงาน #{{ wo.id }} — CMMS</title>{% endblock %}
+{% block content %}
+<style>
+    .wcf-page { min-height: 100vh; background: linear-gradient(135deg, #f5f7ff 0%, #f9fafe 50%, #f5f9ff 100%); padding: 1.5rem; }
+    .wcf-container { max-width: 900px; margin: 0 auto; }
+    .wcf-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); padding: 1.5rem; margin-bottom: 1.25rem; }
+    .wcf-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.75rem; }
+    .wcf-title { font-size: 1.2rem; font-weight: 700; color: #1e293b; }
+    .wcf-sub { font-size: 0.85rem; color: #64748b; }
+    .badge-overall-pass { background:#dcfce7; color:#15803d; padding:0.35rem 0.75rem; border-radius:999px; font-weight:700; font-size:0.8rem; }
+    .badge-overall-fail { background:#fee2e2; color:#b91c1c; padding:0.35rem 0.75rem; border-radius:999px; font-weight:700; font-size:0.8rem; }
+    .badge-overall-pending { background:#fef3c7; color:#b45309; padding:0.35rem 0.75rem; border-radius:999px; font-weight:700; font-size:0.8rem; }
+    .item-card { border:1px solid #e2e8f0; border-radius:12px; padding:0.9rem 1rem; margin-bottom:0.75rem; }
+    .item-card.is-fail { border-color:#fecaca; background:#fff5f5; }
+    .item-card.is-pass { border-color:#bbf7d0; }
+    .item-name { font-weight:600; color:#1e293b; font-size:0.9rem; }
+    .item-desc { font-size:0.78rem; color:#94a3b8; margin-bottom:0.5rem; }
+    .required-mark { color:#dc2626; }
+    .readonly-note { font-size:0.8rem; color:#64748b; }
+</style>
+<div class="wcf-page">
+    <div class="wcf-container">
+        <div class="wcf-card">
+            <div class="wcf-header">
+                <div>
+                    <div class="wcf-title"><i class="bi bi-list-check"></i> {{ checklist.template.name }}</div>
+                    <div class="wcf-sub">ใบงาน #{{ wo.id }} — {{ wo.title }} ({{ wo.get_workorder_type_display }})</div>
+                </div>
+                <div>
+                    {% if checklist.overall_result == 'pass' %}<span class="badge-overall-pass"><i class="bi bi-check-circle"></i> ผ่านทุกรายการ</span>
+                    {% elif checklist.overall_result == 'fail' %}<span class="badge-overall-fail"><i class="bi bi-x-circle"></i> ไม่ผ่านบางรายการ</span>
+                    {% else %}<span class="badge-overall-pending"><i class="bi bi-hourglass-split"></i> ยังกรอกไม่ครบ</span>{% endif %}
+                </div>
+            </div>
+            {% if checklist.completed_at %}
+            <div class="readonly-note"><i class="bi bi-check2-square"></i> ยืนยันผลแล้วโดย {{ checklist.completed_by }} เมื่อ {{ checklist.completed_at }}</div>
+            {% endif %}
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="wcf-card">
+                {% for row in rows %}
+                {% with item=row.item result=row.result %}
+                <div class="item-card {% if result.is_pass == True %}is-pass{% elif result.is_pass == False %}is-fail{% endif %}">
+                    <div class="item-name">{{ item.name }}{% if item.is_required %}<span class="required-mark"> *</span>{% endif %}</div>
+                    {% if item.description %}<div class="item-desc">{{ item.description }}</div>{% endif %}
+
+                    {% if item.result_type == 'check' %}
+                    <div class="d-flex gap-3 mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="item_{{ item.id }}_result" value="pass" id="pass-{{ item.id }}" {% if result.result_choice == 'pass' %}checked{% endif %}>
+                            <label class="form-check-label" for="pass-{{ item.id }}">ผ่าน</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="item_{{ item.id }}_result" value="fail" id="fail-{{ item.id }}" {% if result.result_choice == 'fail' %}checked{% endif %}>
+                            <label class="form-check-label" for="fail-{{ item.id }}">ไม่ผ่าน</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="item_{{ item.id }}_result" value="na" id="na-{{ item.id }}" {% if result.result_choice == 'na' %}checked{% endif %}>
+                            <label class="form-check-label" for="na-{{ item.id }}">N/A</label>
+                        </div>
+                    </div>
+                    {% elif item.result_type == 'measurement' %}
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size:0.78rem;">ค่าที่วัดได้{% if item.unit %} ({{ item.unit }}){% endif %}</label>
+                            <input type="number" step="any" class="form-control form-control-sm" name="item_{{ item.id }}_measured" value="{{ result.measured_value|default_if_none:'' }}" aria-label="ค่าที่วัดได้" placeholder="ค่าที่วัดได้">
+                        </div>
+                        <div class="col-md-8 d-flex align-items-end">
+                            <span class="readonly-note">
+                                ค่ามาตรฐาน: {{ item.standard_value|default_if_none:"-" }} ± {{ item.tolerance|default_if_none:"-" }} {{ item.unit }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <input type="text" class="form-control form-control-sm" name="item_{{ item.id }}_note" placeholder="หมายเหตุ (ถ้ามี)" value="{{ result.note|default:'' }}">
+                </div>
+                {% endwith %}
+                {% endfor %}
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" name="finalize" value="0" class="btn btn-outline-success"><i class="bi bi-save"></i> บันทึกฉบับร่าง</button>
+                {% if can_finalize %}
+                <button type="submit" name="finalize" value="1" class="btn btn-success"><i class="bi bi-check2-square"></i> บันทึกและยืนยันผล</button>
+                {% endif %}
+                <a href="{% url 'workorder_detail' wo.id %}" class="btn btn-outline-secondary">กลับไปใบงาน</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

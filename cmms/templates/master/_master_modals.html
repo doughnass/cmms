@@ -1,0 +1,183 @@
+<!-- Shared master modals: master form, debug banner, undo toast, parent picker -->
+<style>
+  /* Master UI theme and responsive polish (scoped to master modals/includes) */
+  :root{
+    /* Use Bootstrap primary by default; fall back to a sensible blue if not set */
+    --master-accent: var(--bs-primary, #0d6efd);
+    /* darker hover (uses primary rgb with slight opacity reduction) */
+    --master-accent-600: rgba(var(--bs-primary-rgb, 13,110,253), 0.85);
+    /* very light tinted background using primary */
+    --master-accent-50: rgba(var(--bs-primary-rgb, 13,110,253), 0.06);
+    /* subtle border using primary hue */
+    --master-border: rgba(var(--bs-primary-rgb, 13,110,253), 0.12);
+  }
+
+  /* Dialog sizing */
+  #masterModal .modal-dialog{ max-width:720px; }
+  #mi-parent-display{ min-width:0; }
+  #parent-picker-tree{ background:#fff; }
+  @media (max-width:767px){ #parent-picker-tree{ max-height:300px } }
+
+  /* Accent styling for primary actions inside these modals */
+  #masterModal .btn-primary,
+  #parentPickerModal .btn-primary{
+    background:var(--master-accent);
+    border-color:var(--master-accent);
+    color: #fff;
+    box-shadow:none;
+  }
+  #masterModal .btn-primary:hover,
+  #parentPickerModal .btn-primary:hover{
+    background:var(--master-accent-600);
+    border-color:var(--master-accent-600);
+  }
+
+  /* Neutralize shadows on cards / debug banner (defensive) and use stronger borders */
+  #masterModal .card,
+  #parentPickerModal .card,
+  #master-debug-banner{
+    box-shadow:none !important;
+    border:1px solid var(--master-border);
+  }
+
+  /* Parent picker preview styling */
+  #parent-picker-preview{
+    min-height:56px;
+    padding:8px;
+    border-radius:6px;
+    background:var(--master-accent-50);
+    color:var(--master-accent-600);
+    line-height:1.25;
+    word-break:break-word;
+    border:1px solid var(--master-border);
+  }
+
+  /* Subtle modern node hover style (applies across master tree pages that include this partial) */
+  .master-node{
+    border-radius:6px;
+    padding:6px 8px;
+    transition:background .12s,border-color .12s;
+    background:transparent;
+    border:1px solid transparent; /* reserve space to prevent layout jumps */
+  }
+  .master-node:hover{
+    /* Use a subtle primary-tinted background on hover instead of changing border */
+    background: var(--master-accent-50);
+    border-color: transparent; /* keep layout stable but don't emphasize border on hover */
+  }
+
+  /* Toggle icon color */
+  .master-node-toggle{ color:var(--master-accent-600); font-size:1rem; }
+
+  /* Compact action buttons inside nodes */
+  .master-node .node-actions .btn{ padding:.25rem .45rem; font-size:.85rem; }
+
+  /* Selection state for multi-select drag/drop */
+  .master-node.selected{
+    border-color: var(--master-accent-600);
+    background: rgba(var(--bs-primary-rgb, 13,110,253), 0.04);
+  }
+
+  /* Inline label + code truncation helpers */
+  .master-node .label-code{ display:flex; gap:8px; align-items:center; min-width:0; }
+  .master-node .label-code strong{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-block; max-width:220px; }
+  .master-node .label-code small{ color:#6c757d; flex:0 0 auto; }
+</style>
+<!-- Modal for add/edit -->
+<div class="modal fade" id="masterModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+        <form id="masterForm" novalidate">
+        {% csrf_token %}
+      <div class="modal-header"><h5 class="modal-title">Master Item</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+          <div id="mi-error" class="alert alert-danger small d-none"></div>
+        <input type="hidden" name="id" id="mi-id" />
+          <div class="mb-2">
+            <label for="mi-category">Category</label>
+            <input autocomplete="off" class="form-control" name="category" id="mi-category" aria-describedby="mi-category-feedback">
+            <div id="mi-category-feedback" class="invalid-feedback">กรุณาระบุหมวดหมู่</div>
+          </div>
+          <div class="mb-2">
+            <label for="mi-code">Code</label>
+            <input autocomplete="off" class="form-control" name="code" id="mi-code">
+          </div>
+    <div class="mb-2">
+      <label for="mi-label">Label</label>
+      <input autocomplete="off" class="form-control" name="label" id="mi-label" aria-describedby="mi-label-feedback" />
+      <div id="mi-label-feedback" class="invalid-feedback">กรุณาระบุ Label</div>
+    </div>
+        <div class="mb-2">
+          <label for="mi-parent-select">สังกัด</label>
+          <div class="input-group">
+            <!-- Visible parent display (read-only). Clicking the dropdown button opens a richer picker modal. -->
+            <input type="text" id="mi-parent-display" class="form-control form-control-sm" readonly placeholder="(ไม่มี สังกัด)" aria-label="Parent display" aria-describedby="mi-parent-feedback">
+            <button type="button" class="btn btn-outline-secondary" id="mi-change-parent-btn" title="เลือกสังกัด"><i class="bi bi-chevron-down"></i></button>
+            <button type="button" class="btn btn-outline-light" id="mi-clear-parent-btn" title="ลบสังกัด"><i class="bi bi-x-lg text-danger"></i></button>
+          </div>
+          <div id="mi-parent-feedback" class="invalid-feedback">โปรดเลือกสังกัดที่ถูกต้อง</div>
+          <small class="text-muted">คลิก "เลือกสังกัด" เพื่อค้นหา/เลือกจากโครงสร้าง (รองรับการค้นหา)</small>
+          <!-- Select element used by Select2 when available. Hidden by default; used as progressive enhancement fallback. -->
+          <select id="mi-parent-select" class="form-control form-control-sm w-100 d-none mt-2" autocomplete="off"></select>
+        </div>
+        <div class="mb-2"><label for="mi-order">Order</label><input autocomplete="off" class="form-control" name="order" id="mi-order" type="number"></div>
+        <div class="mb-2"><label for="mi-description">Description</label><textarea autocomplete="off" class="form-control" name="description" id="mi-description"></textarea></div>
+        <div class="form-check"><input type="checkbox" class="form-check-input" id="mi-active" name="active" checked><label class="form-check-label" for="mi-active">Active</label></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <button type="submit" id="mi-submit" class="btn btn-primary">
+          <span id="mi-submit-spinner" class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
+          <span id="mi-submit-text">บันทึก</span>
+        </button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Visible debug banner for users who don't open DevTools -->
+<div id="master-debug-banner" class="master-debug-banner d-none" aria-live="polite">
+  <div id="master-debug-lines" class="master-debug-lines"></div>
+</div>
+
+<!-- Undo toast container -->
+<div id="master-undo-toast-container" class="position-fixed bottom-0 end-0 p-3 master-undo-toast"></div>
+
+<!-- Parent picker modal (modern two-column picker with preview) -->
+<div class="modal fade" id="parentPickerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">เลือกสังกัด</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex mb-3">
+          <input id="parent-picker-search" class="form-control form-control-sm me-2" placeholder="ค้นหา..." aria-label="ค้นหา">
+          <button id="parent-picker-refresh" class="btn btn-sm btn-outline-secondary">รีเฟรช</button>
+        </div>
+        <div class="row">
+          <div class="col-md-7">
+            <div id="parent-picker-tree" class="border rounded parent-picker-tree"></div>
+          </div>
+          <div class="col-md-5">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="card-title">ตัวอย่างสังกัดที่เลือก</h6>
+                <div id="parent-picker-preview" class="mb-3 text-wrap text-break text-muted">(ยังไม่ได้เลือก)</div>
+                <div class="d-grid gap-2">
+                  <button type="button" class="btn btn-outline-secondary" id="parent-picker-select-root">เลือกเป็น Root (ไม่มีสังกัด)</button>
+                  <button type="button" id="parent-picker-select" class="btn btn-primary" disabled>เลือกสังกัดนี้</button>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 small text-muted">หมายเหตุ: การเลือกจะอัปเดตฟอร์มและปิดกล่องเลือก</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+</div>

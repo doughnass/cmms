@@ -1,0 +1,1207 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}<title>CMMS MedCMU : รายงาน KPI</title>{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<style>
+:root {
+  --kpi-primary: #667eea;
+  --kpi-primary-dark: #764ba2;
+  --kpi-success: #10b981;
+  --kpi-warning: #f59e0b;
+  --kpi-danger: #ef4444;
+  --kpi-info: #3b82f6;
+  --card-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --card-shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.kpi-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* Header Section */
+.kpi-header {
+  background: linear-gradient(135deg, var(--kpi-primary) 0%, var(--kpi-primary-dark) 100%);
+  color: white;
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  margin-top: 4rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+}
+
+.kpi-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem 0;
+}
+
+.kpi-header p {
+  margin: 0;
+  opacity: 0.95;
+  font-size: 1.05rem;
+}
+
+.kpi-period {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.kpi-period select {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.kpi-period select:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.kpi-period select option {
+  background: #fff;
+  color: #333;
+}
+
+.btn-export {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-export:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* KPI Summary Cards */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.kpi-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s ease;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--kpi-primary), var(--kpi-primary-dark));
+}
+
+.kpi-card.success::before { background: linear-gradient(90deg, #10b981, #059669); }
+.kpi-card.warning::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.kpi-card.danger::before { background: linear-gradient(90deg, #ef4444, #dc2626); }
+.kpi-card.info::before { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+
+.kpi-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--card-shadow-hover);
+}
+
+.kpi-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.kpi-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  background: linear-gradient(135deg, var(--kpi-primary), var(--kpi-primary-dark));
+  color: white;
+}
+
+.kpi-card.success .kpi-icon { background: linear-gradient(135deg, #10b981, #059669); }
+.kpi-card.warning .kpi-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.kpi-card.danger .kpi-icon { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.kpi-card.info .kpi-icon { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+
+.kpi-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.kpi-trend.up {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.kpi-trend.down {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.kpi-label {
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.kpi-value {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.kpi-subtitle {
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+/* Chart Cards */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.chart-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s ease;
+}
+
+.chart-card:hover {
+  box-shadow: var(--card-shadow-hover);
+}
+
+.chart-card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 300px;
+}
+
+/* Table Section */
+.table-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 2rem;
+}
+
+.table-card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.kpi-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.kpi-table thead {
+  background: #f9fafb;
+}
+
+.kpi-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.kpi-table th:first-child { border-radius: 12px 0 0 0; }
+.kpi-table th:last-child { border-radius: 0 12px 0 0; }
+
+.kpi-table td {
+  padding: 1rem;
+  color: #6b7280;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.kpi-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.kpi-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.badge-status {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.badge-excellent { background: #d1fae5; color: #065f46; }
+.badge-good { background: #dbeafe; color: #1e40af; }
+.badge-fair { background: #fef3c7; color: #92400e; }
+.badge-poor { background: #fee2e2; color: #991b1b; }
+
+/* Section Divider */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 2rem 0 1.25rem 0;
+}
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #e5e7eb);
+}
+.section-divider::before {
+  background: linear-gradient(90deg, #e5e7eb, transparent);
+}
+.section-divider span {
+  white-space: nowrap;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #374151;
+  padding: 0.5rem 1.25rem;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 30px;
+}
+
+/* ── Tab Navigation ─────────────────────────────────────────────────── */
+.kpi-tabs-nav {
+  background: white;
+  border-radius: 16px;
+  padding: 0.875rem 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--card-shadow);
+  overflow-x: auto;
+}
+
+.kpi-tabs-nav .nav-pills {
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  min-width: max-content;
+}
+
+.kpi-tabs-nav .nav-pills .nav-link {
+  color: #6b7280;
+  border-radius: 10px;
+  padding: 0.55rem 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  transition: all 0.25s;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.kpi-tabs-nav .nav-pills .nav-link.active {
+  background: linear-gradient(135deg, var(--kpi-primary), var(--kpi-primary-dark));
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+}
+
+.kpi-tabs-nav .nav-pills .nav-link:not(.active):hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0 0.3rem;
+  background: rgba(255, 255, 255, 0.25);
+  color: inherit;
+}
+
+.nav-link:not(.active) .tab-badge          { background: #e5e7eb; color: #374151; }
+.tab-badge.warn                            { background: #fef3c7; color: #92400e; }
+.nav-link.active .tab-badge.warn           { background: rgba(255,255,255,0.3); color: white; }
+.tab-badge.danger                          { background: #fee2e2; color: #7f1d1d; }
+.nav-link.active .tab-badge.danger         { background: rgba(255,255,255,0.3); color: white; }
+
+.tab-pane { padding-top: 0.25rem; }
+
+/* Alert info box */
+.alert-info-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  color: #1d4ed8;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Performance Layout */
+.perf-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.perf-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.perf-stat-row {
+  background: white;
+  border-radius: 12px;
+  padding: 0.875rem 1rem;
+  box-shadow: var(--card-shadow);
+  border-left: 4px solid #e5e7eb;
+}
+
+.perf-stat-row.border-success { border-left-color: #10b981; }
+.perf-stat-row.border-warning { border-left-color: #f59e0b; }
+.perf-stat-row.border-danger  { border-left-color: #ef4444; }
+
+.perf-stat-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.perf-name {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.perf-rate {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.perf-bar-bg {
+  background: #f3f4f6;
+  border-radius: 6px;
+  height: 8px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.perf-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.6s ease;
+}
+
+.perf-bar-fill.fill-success { background: #10b981; }
+.perf-bar-fill.fill-warning { background: #f59e0b; }
+.perf-bar-fill.fill-danger  { background: #ef4444; }
+
+.perf-stat-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+  flex-wrap: wrap;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .kpi-container { padding: 1rem; }
+  .kpi-header { padding: 1.5rem; margin-top: 2rem; }
+  .kpi-header h1 { font-size: 1.5rem; }
+  .kpi-grid { grid-template-columns: 1fr; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .chart-wrapper { height: 250px; }
+  .kpi-period { flex-direction: column; align-items: stretch; }
+  .kpi-table { font-size: 0.85rem; }
+  .kpi-table th, .kpi-table td { padding: 0.75rem; }
+  .perf-layout { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="kpi-container">
+  <!-- Header -->
+  <div class="kpi-header">
+    <h1><i class="bi bi-graph-up-arrow me-2"></i>รายงาน KPI</h1>
+    <p>{{ start_date|date:"j N Y" }} – {{ end_date|date:"j N Y" }} &nbsp;|&nbsp; ภาพรวมตัวชี้วัดความสำเร็จของระบบบริหารจัดการเครื่องมือแพทย์</p>
+
+    <div class="kpi-period">
+      <form method="get" style="display:contents;">
+        <select id="periodSelect" name="period" class="form-select" onchange="this.form.submit()">
+          <option value="today" {% if period == 'today' %}selected{% endif %}>วันนี้</option>
+          <option value="week" {% if period == 'week' %}selected{% endif %}>สัปดาห์นี้</option>
+          <option value="month" {% if period == 'month' %}selected{% endif %}>เดือนนี้</option>
+          <option value="quarter" {% if period == 'quarter' %}selected{% endif %}>ไตรมาสนี้</option>
+          <option value="year" {% if period == 'year' %}selected{% endif %}>ปีนี้</option>
+        </select>
+      </form>
+      <a href="{% url 'kpi_report_print' %}?period={{ period }}" target="_blank" class="btn-export">
+        <i class="bi bi-download"></i>
+        ส่งออกรายงาน
+      </a>
+    </div>
+  </div>
+
+  <!-- ─── Tab Navigation ─────────────────────────────────────────────── -->
+  {% if fallback_note %}
+  <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" style="border-radius:12px;font-size:0.9rem;">
+    <i class="bi bi-calendar-x fs-5"></i>
+    <span>{{ fallback_note }}</span>
+  </div>
+  {% endif %}
+
+  <div class="kpi-tabs-nav">
+    <ul class="nav nav-pills" id="kpiTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-wo" type="button" role="tab">
+          <i class="bi bi-list-check"></i> สถานะ
+          <span class="tab-badge">{{ total_work_orders }}</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-sr" type="button" role="tab">
+          <i class="bi bi-headset"></i> Service Request
+          {% if sr_pending %}<span class="tab-badge warn">{{ sr_pending }}</span>{% endif %}
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-eq" type="button" role="tab">
+          <i class="bi bi-hospital"></i> เครื่องมือ
+          {% if pm_overdue or cal_overdue %}<span class="tab-badge danger">{{ pm_overdue|add:cal_overdue }}</span>{% endif %}
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-parts" type="button" role="tab">
+          <i class="bi bi-box-seam"></i> อะไหล่ / บุคลากร
+          {% if low_stock_count %}<span class="tab-badge warn">{{ low_stock_count }}</span>{% endif %}
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-tech" type="button" role="tab">
+          <i class="bi bi-person-badge"></i> ช่างเทคนิค
+          {% if assignee_stats %}<span class="tab-badge">{{ assignee_stats|length }}</span>{% endif %}
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  <div class="tab-content" id="kpiTabContent">
+
+  <!-- ════════════════════ TAB 1: WORK ORDERS ════════════════════ -->
+  <div class="tab-pane fade show active" id="tab-wo" role="tabpanel">
+    <div class="kpi-grid">
+
+      <div class="kpi-card {% if completion_rate >= 90 %}success{% elif completion_rate >= 70 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header">
+          <div class="kpi-icon"><i class="bi bi-check2-circle"></i></div>
+          {% if completion_rate_trend > 0 %}<span class="kpi-trend up"><i class="bi bi-arrow-up"></i> +{{ completion_rate_trend }}%</span>
+          {% elif completion_rate_trend < 0 %}<span class="kpi-trend down"><i class="bi bi-arrow-down"></i> {{ completion_rate_trend }}%</span>{% endif %}
+        </div>
+        <div class="kpi-label">อัตราการดำเนินการเสร็จสิ้น</div>
+        <div class="kpi-value">{{ completion_rate }}%</div>
+        <div class="kpi-subtitle">เป้าหมาย: 90% &bull; งานเสร็จ {{ completed_work_orders }}/{{ total_work_orders }}</div>
+      </div>
+
+      <div class="kpi-card {% if mttr_hours <= 4 %}info{% elif mttr_hours <= 8 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header">
+          <div class="kpi-icon"><i class="bi bi-stopwatch"></i></div>
+          {% if mttr_hours_trend < 0 %}<span class="kpi-trend up"><i class="bi bi-arrow-down"></i> {{ mttr_hours_trend }}%</span>
+          {% elif mttr_hours_trend > 0 %}<span class="kpi-trend down"><i class="bi bi-arrow-up"></i> +{{ mttr_hours_trend }}%</span>{% endif %}
+        </div>
+        <div class="kpi-label">เวลาเฉลี่ยในการซ่อม (MTTR)</div>
+        <div class="kpi-value">{{ mttr_hours }} ชม.</div>
+        <div class="kpi-subtitle">เป้าหมาย: ≤ 4 ชม. &bull; จากงานเสร็จ {{ completed_work_orders }} รายการ</div>
+      </div>
+
+      <div class="kpi-card {% if avg_uptime >= 95 %}success{% elif avg_uptime >= 80 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header">
+          <div class="kpi-icon"><i class="bi bi-power"></i></div>
+          {% if avg_uptime_trend > 0 %}<span class="kpi-trend up"><i class="bi bi-arrow-up"></i> +{{ avg_uptime_trend }}%</span>
+          {% elif avg_uptime_trend < 0 %}<span class="kpi-trend down"><i class="bi bi-arrow-down"></i> {{ avg_uptime_trend }}%</span>{% endif %}
+        </div>
+        <div class="kpi-label">เวลาการใช้งานเครื่องมือ</div>
+        <div class="kpi-value">{{ avg_uptime }}%</div>
+        <div class="kpi-subtitle">เป้าหมาย: 95% &bull; พร้อมใช้ {{ available_equipment }}/{{ total_equipment }} เครื่อง</div>
+      </div>
+
+      <div class="kpi-card {% if downtime_rate <= 5 %}success{% elif downtime_rate <= 15 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header">
+          <div class="kpi-icon"><i class="bi bi-exclamation-octagon"></i></div>
+          {% if downtime_rate_trend > 0 %}<span class="kpi-trend down"><i class="bi bi-arrow-up"></i> +{{ downtime_rate_trend }}%</span>
+          {% elif downtime_rate_trend < 0 %}<span class="kpi-trend up"><i class="bi bi-arrow-down"></i> {{ downtime_rate_trend }}%</span>{% endif %}
+        </div>
+        <div class="kpi-label">อัตรา Downtime</div>
+        <div class="kpi-value">{{ downtime_rate }}%</div>
+        <div class="kpi-subtitle">ไม่พร้อมใช้ {{ down_equipment }}/{{ total_equipment }} เครื่อง</div>
+      </div>
+
+      <div class="kpi-card {% if avg_uptime >= 95 %}success{% elif avg_uptime >= 80 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header">
+          <div class="kpi-icon"><i class="bi bi-check-circle"></i></div>
+          {% if avg_uptime_trend > 0 %}<span class="kpi-trend up"><i class="bi bi-arrow-up"></i> +{{ avg_uptime_trend }}%</span>
+          {% elif avg_uptime_trend < 0 %}<span class="kpi-trend down"><i class="bi bi-arrow-down"></i> {{ avg_uptime_trend }}%</span>{% endif %}
+        </div>
+        <div class="kpi-label">ความพร้อมใช้ (Available)</div>
+        <div class="kpi-value">{{ available_equipment }} เครื่อง</div>
+        <div class="kpi-subtitle">{{ avg_uptime }}% พร้อมใช้ จาก {{ total_equipment }} เครื่อง</div>
+      </div>
+
+      <div class="kpi-card {% if pm_compliance >= 95 %}success{% elif pm_compliance >= 75 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header">
+          <div class="kpi-icon"><i class="bi bi-calendar-check"></i></div>
+          {% if pm_compliance_trend > 0 %}<span class="kpi-trend up"><i class="bi bi-arrow-up"></i> +{{ pm_compliance_trend }}%</span>
+          {% elif pm_compliance_trend < 0 %}<span class="kpi-trend down"><i class="bi bi-arrow-down"></i> {{ pm_compliance_trend }}%</span>{% endif %}
+        </div>
+        <div class="kpi-label">การปฏิบัติตามแผน PM</div>
+        <div class="kpi-value">{{ pm_compliance }}%</div>
+        <div class="kpi-subtitle">เป้าหมาย: 95% &bull; งาน PM ในช่วงนี้ {{ maintenance_count }} รายการ</div>
+      </div>
+
+      <div class="kpi-card {% if avg_response_time <= 2 %}info{% elif avg_response_time <= 4 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header">
+          <div class="kpi-icon"><i class="bi bi-clock-history"></i></div>
+          {% if avg_response_time_trend < 0 %}<span class="kpi-trend up"><i class="bi bi-arrow-down"></i> {{ avg_response_time_trend }}%</span>
+          {% elif avg_response_time_trend > 0 %}<span class="kpi-trend down"><i class="bi bi-arrow-up"></i> +{{ avg_response_time_trend }}%</span>{% endif %}
+        </div>
+        <div class="kpi-label">เวลาตอบสนองเฉลี่ย</div>
+        <div class="kpi-value">{{ avg_response_time }} ชม.</div>
+        <div class="kpi-subtitle">เป้าหมาย: ≤ 2 ชม.</div>
+      </div>
+
+      <div class="kpi-card danger">
+        <div class="kpi-card-header"><div class="kpi-icon"><i class="bi bi-currency-dollar"></i></div></div>
+        <div class="kpi-label">ค่าใช้จ่าย Outsource</div>
+        <div class="kpi-value">฿{{ total_cost|floatformat:0 }}</div>
+        <div class="kpi-subtitle">รวมค่า Outsource ในช่วงนี้</div>
+      </div>
+
+      <div class="kpi-card {% if backlog_count <= 15 %}success{% elif backlog_count <= 30 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header">
+          <div class="kpi-icon"><i class="bi bi-list-task"></i></div>
+          {% if backlog_count_trend < 0 %}<span class="kpi-trend up"><i class="bi bi-arrow-down"></i> {{ backlog_count_trend }}%</span>
+          {% elif backlog_count_trend > 0 %}<span class="kpi-trend down"><i class="bi bi-arrow-up"></i> +{{ backlog_count_trend }}%</span>{% endif %}
+        </div>
+        <div class="kpi-label">งานค้างทำ (Backlog)</div>
+        <div class="kpi-value">{{ backlog_count }} งาน</div>
+        <div class="kpi-subtitle">เป้าหมาย: ≤ 15 งาน &bull; ณ ปัจจุบัน</div>
+      </div>
+
+      <div class="kpi-card {% if first_time_fix_rate >= 85 %}success{% elif first_time_fix_rate >= 70 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header">
+          <div class="kpi-icon"><i class="bi bi-wrench-adjustable"></i></div>
+          {% if first_time_fix_rate_trend > 0 %}<span class="kpi-trend up"><i class="bi bi-arrow-up"></i> +{{ first_time_fix_rate_trend }}%</span>
+          {% elif first_time_fix_rate_trend < 0 %}<span class="kpi-trend down"><i class="bi bi-arrow-down"></i> {{ first_time_fix_rate_trend }}%</span>{% endif %}
+        </div>
+        <div class="kpi-label">อัตราซ่อมสำเร็จครั้งแรก</div>
+        <div class="kpi-value">{{ first_time_fix_rate }}%</div>
+        <div class="kpi-subtitle">เป้าหมาย: 85%</div>
+      </div>
+
+    </div>
+
+    <!-- Charts: Trend + Type + Response -->
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3><i class="bi bi-bar-chart-line"></i> แนวโน้มการดำเนินงาน</h3>
+        <div class="chart-wrapper"><canvas id="workOrderTrendChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3><i class="bi bi-graph-up"></i> ประเภทงาน</h3>
+        <div class="chart-wrapper"><canvas id="maintenanceTypeChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3><i class="bi bi-speedometer2"></i> เวลาตอบสนองรายสัปดาห์</h3>
+        <div class="chart-wrapper"><canvas id="responseTimeChart"></canvas></div>
+      </div>
+    </div>
+
+  </div><!-- /tab-wo -->
+
+  <!-- ════════════════════ TAB 2: SERVICE REQUEST ════════════════════ -->
+  <div class="tab-pane fade" id="tab-sr" role="tabpanel">
+    <div class="kpi-grid">
+
+      <div class="kpi-card info">
+        <div class="kpi-card-header"><div class="kpi-icon"><i class="bi bi-envelope-open"></i></div></div>
+        <div class="kpi-label">คำขอใช้บริการในช่วงนี้</div>
+        <div class="kpi-value">{{ sr_total }}</div>
+        <div class="kpi-subtitle">รอดำเนินการ: {{ sr_pending }} รายการ</div>
+      </div>
+
+      <div class="kpi-card {% if sr_conversion_rate >= 80 %}success{% elif sr_conversion_rate >= 50 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header"><div class="kpi-icon"><i class="bi bi-arrow-right-circle"></i></div></div>
+        <div class="kpi-label">อัตราแปลงเป็นใบงาน (SR → WO)</div>
+        <div class="kpi-value">{{ sr_conversion_rate }}%</div>
+        <div class="kpi-subtitle">แปลงแล้ว {{ sr_converted }}/{{ sr_total }} &bull; ปฏิเสธ {{ sr_rejected }}</div>
+      </div>
+
+      <div class="kpi-card {% if sr_pending == 0 %}success{% elif sr_pending <= 5 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header"><div class="kpi-icon"><i class="bi bi-hourglass-split"></i></div></div>
+        <div class="kpi-label">คำขอรอดำเนินการ (ณ ปัจจุบัน)</div>
+        <div class="kpi-value">{{ sr_pending }}</div>
+        <div class="kpi-subtitle">เป้าหมาย: 0 รายการ</div>
+      </div>
+
+    </div>
+  </div><!-- /tab-sr -->
+
+  <!-- ════════════════════ TAB 3: EQUIPMENT HEALTH ════════════════════ -->
+  <div class="tab-pane fade" id="tab-eq" role="tabpanel">
+    <div class="kpi-grid">
+
+      <div class="kpi-card {% if pm_overdue == 0 %}success{% elif pm_overdue <= 5 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header"><div class="kpi-icon"><i class="bi bi-exclamation-triangle"></i></div></div>
+        <div class="kpi-label">เกินกำหนด PM</div>
+        <div class="kpi-value">{{ pm_overdue }}</div>
+        <div class="kpi-subtitle">เครื่องมือที่ต้อง PM แต่ยังไม่ได้ดำเนินการ</div>
+      </div>
+
+      <div class="kpi-card {% if cal_overdue == 0 %}success{% elif cal_overdue <= 3 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header"><div class="kpi-icon"><i class="bi bi-rulers"></i></div></div>
+        <div class="kpi-label">เกินกำหนดสอบเทียบ (CAL)</div>
+        <div class="kpi-value">{{ cal_overdue }}</div>
+        <div class="kpi-subtitle">เครื่องมือที่ต้องสอบเทียบแต่ยังไม่ดำเนินการ</div>
+      </div>
+
+      <div class="kpi-card {% if pm_due_soon == 0 %}success{% elif pm_due_soon <= 10 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header"><div class="kpi-icon"><i class="bi bi-calendar-event"></i></div></div>
+        <div class="kpi-label">ถึงกำหนด PM ใน 30 วัน</div>
+        <div class="kpi-value">{{ pm_due_soon }}</div>
+        <div class="kpi-subtitle">ต้องวางแผนล่วงหน้า</div>
+      </div>
+
+      <div class="kpi-card {% if wo_on_hold == 0 %}success{% elif wo_on_hold <= 5 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header"><div class="kpi-icon"><i class="bi bi-pause-circle"></i></div></div>
+        <div class="kpi-label">ใบงานระงับชั่วคราว (On Hold)</div>
+        <div class="kpi-value">{{ wo_on_hold }}</div>
+        <div class="kpi-subtitle">เช่น รออะไหล่ / รอผู้ให้บริการ</div>
+      </div>
+
+      <div class="kpi-card {% if wo_follow_up == 0 %}success{% else %}warning{% endif %}">
+        <div class="kpi-card-header"><div class="kpi-icon"><i class="bi bi-arrow-repeat"></i></div></div>
+        <div class="kpi-label">ใบงานที่ต้องติดตามต่อ</div>
+        <div class="kpi-value">{{ wo_follow_up }}</div>
+        <div class="kpi-subtitle">เสร็จแล้วแต่มีอะไหล่รอจัดซื้อ</div>
+      </div>
+
+      <div class="kpi-card {% if wo_outsource_overdue == 0 %}success{% else %}danger{% endif %}">
+        <div class="kpi-card-header"><div class="kpi-icon"><i class="bi bi-building-x"></i></div></div>
+        <div class="kpi-label">Outsource เกินกำหนดส่ง</div>
+        <div class="kpi-value">{{ wo_outsource_overdue }}</div>
+        <div class="kpi-subtitle">ใบงาน Outsource ที่เลยวันกำหนดแล้ว</div>
+      </div>
+
+    </div>
+
+    <!-- Equipment Status Chart -->
+    <div class="chart-grid" style="grid-template-columns: minmax(280px,480px);">
+      <div class="chart-card">
+        <h3><i class="bi bi-pie-chart"></i> สถานะเครื่องมือ</h3>
+        <div class="chart-wrapper"><canvas id="equipmentStatusChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Top Equipment Table -->
+    <div class="table-card">
+      <h3><i class="bi bi-trophy"></i> เครื่องมือที่มีงานเสร็จสูงสุด 10 อันดับ</h3>
+      <div class="table-responsive">
+        <table class="kpi-table">
+          <thead>
+            <tr>
+              <th>ลำดับ</th><th>รหัสเครื่องมือ</th><th>ชื่อเครื่องมือ</th>
+              <th>หน่วยงานเจ้าของ</th><th>หน่วยงานผู้ใช้</th><th>งานเสร็จ (ช่วงนี้)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for eq in top_equipment %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ eq.equipment_id }}</td>
+              <td>{{ eq.equipment_name_EN|default:eq.equipment_name_TH }}</td>
+              <td>{{ eq.equipment_owner_customer|default:"-" }}</td>
+              <td>{{ eq.equipment_user_customer|default:"-" }}</td>
+              <td>
+                <span class="badge-status {% if eq.wo_count >= 10 %}badge-excellent{% elif eq.wo_count >= 5 %}badge-good{% elif eq.wo_count >= 1 %}badge-fair{% else %}badge-poor{% endif %}">
+                  {{ eq.wo_count }} งาน
+                </span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-3">ไม่มีข้อมูลในช่วงเวลาที่เลือก</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /tab-eq -->
+
+  <!-- ════════════════════ TAB 4: SPARE PARTS & STAFF ════════════════════ -->
+  <div class="tab-pane fade" id="tab-parts" role="tabpanel">
+    <div class="kpi-grid">
+
+      <div class="kpi-card {% if low_stock_count == 0 %}success{% elif low_stock_count <= 5 %}warning{% else %}danger{% endif %}">
+        <div class="kpi-card-header"><div class="kpi-icon"><i class="bi bi-box-arrow-down"></i></div></div>
+        <div class="kpi-label">อะไหล่ใกล้หมดคลัง</div>
+        <div class="kpi-value">{{ low_stock_count }}</div>
+        <div class="kpi-subtitle">จากทั้งหมด {{ total_parts }} รายการ</div>
+      </div>
+
+      <div class="kpi-card info">
+        <div class="kpi-card-header"><div class="kpi-icon"><i class="bi bi-building"></i></div></div>
+        <div class="kpi-label">งาน Outsource (ช่วงนี้)</div>
+        <div class="kpi-value">{{ wo_outsource_period }}</div>
+        <div class="kpi-subtitle">ค่า Outsource: ฿{{ total_cost|floatformat:0 }}</div>
+      </div>
+
+      <div class="kpi-card success">
+        <div class="kpi-card-header"><div class="kpi-icon"><i class="bi bi-people"></i></div></div>
+        <div class="kpi-label">ช่างเทคนิคที่ใช้งานอยู่</div>
+        <div class="kpi-value">{{ active_tech_count }}</div>
+        <div class="kpi-subtitle">พร้อมรับมอบหมายงาน</div>
+      </div>
+
+    </div>
+  </div><!-- /tab-parts -->
+
+  <!-- ════════════════════ TAB 5: TECHNICIAN PERFORMANCE ════════════════════ -->
+  <div class="tab-pane fade" id="tab-tech" role="tabpanel">
+
+    {% if not assignee_stats %}
+    <div class="alert-info-box">
+      <i class="bi bi-info-circle me-2"></i>
+      ยังไม่มีใบงานที่มอบหมายในช่วงเวลานี้
+    </div>
+    {% else %}
+
+    <div class="perf-layout">
+      <div class="chart-card">
+        <h3><i class="bi bi-bar-chart-horizontal"></i> อัตราสำเร็จแต่ละคน</h3>
+        <div class="chart-wrapper" style="height:{{ assignee_stats|length|add:1 }}00px; min-height:200px; max-height:500px;">
+          <canvas id="assigneeChart"></canvas>
+        </div>
+      </div>
+      <div class="perf-stats">
+        {% for a in assignee_stats %}
+        <div class="perf-stat-row {% if a.rate >= 90 %}border-success{% elif a.rate >= 70 %}border-warning{% else %}border-danger{% endif %}">
+          <div class="perf-stat-top">
+            <span class="perf-name">
+              {{ a.name }}
+              {% if a.has_profile %}<i class="bi bi-patch-check-fill text-primary" title="มีประวัติช่าง"></i>{% endif %}
+            </span>
+            <span class="perf-rate {% if a.rate >= 90 %}text-success{% elif a.rate >= 70 %}text-warning{% else %}text-danger{% endif %}">
+              {{ a.rate }}%
+            </span>
+          </div>
+          <div class="perf-bar-bg">
+            <div class="perf-bar-fill {% if a.rate >= 90 %}fill-success{% elif a.rate >= 70 %}fill-warning{% else %}fill-danger{% endif %}"
+                 style="width:{{ a.rate }}%"></div>
+          </div>
+          <div class="perf-stat-meta">
+            <span><i class="bi bi-list-check"></i> {{ a.completed }}/{{ a.total }}</span>
+            {% if a.mttr %}<span><i class="bi bi-stopwatch"></i> MTTR {{ a.mttr }} ชม.</span>{% endif %}
+            {% if a.on_hold %}<span class="text-warning"><i class="bi bi-pause-circle"></i> Hold {{ a.on_hold }}</span>{% endif %}
+            {% if a.follow_up %}<span class="text-secondary"><i class="bi bi-arrow-repeat"></i> ติดตาม {{ a.follow_up }}</span>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="table-card mt-0">
+      <div class="table-responsive">
+        <table class="kpi-table">
+          <thead>
+            <tr>
+              <th>ลำดับ</th><th>ชื่อ / ผู้รับมอบหมาย</th><th>งานทั้งหมด</th>
+              <th>งานเสร็จ</th><th>อัตราสำเร็จ</th><th>MTTR เฉลี่ย</th><th>On Hold</th><th>ต้องติดตาม</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in assignee_stats %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ a.name }}{% if not a.has_profile %} <small class="text-muted">({{ a.username }})</small>{% endif %}</td>
+              <td>{{ a.total }}</td>
+              <td>{{ a.completed }}</td>
+              <td>
+                <span class="badge-status {% if a.rate >= 90 %}badge-excellent{% elif a.rate >= 70 %}badge-good{% elif a.rate >= 50 %}badge-fair{% else %}badge-poor{% endif %}">
+                  {{ a.rate }}%
+                </span>
+              </td>
+              <td>{% if a.mttr %}{{ a.mttr }} ชม.{% else %}<span class="text-muted">-</span>{% endif %}</td>
+              <td>{% if a.on_hold %}<span class="text-warning fw-bold">{{ a.on_hold }}</span>{% else %}0{% endif %}</td>
+              <td>{% if a.follow_up %}<span class="text-secondary fw-bold">{{ a.follow_up }}</span>{% else %}0{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="text-muted mt-2" style="font-size:0.8rem; margin:0.75rem 1rem 0;">
+        <i class="bi bi-info-circle me-1"></i>
+        MTTR แสดงเฉพาะใบงานที่บันทึก actual_start/actual_end ครบ &bull;
+        <i class="bi bi-patch-check-fill text-primary"></i> = เชื่อมกับประวัติช่างแล้ว
+      </p>
+    </div>
+
+    {% endif %}
+  </div><!-- /tab-tech -->
+
+  </div>{# end tab-content #}
+
+</div>{# end .kpi-container #}
+
+<!-- ── Drill-down Modal ──────────────────────────────────────────────── -->
+<div class="modal fade" id="typeDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content" style="border-radius:16px;">
+      <div class="modal-header" style="background:linear-gradient(135deg,var(--kpi-primary),var(--kpi-primary-dark));color:white;border-radius:16px 16px 0 0;">
+        <h5 class="modal-title" id="typeModalTitle"><i class="bi bi-list-ul me-2"></i>รายการใบงาน</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div id="typeModalLoading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-2 text-muted">กำลังโหลด...</p>
+        </div>
+        <div id="typeModalContent" style="display:none;">
+          <div class="px-4 py-2 border-bottom bg-light d-flex align-items-center justify-content-between gap-2 flex-wrap">
+            <small class="text-muted" id="typeModalCount"></small>
+            <small class="text-warning fw-semibold" id="typeModalHint" style="display:none!important;"></small>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover mb-0" style="font-size:0.9rem;">
+              <thead class="table-light">
+                <tr>
+                  <th style="width:50px">#</th>
+                  <th>หัวข้อ</th>
+                  <th style="width:100px">สถานะ</th>
+                  <th style="width:130px">เครื่องมือ</th>
+                  <th style="width:110px">ผู้รับมอบหมาย</th>
+                  <th style="width:95px">วันที่แจ้ง</th>
+                </tr>
+              </thead>
+              <tbody id="typeModalBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const chartColors = {
+  primary: '#667eea', primaryDark: '#764ba2',
+  success: '#10b981', warning: '#f59e0b',
+  danger: '#ef4444', info: '#3b82f6', gray: '#6b7280'
+};
+const thaiMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+// --- Work Order Trend Chart (ข้อมูลจริงรายเดือน) ---
+const monthlyData = {{ monthly_data_json|safe }};
+const trendLabels = monthlyData.map(d => {
+  const dt = new Date(d.month);
+  return thaiMonths[dt.getMonth()] + "'" + String(dt.getFullYear() + 543).slice(-2);
+});
+new Chart(document.getElementById('workOrderTrendChart'), {
+  type: 'line',
+  data: {
+    labels: trendLabels,
+    datasets: [{
+      label: 'งานเสร็จสิ้น',
+      data: monthlyData.map(d => d.completed),
+      borderColor: chartColors.success,
+      backgroundColor: 'rgba(16,185,129,0.1)',
+      tension: 0.4, fill: true
+    }, {
+      label: 'งานทั้งหมด',
+      data: monthlyData.map(d => d.total),
+      borderColor: chartColors.primary,
+      backgroundColor: 'rgba(102,126,234,0.1)',
+      tension: 0.4, fill: true
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15 } } },
+    scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
+  }
+});
+
+// --- Equipment Status Chart (ข้อมูลจริง) ---
+const totalEq = {{ total_equipment }};
+const downEq = {{ down_equipment }};
+new Chart(document.getElementById('equipmentStatusChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['พร้อมใช้งาน', 'มีงานค้างซ่อม/บำรุง'],
+    datasets: [{
+      data: [totalEq - downEq, downEq],
+      backgroundColor: [chartColors.success, chartColors.warning],
+      borderWidth: 0
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15 } },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.label}: ${ctx.parsed} เครื่อง (${totalEq ? Math.round(ctx.parsed/totalEq*100) : 0}%)`
+        }
+      }
+    }
+  }
+});
+
+// --- Maintenance Type Chart (ข้อมูลจริง) ---
+const TYPE_LABELS = {{ type_labels_json|safe }} || [];
+const TYPE_CODES  = {{ type_codes_json|safe }} || [];
+const TYPE_COUNTS = {{ type_counts_json|safe }} || [];
+
+// Debug: log server-provided arrays to help diagnose missing/incorrect data
+try {
+  console.log('TYPE_LABELS:', TYPE_LABELS);
+  console.log('TYPE_CODES :', TYPE_CODES);
+  console.log('TYPE_COUNTS:', TYPE_COUNTS);
+} catch(e) { console.warn('Chart debug log failed', e); }
+
+// Helper: check if counts contain any non-zero value
+function countsAllZero(arr) {
+  if (!Array.isArray(arr)) return true;
+  return arr.length === 0 || arr.every(v => !v || Number(v) === 0);
+}
+const currentPeriod = '{{ period }}';
+
+// build a simple palette for dynamic types
+const _palette = [chartColors.primary, chartColors.danger, chartColors.warning, chartColors.info, chartColors.gray, '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'];
+const bgColors = TYPE_LABELS.map((_, i) => _palette[i % _palette.length]);
+
+// If there's no meaningful data, show a small placeholder instead of rendering an empty chart
+if (!Array.isArray(TYPE_LABELS) || countsAllZero(TYPE_COUNTS)) {
+  const container = document.getElementById('maintenanceTypeChart').parentElement;
+  container.innerHTML = '<div class="text-center text-muted py-4">ไม่มีข้อมูลประเภทการบำรุงรักษาในช่วงนี้</div>';
+} else {
+  new Chart(document.getElementById('maintenanceTypeChart'), {
+  type: 'bar',
+  data: {
+    labels: TYPE_LABELS,
+    datasets: [{
+      label: 'จำนวนงาน',
+      data: TYPE_COUNTS,
+      backgroundColor: bgColors,
+      borderRadius: 8,
+      hoverBackgroundColor: bgColors,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cursor: 'pointer',
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { footer: () => '\u{1F50D} คลิกเพื่อดูรายละเอียด' } },
+    },
+    scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } },
+    onClick(evt, elements) {
+      if (!elements.length) return;
+      const idx = elements[0].index;
+      const code = TYPE_CODES[idx];
+      const label = TYPE_LABELS[idx];
+      openTypeModal(code, label);
+    },
+    onHover(evt, elements) {
+      evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+    },
+  }
+  });
+}
+
+function openTypeModal(code, label) {
+  const modal = new bootstrap.Modal(document.getElementById('typeDetailModal'));
+  document.getElementById('typeModalTitle').innerHTML =
+    '<i class="bi bi-list-ul me-2"></i>' + label;
+  document.getElementById('typeModalLoading').style.display = 'block';
+  document.getElementById('typeModalContent').style.display = 'none';
+  modal.show();
+
+  const STATUS_COLOR = {
+    open: 'secondary', assigned: 'info', in_progress: 'primary',
+    on_hold: 'warning', completed: 'success', verified: 'success', closed: 'dark'
+  };
+
+  fetch(`/api/workorders-by-type/?code=${code}&period=${currentPeriod}`)
+    .then(r => r.json())
+    .then(({ workorders, count }) => {
+      document.getElementById('typeModalCount').textContent =
+        `พบ ${count} รายการ (แสดงสูงสุด 100)`;
+      const hint = document.getElementById('typeModalHint');
+      if (code === 'untyped' && count > 0) {
+        hint.textContent = '⚠️ ใบงานเหล่านี้ยังไม่ได้ตั้งค่าประเภท — คลิกชื่อใบงานเพื่ออัปเดต';
+        hint.style.removeProperty('display');
+      } else {
+        hint.style.setProperty('display', 'none', 'important');
+      }
+      const tbody = document.getElementById('typeModalBody');
+      tbody.innerHTML = workorders.length
+        ? workorders.map((wo, i) => `
+            <tr>
+              <td>${i + 1}</td>
+              <td><a href="/workorders/${wo.id}" target="_blank" class="fw-semibold text-decoration-none">${wo.title}</a></td>
+              <td><span class="badge bg-${STATUS_COLOR[wo.status] || 'secondary'}">${wo.status_th}</span></td>
+              <td class="text-muted" style="font-size:0.8rem">${wo.equipment}</td>
+              <td>${wo.assigned_to || '<span class="text-muted">-</span>'}</td>
+              <td class="text-muted">${wo.reported_at}</td>
+            </tr>`).join('')
+        : '<tr><td colspan="6" class="text-center text-muted py-4">ไม่มีข้อมูลในช่วงเวลานี้</td></tr>';
+      document.getElementById('typeModalLoading').style.display = 'none';
+      document.getElementById('typeModalContent').style.display = 'block';
+    })
+    .catch(() => {
+      document.getElementById('typeModalBody').innerHTML =
+        '<tr><td colspan="6" class="text-center text-danger py-4">เกิดข้อผิดพลาด กรุณาลองใหม่</td></tr>';
+      document.getElementById('typeModalLoading').style.display = 'none';
+      document.getElementById('typeModalContent').style.display = 'block';
+    });
+}
+
+// --- Response Time Chart (ข้อมูลจริงรายสัปดาห์) ---
+const responseData = {{ weekly_response_json|safe }};
+new Chart(document.getElementById('responseTimeChart'), {
+  type: 'line',
+  data: {
+    labels: responseData.length ? responseData.map(d => d.week) : ['ไม่มีข้อมูล'],
+    datasets: [{
+      label: 'เวลาตอบสนองเฉลี่ย (ชม.)',
+      data: responseData.map(d => d.avg),
+      borderColor: chartColors.info,
+      backgroundColor: 'rgba(59,130,246,0.1)',
+      tension: 0.4, fill: true,
+      pointRadius: 5, pointHoverRadius: 7
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15 } } },
+    scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
+  }
+});
+
+// --- Assignee Performance Chart ---
+const assigneeData = {{ assignee_chart_json|safe }};
+if (assigneeData.names && assigneeData.names.length > 0) {
+  new Chart(document.getElementById('assigneeChart'), {
+    type: 'bar',
+    data: {
+      labels: assigneeData.names,
+      datasets: [{
+        label: 'อัตราสำเร็จ (%)',
+        data: assigneeData.rates,
+        backgroundColor: assigneeData.colors,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` อัตราสำเร็จ: ${ctx.parsed.x}%  (งานทั้งหมด: ${assigneeData.totals[ctx.dataIndex]} รายการ)`
+          }
+        }
+      },
+      scales: {
+        x: { beginAtZero: true, max: 100, grid: { color: '#f3f4f6' }, ticks: { callback: v => v + '%' } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+// Re-render charts when switching tabs (fixes Chart.js hidden-pane sizing)
+document.querySelectorAll('button[data-bs-toggle="pill"]').forEach(btn => {
+  btn.addEventListener('shown.bs.tab', () => {
+    Object.values(Chart.instances).forEach(c => c.resize());
+  });
+});
+</script>
+
+{% endblock %}

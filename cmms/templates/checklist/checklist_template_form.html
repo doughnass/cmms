@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% block title %}<title>{% if template %}แก้ไข{% else %}สร้าง{% endif %}แบบฟอร์ม Checklist — CMMS</title>{% endblock %}
+{% block content %}
+<style>
+    .ctf-page { min-height: 100vh; background: linear-gradient(135deg, #f5f7ff 0%, #f9fafe 50%, #f5f9ff 100%); padding: 1.5rem; }
+    .ctf-container { max-width: 1000px; margin: 0 auto; }
+    .ctf-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); padding: 1.5rem; margin-bottom: 1.25rem; }
+    .ctf-title { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin-bottom: 1rem; display:flex; align-items:center; gap:0.6rem; }
+    .item-row { border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.9rem; margin-bottom: 0.75rem; background: #f8fafc; position: relative; }
+    .item-row .row-num { position:absolute; top:-10px; left:12px; background:#059669; color:#fff; font-size:0.7rem; font-weight:700; padding:0.15rem 0.55rem; border-radius:999px; }
+    .item-row .btn-remove-item { position:absolute; top:0.5rem; right:0.5rem; }
+    .measure-only { display: none; }
+    .item-row.type-measurement .measure-only { display: block; }
+    .form-label-sm { font-size: 0.78rem; font-weight: 600; color: #475569; margin-bottom: 0.25rem; }
+</style>
+<div class="ctf-page">
+    <div class="ctf-container">
+        <form method="post" id="ctf-form">
+            {% csrf_token %}
+            <div class="ctf-card">
+                <div class="ctf-title">
+                    <i class="bi bi-card-checklist"></i> {% if template %}แก้ไขแบบฟอร์ม{% else %}สร้างแบบฟอร์มใหม่{% endif %}
+                    {% if template %}<span class="badge bg-secondary" style="font-size:0.7rem;">v{{ template.version }}</span>{% endif %}
+                </div>
+                {% if template_in_use %}
+                <div class="alert alert-warning" style="font-size:0.85rem;">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    แบบฟอร์มนี้เคยถูกใช้กรอกผลในใบงานแล้ว การบันทึกแก้ไขครั้งนี้จะสร้างเป็น<strong>เวอร์ชันใหม่</strong>แทนการเขียนทับ
+                    เวอร์ชันเดิม (v{{ template.version }}) จะถูกปิดใช้งานและเก็บไว้เป็นประวัติ ผลที่กรอกไว้ในใบงานเก่าจะไม่ถูกกระทบ
+                </div>
+                {% endif %}
+                {% if template.previous_version %}
+                <div class="text-muted" style="font-size:0.8rem; margin-bottom:0.5rem;">
+                    <i class="bi bi-clock-history"></i> สืบทอดมาจาก
+                    <a href="{% url 'checklist_template_edit' template.previous_version.id %}">v{{ template.previous_version.version }}</a>
+                </div>
+                {% endif %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label-sm" for="ctf-name">ชื่อแบบฟอร์ม <span class="text-danger">*</span></label>
+                        <input type="text" id="ctf-name" name="name" class="form-control" value="{{ form_data.name }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-sm" for="ctf-wo-type">ประเภทใบงาน <span class="text-danger">*</span></label>
+                        <select id="ctf-wo-type" name="workorder_type" class="form-select" required>
+                            <option value="">-- เลือก --</option>
+                            {% for value, label in workorder_type_choices %}
+                            <option value="{{ value }}" {% if form_data.workorder_type == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label-sm" for="ctf-eq-type-0">ประเภทเครื่องมือ</label>
+                        <div class="form-control" style="height:auto; max-height:150px; overflow-y:auto;">
+                            {% for opt in equipment_type_options %}
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="ctf-eq-type-{{ forloop.counter0 }}" name="equipment_types" value="{{ opt }}" {% if opt in form_data.selected_equipment_types %}checked{% endif %}>
+                                <label class="form-check-label" style="font-size:0.8rem;" for="ctf-eq-type-{{ forloop.counter0 }}">{{ opt }}</label>
+                            </div>
+                            {% empty %}
+                            <span class="text-muted" style="font-size:0.8rem;">ยังไม่มีข้อมูลเครื่องมือในระบบ</span>
+                            {% endfor %}
+                        </div>
+                        <div class="form-text" style="font-size:0.75rem;">เลือกได้หลายชนิด — ไม่เลือกเลย = ใช้เป็นแบบฟอร์มกลางสำหรับทุกประเภทเครื่องมือ</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label-sm" for="ctf-desc">คำอธิบาย</label>
+                        <textarea id="ctf-desc" name="description" class="form-control" rows="2">{{ form_data.description }}</textarea>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input type="checkbox" name="active" class="form-check-input" id="ctf-active" {% if form_data.active %}checked{% endif %}>
+                            <label class="form-check-label" for="ctf-active">เปิดใช้งาน</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ctf-card">
+                <div class="ctf-title"><i class="bi bi-list-ol"></i> รายการตรวจสอบ</div>
+                <div id="item-rows"></div>
+                <button type="button" id="btn-add-item" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-plus-lg"></i> เพิ่มรายการ
+                </button>
+            </div>
+
+            <input type="hidden" name="items_data" id="items_data" value="[]">
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> บันทึกแบบฟอร์ม</button>
+                <a href="{% url 'checklist_templates' %}" class="btn btn-outline-secondary">ยกเลิก</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{ items_for_json|json_script:"initial-items-data" }}
+{{ result_type_choices|json_script:"result-type-choices" }}
+<script>
+(function () {
+    const initialItems = JSON.parse(document.getElementById('initial-items-data').textContent);
+    const resultTypeChoices = JSON.parse(document.getElementById('result-type-choices').textContent);
+    const rowsWrap = document.getElementById('item-rows');
+    const form = document.getElementById('ctf-form');
+    let rowSeq = 0;
+
+    function makeRow(data) {
+        data = data || {};
+        rowSeq += 1;
+        const id = 'row-' + rowSeq;
+        const wrap = document.createElement('div');
+        wrap.className = 'item-row' + (data.result_type === 'measurement' ? ' type-measurement' : '');
+        wrap.dataset.rowId = id;
+
+        let optionsHtml = '';
+        resultTypeChoices.forEach(function (choice) {
+            const selected = (data.result_type || 'check') === choice[0] ? 'selected' : '';
+            optionsHtml += '<option value="' + choice[0] + '" ' + selected + '>' + choice[1] + '</option>';
+        });
+
+        wrap.innerHTML =
+            '<span class="row-num"></span>' +
+            '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-item"><i class="bi bi-x-lg"></i></button>' +
+            '<div class="row g-2">' +
+                '<div class="col-md-5">' +
+                    '<label class="form-label-sm">รายการตรวจสอบ</label>' +
+                    '<input type="text" class="form-control form-control-sm f-name" value="' + (data.name ? data.name.replace(/"/g, '&quot;') : '') + '" placeholder="เช่น ตรวจสอบสายไฟ / วัดค่าความดัน">' +
+                '</div>' +
+                '<div class="col-md-3">' +
+                    '<label class="form-label-sm">รูปแบบการกรอกผล</label>' +
+                    '<select class="form-select form-select-sm f-result-type">' + optionsHtml + '</select>' +
+                '</div>' +
+                '<div class="col-md-2 measure-only">' +
+                    '<label class="form-label-sm">หน่วย</label>' +
+                    '<input type="text" class="form-control form-control-sm f-unit" value="' + (data.unit || '') + '">' +
+                '</div>' +
+                '<div class="col-md-2 d-flex align-items-end">' +
+                    '<div class="form-check">' +
+                        '<input type="checkbox" class="form-check-input f-required" ' + (data.is_required === false ? '' : 'checked') + '>' +
+                        '<label class="form-check-label" style="font-size:0.78rem;">ต้องกรอก</label>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="col-md-6 measure-only">' +
+                    '<label class="form-label-sm">ค่ามาตรฐาน/ค่าอ้างอิง</label>' +
+                    '<input type="number" step="any" class="form-control form-control-sm f-standard" value="' + (data.standard_value || '') + '">' +
+                '</div>' +
+                '<div class="col-md-6 measure-only">' +
+                    '<label class="form-label-sm">ค่าเผื่อเบี่ยงเบน (±)</label>' +
+                    '<input type="number" step="any" class="form-control form-control-sm f-tolerance" value="' + (data.tolerance || '') + '">' +
+                '</div>' +
+                '<div class="col-12">' +
+                    '<label class="form-label-sm">คำอธิบายเพิ่มเติม</label>' +
+                    '<input type="text" class="form-control form-control-sm f-description" value="' + (data.description ? data.description.replace(/"/g, '&quot;') : '') + '">' +
+                '</div>' +
+            '</div>';
+
+        const select = wrap.querySelector('.f-result-type');
+        select.addEventListener('change', function () {
+            wrap.classList.toggle('type-measurement', select.value === 'measurement');
+        });
+
+        wrap.querySelector('.btn-remove-item').addEventListener('click', function () {
+            wrap.remove();
+            renumberRows();
+        });
+
+        return wrap;
+    }
+
+    function renumberRows() {
+        const rows = rowsWrap.querySelectorAll('.item-row');
+        rows.forEach(function (row, idx) {
+            row.querySelector('.row-num').textContent = 'ข้อ ' + (idx + 1);
+        });
+    }
+
+    function addRow(data) {
+        const row = makeRow(data);
+        rowsWrap.appendChild(row);
+        renumberRows();
+    }
+
+    document.getElementById('btn-add-item').addEventListener('click', function () {
+        addRow({});
+    });
+
+    if (initialItems.length) {
+        initialItems.forEach(function (it) { addRow(it); });
+    } else {
+        addRow({});
+    }
+
+    form.addEventListener('submit', function (e) {
+        const rows = rowsWrap.querySelectorAll('.item-row');
+        const items = [];
+        rows.forEach(function (row) {
+            const name = row.querySelector('.f-name').value.trim();
+            if (!name) return;
+            items.push({
+                name: name,
+                description: row.querySelector('.f-description').value.trim(),
+                result_type: row.querySelector('.f-result-type').value,
+                unit: row.querySelector('.f-unit').value.trim(),
+                standard_value: row.querySelector('.f-standard').value,
+                tolerance: row.querySelector('.f-tolerance').value,
+                is_required: row.querySelector('.f-required').checked,
+            });
+        });
+        if (!items.length) {
+            e.preventDefault();
+            alert('กรุณาเพิ่มอย่างน้อย 1 รายการตรวจสอบ');
+            return;
+        }
+        document.getElementById('items_data').value = JSON.stringify(items);
+    });
+})();
+</script>
+{% endblock %}

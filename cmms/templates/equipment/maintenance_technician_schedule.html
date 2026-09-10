@@ -1,0 +1,446 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load thai_dates %}
+
+{% block title %}<title>ตารางงานช่าง</title>{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --green-gradient:   linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  --yellow-gradient:  linear-gradient(135deg, #f9ca24 0%, #f0932b 100%);
+  --red-gradient:     linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  --blue-gradient:    linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --teal-gradient:    linear-gradient(135deg, #0fd850 0%, #f9f047 100%);
+  --card-shadow:  0 8px 24px rgba(0,0,0,.10);
+  --hover-shadow: 0 14px 36px rgba(0,0,0,.16);
+}
+
+/* ── Page Header ─────────────────────────────────────── */
+.page-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #fff;
+  padding: 2.4rem 0 2rem;
+  margin-bottom: 2rem;
+  border-radius: 0 0 28px 28px;
+  box-shadow: 0 8px 28px rgba(15,52,96,.45);
+}
+.page-header h1 { font-size: 2rem; font-weight: 700; }
+.page-header .subtitle { opacity: .88; font-size: 1rem; }
+
+/* ── Technician Cards ─────────────────────────────────── */
+.tech-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 1.4rem 1.2rem 1.2rem;
+  box-shadow: var(--card-shadow);
+  transition: transform .25s, box-shadow .25s;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+  border: 2.5px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+.tech-card:hover { transform: translateY(-4px); box-shadow: var(--hover-shadow); text-decoration: none; }
+.tech-card.selected {
+  border-color: #667eea;
+  background: linear-gradient(135deg,#f0f3ff,#faf5ff);
+  box-shadow: 0 0 0 4px rgba(102,126,234,.18), var(--hover-shadow);
+}
+.tech-card.selected::before {
+  content: '';
+  position: absolute; top:0; left:0; right:0; height:4px;
+  background: var(--primary-gradient);
+}
+.tech-card.unassigned-card { border-color: #f59e0b; }
+.tech-card.unassigned-card.selected { border-color: #f59e0b; background: linear-gradient(135deg,#fffbeb,#fef3c7); }
+.tech-card.unassigned-card.selected::before { background: var(--yellow-gradient); }
+
+.tech-avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; font-weight: 700; color: #fff;
+  margin: 0 auto .8rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+.tech-name { font-size: .95rem; font-weight: 700; color: #2d3748; text-align: center; margin-bottom: .25rem; }
+.tech-skills { font-size: .72rem; color: #718096; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: .8rem; }
+
+.tech-stats { display: flex; gap: .4rem; justify-content: center; flex-wrap: wrap; }
+.tech-stat-pill {
+  display: inline-flex; flex-direction: column; align-items: center;
+  padding: .3rem .6rem; border-radius: 10px;
+  font-size: .7rem; font-weight: 600; min-width: 44px;
+}
+.tech-stat-pill .pill-val { font-size: 1.1rem; font-weight: 800; line-height: 1; }
+.pill-today  { background: #c6f6d5; color: #22543d; }
+.pill-up     { background: #bee3f8; color: #2a4365; }
+.pill-total  { background: #e9d8fd; color: #553c9a; }
+.pill-past   { background: #fed7d7; color: #742a2a; }
+
+/* ── Section Divider ─────────────────────────────────── */
+.section-divider {
+  background: #fff;
+  border-radius: 18px;
+  padding: 1.2rem 1.6rem;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 1.4rem;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem;
+}
+.section-title { font-size: 1.15rem; font-weight: 700; color: #2d3748; margin: 0; display: flex; align-items: center; gap: .5rem; }
+
+/* ── Date filter tabs ─────────────────────────────────── */
+.filter-tabs { display: flex; gap: .4rem; flex-wrap: wrap; }
+.filter-tab {
+  padding: .4rem 1rem; border-radius: 20px; font-size: .82rem; font-weight: 600;
+  border: 1.5px solid #e2e8f0; background: #fff; color: #4a5568;
+  text-decoration: none; transition: all .18s;
+}
+.filter-tab:hover { background: #edf2f7; color: #2d3748; text-decoration: none; }
+.filter-tab.active { background: var(--primary-gradient); border-color: transparent; color: #fff; box-shadow: 0 4px 12px rgba(102,126,234,.28); }
+.filter-tab.active:hover { color: #fff; }
+
+/* ── Appointment Table ──────────────────────────────── */
+.appt-table-wrapper {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+.appt-table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 0; }
+.appt-table thead th {
+  background: #f8fafc;
+  color: #718096;
+  font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  padding: .85rem 1.2rem;
+  border-bottom: 1.5px solid #e2e8f0;
+  white-space: nowrap;
+}
+.appt-table tbody tr { border-bottom: 1px solid #f0f4f8; transition: background .18s; }
+.appt-table tbody tr:last-child { border-bottom: none; }
+.appt-table tbody tr:hover { background: #f8fafc; }
+.appt-table td { padding: .9rem 1.2rem; vertical-align: middle; }
+
+/* Date badge */
+.date-badge {
+  display: inline-flex; flex-direction: column; align-items: center;
+  padding: .45rem .8rem; border-radius: 12px; font-weight: 700;
+  min-width: 70px; line-height: 1.2;
+}
+.date-badge .day  { font-size: 1.4rem; }
+.date-badge .month-year { font-size: .72rem; opacity: .88; }
+.date-badge.future  { background: #ebf8ff; color: #2b6cb0; }
+.date-badge.today   { background: linear-gradient(135deg,#43e97b22,#38f9d722); color: #276749; border: 1.5px solid #43e97b; }
+.date-badge.past    { background: #fff5f5; color: #9b2335; }
+
+/* Equipment cell */
+.eq-id   { font-family: monospace; font-size: .82rem; color: #667eea; background: #edf2ff; padding: .2rem .55rem; border-radius: 6px; }
+.eq-name { font-weight: 600; color: #2d3748; font-size: .95rem; }
+.eq-meta { font-size: .8rem; color: #718096; }
+
+/* Type badge */
+.type-badge { display: inline-block; padding: .25rem .75rem; border-radius: 20px; font-size: .77rem; font-weight: 600; background: #e9d8fd; color: #553c9a; }
+
+/* Status pill */
+.status-pill { display: inline-block; padding: .22rem .75rem; border-radius: 20px; font-size: .78rem; font-weight: 600; }
+.status-pill.future { background: #bee3f8; color: #2a4365; }
+.status-pill.today- { background: #c6f6d5; color: #22543d; }
+.status-pill.past-  { background: #fed7d7; color: #742a2a; }
+
+/* Source badge */
+.source-badge-appt { display: inline-block; padding: .18rem .6rem; border-radius: 20px; font-size: .7rem; font-weight: 600; background: #bee3f8; color: #2a4365; }
+.source-badge-sr   { display: inline-block; padding: .18rem .6rem; border-radius: 20px; font-size: .7rem; font-weight: 600; background: #fefcbf; color: #744210; }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 3.5rem 2rem; color: #a0aec0; }
+.empty-state i { font-size: 3.5rem; opacity: .35; }
+.empty-state p { margin-top: 1rem; font-size: 1rem; }
+
+/* Hint banner */
+.hint-banner {
+  text-align: center; padding: 3rem 2rem; color: #a0aec0;
+  background: #fff; border-radius: 18px; box-shadow: var(--card-shadow);
+}
+.hint-banner i { font-size: 3rem; opacity: .3; display: block; margin-bottom: 1rem; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-header h1 { font-size: 1.5rem; }
+  .appt-table thead { display: none; }
+  .appt-table tbody tr { display: block; margin-bottom: 1rem; border-radius: 12px; box-shadow: var(--card-shadow); border: none !important; }
+  .appt-table td { display: flex; justify-content: space-between; align-items: center; padding: .6rem 1rem; border-bottom: 1px solid #f0f4f8; }
+  .appt-table td::before { content: attr(data-label); font-size: .78rem; color: #718096; font-weight: 600; flex-shrink: 0; margin-right: .5rem; }
+  .appt-table td:last-child { border-bottom: none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ─────────────────────── PAGE HEADER ─────────────────────── #}
+<div class="page-header">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <h1><i class="bi bi-person-lines-fill me-2"></i>ตารางงานช่าง</h1>
+        <p class="subtitle mb-0">ดูรายการนัดหมายและภาระงานของช่างแต่ละคน</p>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'maintenance_appointments_list' %}" class="btn btn-light btn-sm fw-semibold">
+          <i class="bi bi-calendar2-check me-1"></i>รายการนัดหมาย
+        </a>
+        <a href="{% url 'technicians_list' %}" class="btn btn-outline-light btn-sm fw-semibold">
+          <i class="bi bi-people me-1"></i>จัดการช่าง
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container pb-5">
+
+  {# ─────────────────────── TECHNICIAN CARDS ─────────────────────── #}
+  <div class="section-divider mb-3">
+    <h2 class="section-title mb-0">
+      <i class="bi bi-people-fill text-primary"></i>ช่างทั้งหมด ({{ tech_summaries|length }} คน)
+    </h2>
+    <span class="text-muted small">คลิกที่การ์ดเพื่อดูนัดหมายของช่างแต่ละคน</span>
+  </div>
+
+  <div class="row g-3 mb-4">
+    {% for summary in tech_summaries %}
+    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+      <a href="?tech_id={{ summary.tech.id }}&date_filter={{ date_filter }}"
+         class="tech-card {% if selected_tech_id == summary.tech.id|stringformat:'s' %}selected{% endif %}">
+
+        {# Avatar with gradient based on initial #}
+        {% with name=summary.tech.name %}
+        <div class="tech-avatar"
+             style="background: linear-gradient(135deg,
+               hsl({{ summary.tech.id|add:70 }}deg 65% 55%) 0%,
+               hsl({{ summary.tech.id|add:130 }}deg 65% 45%) 100%);">
+          {{ name|first|upper }}
+        </div>
+        {% endwith %}
+
+        <div class="tech-name">{{ summary.tech.name }}</div>
+        {% if summary.tech.skills %}
+        <div class="tech-skills" title="{{ summary.tech.skills }}">{{ summary.tech.skills }}</div>
+        {% else %}
+        <div class="tech-skills text-muted">ไม่ระบุทักษะ</div>
+        {% endif %}
+
+        <div class="tech-stats">
+          {% if summary.today > 0 %}
+          <div class="tech-stat-pill pill-today">
+            <span class="pill-val">{{ summary.today }}</span>
+            <span>วันนี้</span>
+          </div>
+          {% endif %}
+          <div class="tech-stat-pill pill-up">
+            <span class="pill-val">{{ summary.upcoming }}</span>
+            <span>รอ</span>
+          </div>
+          <div class="tech-stat-pill pill-total">
+            <span class="pill-val">{{ summary.total }}</span>
+            <span>ทั้งหมด</span>
+          </div>
+        </div>
+
+        {% if selected_tech_id == summary.tech.id|stringformat:'s' %}
+        <div class="mt-2 text-center">
+          <span style="font-size:.72rem; color:#667eea; font-weight:700;">
+            <i class="bi bi-check-circle-fill me-1"></i>กำลังดูอยู่
+          </span>
+        </div>
+        {% endif %}
+      </a>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="hint-banner">
+        <i class="bi bi-person-x"></i>
+        <p>ยังไม่มีข้อมูลช่างในระบบ</p>
+        <a href="{% url 'technician_create' %}" class="btn btn-primary btn-sm">
+          <i class="bi bi-plus-circle me-1"></i>เพิ่มช่าง
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+
+    {# Unassigned card #}
+    {% if unassigned_count > 0 %}
+    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+      <a href="?tech_id=unassigned&date_filter={{ date_filter }}"
+         class="tech-card unassigned-card {% if selected_tech_id == 'unassigned' %}selected{% endif %}">
+        <div class="tech-avatar" style="background: linear-gradient(135deg,#f6d365,#fda085);">
+          <i class="bi bi-question-lg" style="font-size:1.3rem;"></i>
+        </div>
+        <div class="tech-name">ยังไม่ได้มอบหมาย</div>
+        <div class="tech-skills text-muted">—</div>
+        <div class="tech-stats">
+          <div class="tech-stat-pill" style="background:#fef3c7; color:#92400e;">
+            <span class="pill-val">{{ unassigned_count }}</span>
+            <span>รายการ</span>
+          </div>
+        </div>
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  {# ─────────────────────── APPOINTMENT LIST ─────────────────────── #}
+  {% if selected_tech_id %}
+
+  <div class="section-divider mb-3">
+    <div>
+      <h2 class="section-title mb-0">
+        {% if selected_tech %}
+          <i class="bi bi-person-check-fill text-success"></i>
+          นัดหมายของ: <span style="color:#667eea;">{{ selected_tech.name }}</span>
+        {% else %}
+          <i class="bi bi-question-circle text-warning"></i>
+          นัดหมายที่ยังไม่ได้มอบหมาย
+        {% endif %}
+      </h2>
+      <div class="mt-1 small text-muted">
+        พบ <strong>{{ appointments|length }}</strong> รายการ
+        {% if date_filter == 'upcoming' %} (กำลังจะมาถึง)
+        {% elif date_filter == 'today' %} (วันนี้)
+        {% elif date_filter == 'past' %} (ผ่านมาแล้ว)
+        {% endif %}
+      </div>
+    </div>
+    <div class="filter-tabs">
+      <a href="?tech_id={{ selected_tech_id }}&date_filter=today"
+         class="filter-tab {% if date_filter == 'today' %}active{% endif %}">วันนี้</a>
+      <a href="?tech_id={{ selected_tech_id }}&date_filter=upcoming"
+         class="filter-tab {% if date_filter == 'upcoming' %}active{% endif %}">กำลังจะมาถึง</a>
+      <a href="?tech_id={{ selected_tech_id }}&date_filter=past"
+         class="filter-tab {% if date_filter == 'past' %}active{% endif %}">ผ่านมาแล้ว</a>
+      <a href="?tech_id={{ selected_tech_id }}&date_filter=all"
+         class="filter-tab {% if date_filter == 'all' %}active{% endif %}">ทั้งหมด</a>
+    </div>
+  </div>
+
+  <div class="appt-table-wrapper">
+    {% if appointments %}
+    <table class="appt-table">
+      <thead>
+        <tr>
+          <th style="width:110px">วันที่นัด</th>
+          <th>เครื่องมือ</th>
+          <th>ประเภท</th>
+          <th>หน่วยงาน</th>
+          <th>สถานะ</th>
+          <th>หมายเหตุ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for appt in appointments %}
+        {% with sd=appt.scheduled_date %}
+        <tr {% if sd == today %}class="fw-semibold"{% elif sd < today %}class="text-muted"{% endif %}>
+
+          {# Date cell #}
+          <td data-label="วันที่นัด">
+            {% if sd == today %}
+            <div class="date-badge today">
+            {% elif sd > today %}
+            <div class="date-badge future">
+            {% else %}
+            <div class="date-badge past">
+            {% endif %}
+              <span class="day">{{ sd.day }}</span>
+              <span class="month-year">{{ sd|thai_date }}</span>
+            </div>
+          </td>
+
+          {# Equipment cell #}
+          <td data-label="เครื่องมือ">
+            {% if appt.equipment %}
+            <div><span class="eq-id">{{ appt.equipment.equipment_id }}</span></div>
+            <div class="eq-name mt-1">{{ appt.equipment.equipment_name_TH|default:appt.equipment.equipment_name_EN }}</div>
+            {% if appt.equipment.equipment_brand or appt.equipment.equipment_model %}
+            <div class="eq-meta">
+              {% if appt.equipment.equipment_brand %}{{ appt.equipment.equipment_brand }}{% endif %}
+              {% if appt.equipment.equipment_model %} / {{ appt.equipment.equipment_model }}{% endif %}
+            </div>
+            {% endif %}
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+
+          {# Type cell #}
+          <td data-label="ประเภท">
+            {% if appt.equipment.equipment_type %}
+            <span class="type-badge">{{ appt.equipment.equipment_type }}</span>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+
+          {# Department cell #}
+          <td data-label="หน่วยงาน">
+            {% if appt.equipment.equipment_user_customer %}
+            <div class="fw-semibold small">{{ appt.equipment.equipment_user_customer }}</div>
+            {% endif %}
+            {% if appt.equipment.equipment_owner_customer %}
+            <div class="eq-meta">{{ appt.equipment.equipment_owner_customer }}</div>
+            {% endif %}
+            {% if not appt.equipment.equipment_user_customer and not appt.equipment.equipment_owner_customer %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+
+          {# Status cell #}
+          <td data-label="สถานะ">
+            {% if sd == today %}
+              <span class="status-pill today-">🟢 วันนี้</span>
+            {% elif sd > today %}
+              <span class="status-pill future">🔵 รออยู่</span>
+            {% else %}
+              <span class="status-pill past-">🔴 ผ่านแล้ว</span>
+            {% endif %}
+          </td>
+
+          {# Notes cell #}
+          <td data-label="หมายเหตุ">
+            <span class="eq-meta">{{ appt.notes|default:"—"|truncatechars:60 }}</span>
+          </td>
+
+        </tr>
+        {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-calendar2-x d-block"></i>
+      <p class="fw-semibold">ไม่พบรายการนัดหมาย</p>
+      <p class="small text-muted">
+        {% if date_filter != 'all' %}
+          ลองเปลี่ยนตัวกรองวันที่ หรือ
+          <a href="?tech_id={{ selected_tech_id }}&date_filter=all" class="text-primary">ดูทั้งหมด</a>
+        {% else %}
+          ช่างคนนี้ยังไม่มีนัดหมายในระบบ
+        {% endif %}
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  {% else %}
+  {# No technician selected yet #}
+  <div class="hint-banner mt-3">
+    <i class="bi bi-hand-index-thumb"></i>
+    <p class="fw-semibold mb-1">เลือกช่างจากการ์ดด้านบน</p>
+    <p class="small">คลิกที่การ์ดช่างเพื่อดูรายการนัดหมายของช่างแต่ละคน</p>
+  </div>
+  {% endif %}
+
+</div>{# /container #}
+
+{% endblock %}

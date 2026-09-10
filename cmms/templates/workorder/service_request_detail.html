@@ -1,0 +1,1874 @@
+{% extends 'base.html' %}
+{% load thai_dates %}
+{% block title %}<title>คำขอ {{ sr.display_id }} - {{ sr.title }}</title>{% endblock %}
+{% block content %}
+<style>
+    /* ===== Ultra-Modern Service Request Detail - Redesigned ===== */
+    :root {
+        --primary: #6366f1;
+        --primary-dark: #4f46e5;
+        --primary-light: #818cf8;
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%);
+        --secondary-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+        --success: #10b981;
+        --success-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        --warning: #f59e0b;
+        --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        --danger: #ef4444;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --gray-900: #0f172a;
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.08);
+        --shadow-medium: 0 8px 32px rgba(0, 0, 0, 0.12);
+        --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
+    }
+
+    .sr-page {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 50%, #ecfeff 100%);
+        padding: 1.5rem 0 3rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .sr-page::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 80%;
+        height: 80%;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    /* ===== Top Navigation Bar ===== */
+    .sr-topbar {
+        background: transparent;
+        padding: 1.25rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        max-width: 1280px;
+        margin: 0 auto;
+    }
+
+    .sr-back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 0.625rem 1.25rem;
+        border-radius: 12px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.5);
+        box-shadow: var(--shadow-soft);
+        transition: all 0.3s ease;
+    }
+
+    .sr-back-btn:hover {
+        background: white;
+        color: var(--primary);
+        transform: translateX(-4px);
+        box-shadow: var(--shadow-medium);
+    }
+
+    .sr-topbar-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .sr-action-icon {
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.5);
+        color: var(--gray-600);
+        text-decoration: none;
+        box-shadow: var(--shadow-soft);
+        transition: all 0.3s ease;
+    }
+
+    .sr-action-icon:hover {
+        background: white;
+        color: var(--primary);
+        transform: scale(1.08);
+        box-shadow: var(--shadow-medium);
+    }
+
+    .sr-action-icon.danger:hover {
+        background: #fef2f2;
+        color: var(--danger);
+        border-color: #fecaca;
+    }
+
+    /* ===== Hero Section ===== */
+    .sr-hero-section {
+        max-width: 1280px;
+        margin: -0.5rem auto 0;
+        padding: 0 2rem 2rem;
+    }
+
+    .sr-hero-card {
+        /* White hero card for light tone */
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--gray-100);
+        border-radius: 24px;
+        padding: 2rem;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 2rem;
+        flex-wrap: wrap;
+        box-shadow: var(--shadow-soft);
+        position: relative;
+        overflow: hidden;
+        color: var(--gray-800);
+    }
+
+    .sr-hero-card::before {
+        content: '';
+        position: absolute;
+        top: -10%;
+        right: -10%;
+        width: 40%;
+        height: 120%;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 60%);
+        pointer-events: none;
+    }
+
+    .sr-hero-left {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .sr-id-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08));
+        color: var(--primary);
+        padding: 0.4rem 1rem;
+        border-radius: 50px;
+        font-size: 0.8125rem;
+        font-weight: 700;
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(99,102,241,0.08);
+        margin-bottom: 1rem;
+    }
+
+    .sr-id-badge i {
+        font-size: 1rem;
+    }
+
+    .sr-hero-title {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--gray-800);
+        margin: 0 0 1rem;
+        line-height: 1.25;
+        letter-spacing: -0.02em;
+    }
+
+    /* Quick Info Badges */
+    .sr-quick-info {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+    }
+
+    .sr-quick-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.875rem;
+        border-radius: 50px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+    }
+
+    .sr-quick-badge.date {
+        background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+        color: var(--primary);
+    }
+
+    .sr-quick-badge.type {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        color: var(--success);
+    }
+
+    /* Workorder Link */
+    .sr-workorder-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        color: #047857;
+        border-radius: 10px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-decoration: none;
+        margin-top: 0.75rem;
+        transition: all 0.2s;
+    }
+
+    .sr-workorder-link:hover {
+        background: var(--success);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .sr-hero-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .sr-stat {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+    }
+
+    .sr-stat-icon {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: var(--primary);
+        color: white;
+        font-size: 1rem;
+    }
+
+    .sr-stat-text {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sr-stat-label {
+        font-size: 0.6875rem;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+
+    .sr-stat-value {
+        font-size: 0.9375rem;
+        color: var(--gray-800);
+        font-weight: 600;
+    }
+
+    /* Status Badge */
+    .sr-status-container {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 1rem;
+    }
+
+    .sr-status-pill {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        padding: 0.875rem 1.5rem;
+        border-radius: 16px;
+        font-weight: 700;
+        font-size: 1rem;
+        color: white;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .sr-status-pill.new {
+        background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+    }
+    .sr-status-pill.reviewed {
+        background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    }
+    .sr-status-pill.converted {
+        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    }
+    .sr-status-pill.rejected {
+        background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+    }
+    .sr-status-pill.closed {
+        background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+    }
+    .sr-status-pill.deleted {
+        background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+    }
+
+    .sr-status-pill i {
+        font-size: 1.125rem;
+    }
+
+    /* ===== Main Content Area ===== */
+    .sr-content-wrapper {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .sr-layout {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 1.5rem;
+        margin-top: -1rem;
+    }
+
+    @media (max-width: 1024px) {
+        .sr-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* ===== Cards ===== */
+    .sr-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+        overflow: hidden;
+        margin-bottom: 1.25rem;
+        border: 1px solid var(--gray-100);
+    }
+
+    .sr-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+    .sr-card-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sr-card-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        font-size: 1.125rem;
+    }
+
+    .sr-card-icon.purple {
+        background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+        color: var(--primary);
+    }
+
+    .sr-card-icon.green {
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        color: var(--success);
+    }
+
+    .sr-card-icon.orange {
+        background: linear-gradient(135deg, #fffbeb, #fef3c7);
+        color: var(--warning);
+    }
+
+    .sr-card-icon.blue {
+        background: linear-gradient(135deg, #eff6ff, #dbeafe);
+        color: #3b82f6;
+    }
+
+    .sr-card-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .sr-card-body {
+        padding: 1.5rem;
+    }
+
+    /* ===== Equipment Card (Full Details) ===== */
+    .sr-equipment-card {
+        border: 2px solid #e0e7ff;
+        background: linear-gradient(180deg, #fafaff 0%, white 100%);
+    }
+
+    .sr-badge-selected {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        background: var(--success-gradient);
+        color: white;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .sr-equipment-main {
+        display: flex;
+        align-items: flex-start;
+        gap: 1.25rem;
+        padding-bottom: 1.25rem;
+        margin-bottom: 1.25rem;
+        border-bottom: 2px dashed var(--gray-200);
+    }
+
+    .sr-equipment-image {
+        width: 100px;
+        height: 100px;
+        border-radius: 16px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #f0f4ff, #e0e7ff);
+        border: 2px solid rgba(99, 102, 241, 0.2);
+        flex-shrink: 0;
+    }
+
+    .sr-equipment-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .sr-equipment-primary {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .sr-equipment-code {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.375rem;
+    }
+
+    .sr-equipment-code .code-dot {
+        width: 10px;
+        height: 10px;
+        background: var(--success);
+        border-radius: 50%;
+        animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.6; transform: scale(1.2); }
+    }
+
+    .sr-equipment-name {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        line-height: 1.4;
+    }
+
+    .sr-equipment-name-th {
+        font-size: 0.875rem;
+        color: var(--gray-500);
+        margin-top: 0.25rem;
+    }
+
+    .sr-equipment-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0;
+    }
+
+    .sr-equip-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+        padding: 0.875rem 1rem;
+        background: rgba(248, 250, 252, 0.8);
+        border: 1px solid var(--gray-100);
+        margin: -1px 0 0 -1px;
+        transition: all 0.2s ease;
+    }
+
+    .sr-equip-item:first-child { border-top-left-radius: 12px; }
+    .sr-equip-item:nth-child(2) { border-top-right-radius: 12px; }
+
+    .sr-equip-item.full {
+        grid-column: span 2;
+    }
+
+    .sr-equip-item:hover {
+        background: white;
+        border-color: var(--primary-light);
+        z-index: 1;
+    }
+
+    .sr-equip-label {
+        font-size: 0.6875rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-weight: 600;
+    }
+
+    .sr-equip-label i {
+        color: var(--primary);
+        font-size: 0.75rem;
+    }
+
+    .sr-equip-value {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--gray-800);
+    }
+
+    /* ===== Service Date Display ===== */
+    .sr-service-date {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--success);
+    }
+
+    .sr-service-date i {
+        font-size: 1.25rem;
+    }
+
+    .sr-no-date {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--gray-400);
+        font-style: italic;
+        font-weight: 500;
+        font-size: 0.9375rem;
+    }
+
+    /* ===== Requester Info (Enhanced) ===== */
+    .sr-requester-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .sr-info-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.875rem;
+        padding: 0.875rem 0;
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+    .sr-info-row:last-child {
+        border-bottom: none;
+    }
+
+    .sr-info-row.highlight {
+        background: linear-gradient(135deg, #eef2ff, #faf5ff);
+        margin: 0.5rem -1.5rem -1.5rem;
+        padding: 1rem 1.5rem;
+        border-radius: 0 0 16px 16px;
+        border-bottom: none;
+    }
+
+    .sr-info-icon {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: var(--gray-100);
+        color: var(--primary);
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .sr-info-row.highlight .sr-info-icon {
+        background: var(--primary);
+        color: white;
+    }
+
+    .sr-info-content {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+
+    .sr-info-label {
+        font-size: 0.6875rem;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+
+    .sr-info-value {
+        font-size: 0.9375rem;
+        color: var(--gray-800);
+        font-weight: 600;
+        word-break: break-word;
+    }
+
+    .sr-contact-link {
+        color: var(--primary);
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .sr-contact-link:hover {
+        color: var(--primary-dark);
+        text-decoration: underline;
+    }
+
+    /* ===== Notes Card ===== */
+    .sr-notes-text {
+        font-size: 0.9375rem;
+        line-height: 1.7;
+        color: var(--gray-600);
+        background: var(--gray-50);
+        padding: 1rem 1.25rem;
+        border-radius: 12px;
+        border-left: 4px solid var(--warning);
+    }
+
+    /* ===== Description ===== */
+    .sr-description-text {
+        font-size: 0.9375rem;
+        line-height: 1.8;
+        color: var(--gray-600);
+        white-space: pre-wrap;
+    }
+
+    .sr-description-text:empty::after {
+        content: 'ไม่มีรายละเอียดเพิ่มเติม';
+        color: var(--gray-400);
+        font-style: italic;
+    }
+
+    /* ===== Attachments ===== */
+    .sr-attach-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .sr-attach-card {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.875rem 1rem;
+        background: var(--gray-50);
+        border: 1px solid var(--gray-200);
+        border-radius: 12px;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .sr-attach-card:hover {
+        background: #eef2ff;
+        border-color: #c7d2fe;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+    }
+
+    .sr-attach-icon {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: white;
+        color: var(--primary);
+        font-size: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .sr-attach-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .sr-attach-name {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .sr-attach-size {
+        font-size: 0.6875rem;
+        color: var(--gray-400);
+    }
+
+    .sr-empty {
+        text-align: center;
+        padding: 2rem;
+        color: var(--gray-400);
+        font-size: 0.875rem;
+    }
+
+    .sr-empty i {
+        font-size: 2rem;
+        margin-bottom: 0.75rem;
+        opacity: 0.5;
+    }
+
+    /* ===== Timeline ===== */
+    .sr-timeline {
+        position: relative;
+        /* Make the timeline scrollable when content grows */
+        max-height: 380px; /* adjust as needed */
+        overflow: auto;
+        padding-right: 0.5rem; /* room for scrollbar */
+    }
+
+    /* Custom scrollbar (WebKit) */
+    .sr-timeline::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    .sr-timeline::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .sr-timeline::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, rgba(99,102,241,0.35), rgba(99,102,241,0.6));
+        border-radius: 999px;
+        border: 2px solid rgba(248,250,252,0.8);
+    }
+
+    /* Firefox scrollbar styling */
+    .sr-timeline {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(99,102,241,0.6) rgba(248,250,252,0.8);
+    }
+
+    .sr-timeline-item {
+        display: flex;
+        gap: 1rem;
+        padding-bottom: 1.5rem;
+        position: relative;
+    }
+
+    .sr-timeline-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .sr-timeline-item:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: 17px;
+        top: 40px;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg, var(--primary-light) 0%, var(--gray-200) 100%);
+    }
+
+    .sr-timeline-dot {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    }
+
+    .sr-timeline-content {
+        flex: 1;
+        padding-top: 0.25rem;
+    }
+
+    .sr-timeline-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.25rem;
+    }
+
+    .sr-timeline-action {
+        font-weight: 700;
+        color: var(--gray-800);
+        font-size: 0.9375rem;
+    }
+
+    .sr-timeline-time {
+        font-size: 0.75rem;
+        color: var(--gray-400);
+    }
+
+    .sr-timeline-actor {
+        font-size: 0.8125rem;
+        color: var(--gray-500);
+    }
+
+    .sr-timeline-note {
+        margin-top: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: var(--gray-50);
+        border-radius: 10px;
+        border-left: 3px solid var(--primary-light);
+        font-size: 0.8125rem;
+        color: var(--gray-600);
+    }
+
+    /* ===== Change Log Styling ===== */
+    .sr-change-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.625rem;
+    }
+
+    .sr-change-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+        padding: 0.625rem 0.875rem;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid var(--gray-200);
+    }
+
+    .sr-change-field {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 0.75rem;
+    }
+
+    .sr-change-field i {
+        font-size: 0.875rem;
+    }
+
+    .sr-change-values {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .sr-change-old {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.625rem;
+        background: linear-gradient(135deg, #fef2f2, #fee2e2);
+        color: #b91c1c;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .sr-change-arrow {
+        color: var(--gray-400);
+        font-size: 0.875rem;
+    }
+
+    .sr-change-new {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.625rem;
+        background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+        color: #047857;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .sr-change-old:hover,
+    .sr-change-new:hover {
+        max-width: none;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    /* ===== Sidebar ===== */
+    .sr-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    /* Info Grid */
+    .sr-info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .sr-info-item {
+        padding: 1rem;
+        background: var(--gray-50);
+        border-radius: 12px;
+        border: 1px solid var(--gray-100);
+    }
+
+    .sr-info-item.full {
+        grid-column: span 2;
+    }
+
+    .sr-info-item-label {
+        font-size: 0.6875rem;
+        font-weight: 700;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.375rem;
+    }
+
+    .sr-info-item-value {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .sr-info-item-value i {
+        color: var(--primary);
+        font-size: 0.875rem;
+    }
+
+    /* ===== Actions Card ===== */
+    .sr-actions-card {
+        background: linear-gradient(180deg, #fafaff 0%, white 100%);
+        border: 2px solid #e0e7ff;
+    }
+
+    .sr-form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .sr-form-label {
+        display: block;
+        font-size: 0.8125rem;
+        font-weight: 700;
+        color: var(--gray-700);
+        margin-bottom: 0.5rem;
+    }
+
+    .sr-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid var(--gray-200);
+        border-radius: 12px;
+        font-size: 0.9375rem;
+        font-family: inherit;
+        background: white;
+        transition: all 0.2s;
+    }
+
+    .sr-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    .sr-input::placeholder {
+        color: var(--gray-400);
+    }
+
+    /* Pills */
+    .worktype-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .worktype-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.5rem 0.875rem;
+        background: var(--gray-100);
+        border: 2px solid transparent;
+        border-radius: 50px;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--gray-600);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .worktype-pill:hover {
+        background: #eef2ff;
+        color: var(--primary);
+    }
+
+    .worktype-pill.selected {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    }
+
+    .worktype-pill i {
+        font-size: 0.875rem;
+    }
+
+    .selected-types-display {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+    }
+
+    .selected-type-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        background: #ecfdf5;
+        color: var(--success);
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .selected-type-tag .remove-tag {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        background: rgba(16, 185, 129, 0.2);
+        border-radius: 50%;
+        cursor: pointer;
+        margin-left: 0.25rem;
+        transition: all 0.2s;
+    }
+
+    .selected-type-tag .remove-tag:hover {
+        background: var(--success);
+        color: white;
+    }
+
+    /* ===== Buttons ===== */
+    .sr-btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .sr-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.625rem;
+        padding: 0.875rem 1.25rem;
+        border-radius: 14px;
+        font-weight: 700;
+        font-size: 0.9375rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .sr-btn-primary {
+        background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+        color: white;
+        box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+
+    .sr-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.5);
+        color: white;
+    }
+
+    .sr-btn-success {
+        background: linear-gradient(135deg, var(--success) 0%, #34d399 100%);
+        color: white;
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+        
+    }
+
+    .sr-btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.5);
+    }
+
+    .sr-btn-outline {
+        background: white;
+        color: var(--gray-600);
+        border: 2px solid var(--gray-200);
+    }
+
+    .sr-btn-outline:hover {
+        background: var(--gray-50);
+        border-color: var(--gray-300);
+    }
+
+    .sr-btn-danger {
+        background: transparent;
+        color: var(--danger);
+        border: 2px solid #fecaca;
+    }
+
+    .sr-btn-danger:hover {
+        background: #fef2f2;
+        border-color: #fca5a5;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 768px) {
+        .sr-topbar {
+            padding: 1rem;
+        }
+
+        .sr-hero-section {
+            padding: 0 1rem 1.5rem;
+        }
+
+        .sr-hero-card {
+            padding: 1.5rem;
+            flex-direction: column;
+        }
+
+        .sr-hero-title {
+            font-size: 1.5rem;
+        }
+
+        .sr-status-container {
+            align-items: flex-start;
+        }
+
+        .sr-content-wrapper {
+            padding: 0 1rem;
+        }
+
+        .sr-info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .sr-info-item.full {
+            grid-column: span 1;
+        }
+
+        .sr-equipment-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .sr-equip-item.full {
+            grid-column: span 1;
+        }
+
+        .sr-equipment-main {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .sr-equipment-code {
+            justify-content: center;
+        }
+
+        .sr-quick-info {
+            justify-content: center;
+        }
+    }
+</style>
+
+<div class="sr-page">
+    <!-- Top Bar -->
+    <div class="sr-topbar">
+        <a href="{% url 'my_service_requests' %}" class="sr-back-btn">
+            <i class="bi bi-arrow-left"></i>
+            กลับหน้ารายการ
+        </a>
+        <div class="sr-topbar-actions">
+            <a href="#wo-create-panel" class="sr-action-icon" title="สร้างใบงาน" onclick="document.getElementById('wo-create-panel').style.display='block'; this.style.display='none'; return false;">
+                <i class="bi bi-plus-lg"></i>
+            </a>
+            <a href="{% url 'service_request_delete' sr.id %}" class="sr-action-icon danger" title="ลบคำขอ">
+                <i class="bi bi-trash"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Hero Section with Status -->
+    <div class="sr-hero-section">
+        <div class="sr-hero-card">
+            <div class="sr-hero-left">
+                <div class="sr-id-badge">
+                    <i class="bi bi-file-earmark-text-fill"></i>
+                    คำขอรับบริการที่ : {{ sr.display_id }}
+                </div>
+                <h1 class="sr-hero-title">{{ sr.title|default:'(ไม่ระบุหัวข้อ)' }}</h1>
+                
+                <!-- Quick Info Badges -->
+                <!-- <div class="sr-quick-info">
+                    <span class="sr-quick-badge date">
+                        <i class="bi bi-calendar3"> แจ้งวันที่</i>
+                        {{ sr.requested_at|thai_datetime }}
+                    </span>
+                    
+                            {% if desired_service_date %}
+                            <span class="sr-quick-badge type">
+                                <i class="bi bi-calendar-check"> นัดหมาย</i>
+                                {{ desired_service_date|thai_date }}
+                            {% elif sr.preferred_service_date %}
+                                <span class="sr-quick-badge type">
+                                    <i class="bi bi-calendar-check"> นัดหมาย</i>
+                                    {{ sr.preferred_service_date|thai_date }}
+                                </span>
+                            {% else %}
+                                <span class="sr-no-date">
+                                    <i class="bi bi-calendar-x"></i>
+                                    ไม่ระบุวันที่ต้องการเข้ารับบริการ
+                                </span>
+                            </span>
+                            {% endif %}
+                </div> -->
+            </div>
+            <div class="sr-status-container">
+                <div class="sr-status-pill {{ sr.status }}">
+                    {% if sr.status == 'new' %}
+                        <i class="bi bi-hourglass-split"></i> รอตรวจคำขอ
+                    {% elif sr.status == 'reviewed' %}
+                        <i class="bi bi-eye-fill"></i> ตรวจสอบแล้ว
+                    {% elif sr.status == 'converted' %}
+                        <i class="bi bi-check-circle-fill"></i> ดำเนินการแล้ว
+                    {% elif sr.status == 'rejected' %}
+                        <i class="bi bi-x-circle-fill"></i> ปฏิเสธ
+                    {% elif sr.status == 'deleted' %}
+                        <i class="bi bi-trash-fill"></i> ถูกลบ
+                    {% elif sr.status == 'closed' %}
+                        <i class="bi bi-archive-fill"></i> ปิดแล้ว
+                    {% else %}
+                        {{ sr.get_status_display }}
+                    {% endif %}
+                </div>
+                {% if sr.converted_to %}
+                <a href="{% url 'workorder_detail' sr.converted_to.id %}" class="sr-workorder-link">
+                    <i class="bi bi-link-45deg"></i> ใบงาน #{{ sr.converted_to.id }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="sr-content-wrapper">
+        <div class="sr-layout">
+            <!-- Left Column - Main Content -->
+            <div class="sr-main-col">
+                
+                <!-- Equipment Card (Full Details) -->
+                {% if sr.equipment %}
+                <div class="sr-card sr-equipment-card">
+                    <div class="sr-card-header">
+                        <div class="sr-card-header-left">
+                            <div class="sr-card-icon blue">
+                                <i class="bi bi-cpu-fill"></i>
+                            </div>
+                            <h3 class="sr-card-title">ข้อมูลเครื่องมือ</h3>
+                        </div>
+                        <span class="sr-badge-selected">
+                            <i class="bi bi-patch-check-fill"></i>
+                            เลือกจากระบบ
+                        </span>
+                    </div>
+                    <div class="sr-card-body">
+                        <div class="sr-equipment-main">
+                            {% if sr.equipment.equipment_image %}
+                            <div class="sr-equipment-image">
+                                <img src="{{ sr.equipment.equipment_image.url }}" alt="{{ sr.equipment.equipment_name_EN }}">
+                            </div>
+                            {% endif %}
+                            <div class="sr-equipment-primary">
+                                <div class="sr-equipment-code">
+                                    <span class="code-dot"></span>
+                                    {{ sr.equipment.equipment_id|default:'-' }}
+                                </div>
+                                <div class="sr-equipment-name">{{ sr.equipment.equipment_name_EN|default:'-' }}</div>
+                                {% if sr.equipment.equipment_name_TH %}
+                                <div class="sr-equipment-name-th">{{ sr.equipment.equipment_name_TH }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="sr-equipment-grid">
+                            <div class="sr-equip-item">
+                                <span class="sr-equip-label"><i class="bi bi-award"></i> ยี่ห้อ</span>
+                                <span class="sr-equip-value">{{ sr.equipment.equipment_brand|default:'-' }}</span>
+                            </div>
+                            <div class="sr-equip-item">
+                                <span class="sr-equip-label"><i class="bi bi-cpu"></i> รุ่น</span>
+                                <span class="sr-equip-value">{{ sr.equipment.equipment_model|default:'-' }}</span>
+                            </div>
+                            <div class="sr-equip-item">
+                                <span class="sr-equip-label"><i class="bi bi-upc-scan"></i> S/N</span>
+                                <span class="sr-equip-value">{{ sr.equipment.equipment_sn|default:'-' }}</span>
+                            </div>
+                            <div class="sr-equip-item">
+                                <span class="sr-equip-label"><i class="bi bi-hash"></i> เลขครุภัณฑ์</span>
+                                <span class="sr-equip-value">{{ sr.equipment.equipment_gov|default:'-' }}</span>
+                            </div>
+                            <div class="sr-equip-item">
+                                <span class="sr-equip-label"><i class="bi bi-person-badge"></i> ผู้ใช้งาน</span>
+                                <span class="sr-equip-value">{{ sr.equipment.equipment_user_customer|default:'-' }}</span>
+                            </div>
+                            <div class="sr-equip-item">
+                                <span class="sr-equip-label"><i class="bi bi-building"></i> เจ้าของ</span>
+                                <span class="sr-equip-value">{{ sr.equipment.equipment_owner_customer|default:'-' }}</span>
+                            </div>
+                            {% if sr.equipment.equipment_type %}
+                            <div class="sr-equip-item full">
+                                <span class="sr-equip-label"><i class="bi bi-diagram-3"></i> ประเภทเครื่องมือ</span>
+                                <span class="sr-equip-value">{{ sr.equipment.equipment_type }}</span>
+                            </div>
+                            {% endif %}
+                            {% if sr.equipment.equipment_location %}
+                            <div class="sr-equip-item full">
+                                <span class="sr-equip-label"><i class="bi bi-geo-alt"></i> ที่ตั้ง</span>
+                                <span class="sr-equip-value">{{ sr.equipment.equipment_location }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <!-- No Equipment Selected -->
+                <div class="sr-card">
+                    <div class="sr-card-header">
+                        <div class="sr-card-header-left">
+                            <div class="sr-card-icon orange">
+                                <i class="bi bi-question-circle-fill"></i>
+                            </div>
+                            <h3 class="sr-card-title">ข้อมูลเครื่องมือ</h3>
+                        </div>
+                    </div>
+                    <div class="sr-card-body">
+                        <div class="sr-empty">
+                            <i class="bi bi-cpu"></i>
+                            <p>ไม่ได้เลือกเครื่องมือจากระบบ</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Description Card -->
+                <div class="sr-card">
+                    <div class="sr-card-header">
+                        <div class="sr-card-header-left">
+                            <div class="sr-card-icon purple">
+                                <i class="bi bi-chat-left-text-fill"></i>
+                            </div>
+                            <h3 class="sr-card-title">รายละเอียด / ปัญหาที่พบ / อาการเสียที่พบ</h3>
+                        </div>
+                    </div>
+                    <div class="sr-card-body">
+                        <div class="sr-description-text">{{ sr.description|default:''|linebreaks }}</div>
+                    </div>
+                </div>
+
+                <!-- Desired Service Date Card -->
+                <div class="sr-card">
+                    <div class="sr-card-header">
+                        <div class="sr-card-header-left">           
+                            <div class="sr-card-icon green">
+                                <i class="bi bi-calendar-event-fill"></i>
+                            </div>
+                            <h3 class="sr-card-title">วันที่ต้องการเข้ารับบริการ / นัดหมาย</h3>     
+                        </div>
+                    </div>
+                    <div class="sr-card-body">
+                        <div class="sr-service-date">
+                            {% if desired_service_date %}
+                                <i class="bi bi-calendar-check"></i>
+                                {{ desired_service_date|thai_date }}
+                            {% elif sr.preferred_service_date %}
+                                <i class="bi bi-calendar-check"></i>
+                                {{ sr.preferred_service_date|thai_date }}
+                            {% else %}
+                                <span class="sr-no-date">
+                                    <i class="bi bi-calendar-x"></i>
+                                    ไม่ระบุวันที่ต้องการเข้ารับบริการ
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attachments -->
+                <div class="sr-card">
+                    <div class="sr-card-header">
+                        <div class="sr-card-header-left">
+                            <div class="sr-card-icon orange">
+                                <i class="bi bi-paperclip"></i>
+                            </div>
+                            <h3 class="sr-card-title">ไฟล์แนบ</h3>
+                        </div>
+                        {% if attachments %}
+                        <span style="font-size: 0.75rem; color: var(--gray-400);">{{ attachments|length }} ไฟล์</span>
+                        {% endif %}
+                    </div>
+                    <div class="sr-card-body">
+                        {% if attachments %}
+                        <div class="sr-attach-grid">
+                            {% for a in attachments %}
+                            <a href="{{ a.file.url }}" class="sr-attach-card" target="_blank">
+                                <div class="sr-attach-icon">
+                                    <i class="bi bi-file-earmark-arrow-down"></i>
+                                </div>
+                                <div class="sr-attach-info">
+                                    <div class="sr-attach-name">{{ a.file.name|truncatechars:20 }}</div>
+                                    <div class="sr-attach-size">ดาวน์โหลด</div>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="sr-empty">
+                            <i class="bi bi-folder2-open"></i>
+                            <p>ไม่มีไฟล์แนบ</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="sr-card">
+                    <div class="sr-card-header">
+                        <div class="sr-card-header-left">
+                            <div class="sr-card-icon blue">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <h3 class="sr-card-title">ประวัติการดำเนินการ</h3>
+                        </div>
+                    </div>
+                    <div class="sr-card-body">
+                        {% if logs %}
+                        <div class="sr-timeline">
+                            {% for log in logs %}
+                            <div class="sr-timeline-item">
+                                <div class="sr-timeline-dot">
+                                    <i class="bi bi-{% if forloop.first %}star-fill{% else %}check{% endif %}"></i>
+                                </div>
+                                <div class="sr-timeline-content">
+                                    <div class="sr-timeline-header">
+                                        <span class="sr-timeline-action">{{ log.action }}</span>
+                                        <span class="sr-timeline-time">{{ log.created_at|thai_datetime }}</span>
+                                    </div>
+                                    <div class="sr-timeline-actor">
+                                        <i class="bi bi-person-fill"></i>
+                                        {% if log.actor %}{{ log.actor.get_full_name|default:log.actor.username }}{% else %}ระบบ{% endif %}
+                                    </div>
+                                    {% if log.note %}
+                                    <div class="sr-timeline-note">
+                                        <div class="sr-change-list" data-note="{{ log.note }}"></div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="sr-empty">
+                            <i class="bi bi-clock"></i>
+                            <p>ยังไม่มีประวัติการดำเนินการ</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="sr-sidebar">
+                <!-- Requester Info Card (Full Details like Create Form) -->
+                <div class="sr-card">
+                    <div class="sr-card-header">
+                        <div class="sr-card-header-left">
+                            <div class="sr-card-icon green">
+                                <i class="bi bi-person-badge-fill"></i>
+                            </div>
+                            <h3 class="sr-card-title">ข้อมูลผู้แจ้ง</h3>
+                        </div>
+                    </div>
+                    <div class="sr-card-body">
+                        <div class="sr-requester-info">
+                            <!-- Name -->
+                            <div class="sr-info-row">
+                                <div class="sr-info-icon">
+                                    <i class="bi bi-person-fill"></i>
+                                </div>
+                                <div class="sr-info-content">
+                                    <span class="sr-info-label">ชื่อผู้แจ้ง</span>
+                                    <span class="sr-info-value">
+                                        {% if sr.customer_name %}{{ sr.customer_name }}{% elif sr.requested_by %}{{ sr.requested_by.get_full_name|default:sr.requested_by.username }}{% else %}ไม่ระบุ{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Position -->
+                            <div class="sr-info-row">
+                                <div class="sr-info-icon">
+                                    <i class="bi bi-briefcase-fill"></i>
+                                </div>
+                                <div class="sr-info-content">
+                                    <span class="sr-info-label">ตำแหน่งงาน</span>
+                                    <span class="sr-info-value">{{ sr.customer_position|default:'-' }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Department -->
+                            <div class="sr-info-row">
+                                <div class="sr-info-icon">
+                                    <i class="bi bi-building"></i>
+                                </div>
+                                <div class="sr-info-content">
+                                    <span class="sr-info-label">หน่วยงาน</span>
+                                    <span class="sr-info-value">{{ sr.customer_department|default:'-' }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Phone -->
+                            <div class="sr-info-row">
+                                <div class="sr-info-icon">
+                                    <i class="bi bi-telephone-fill"></i>
+                                </div>
+                                <div class="sr-info-content">
+                                    <span class="sr-info-label">โทรศัพท์</span>
+                                    <span class="sr-info-value">
+                                        {% if sr.customer_telephone %}
+                                        <a href="tel:{{ sr.customer_telephone }}" class="sr-contact-link">{{ sr.customer_telephone }}</a>
+                                        {% else %}-{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Email -->
+                            <div class="sr-info-row">
+                                <div class="sr-info-icon">
+                                    <i class="bi bi-envelope-fill"></i>
+                                </div>
+                                <div class="sr-info-content">
+                                    <span class="sr-info-label">อีเมล</span>
+                                    <span class="sr-info-value">
+                                        {% if sr.customer_email %}
+                                        <a href="mailto:{{ sr.customer_email }}" class="sr-contact-link">{{ sr.customer_email }}</a>
+                                        {% else %}-{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Request Date/Time -->
+                            <div class="sr-info-row highlight">
+                                <div class="sr-info-icon">
+                                    <i class="bi bi-calendar3"></i>
+                                </div>
+                                <div class="sr-info-content">
+                                    <span class="sr-info-label">วันที่แจ้ง</span>
+                                    <span class="sr-info-value">{{ sr.requested_at|thai_datetime }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notes Card -->
+                {% if sr.notes %}
+                <div class="sr-card">
+                    <div class="sr-card-header">
+                        <div class="sr-card-header-left">
+                            <div class="sr-card-icon orange">
+                                <i class="bi bi-sticky-fill"></i>
+                            </div>
+                            <h3 class="sr-card-title">หมายเหตุ</h3>
+                        </div>
+                    </div>
+                    <div class="sr-card-body">
+                        <div class="sr-notes-text">{{ sr.notes|linebreaks }}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Actions Card -->
+                {% if perms.cmms.view_servicerequest %}
+                <form method="post" class="sr-card sr-actions-card">
+                    {% csrf_token %}
+                    <div class="sr-card-header">
+                        <div class="sr-card-header-left">
+                            <div class="sr-card-icon purple">
+                                <i class="bi bi-gear-fill"></i>
+                            </div>
+                            <h3 class="sr-card-title">ตรวจสอบ / แก้ไข คำขอรับบริการ</h3>
+                        </div>
+                    </div>
+                    <div class="sr-card-body">
+                        <div class="sr-form-group">
+                            <label class="sr-form-label">ประเภทงาน</label>
+                            <input type="hidden" name="title" id="id_title" value="{{ sr.title|default:'' }}">
+                            <div class="worktype-pills" id="workorderTypePills">
+                                <!-- Populated by JS -->
+                            </div>
+                            <div class="selected-types-display" id="selectedTypesDisplay" style="display: none;"></div>
+                        </div>
+
+                        <div class="sr-form-group">
+                            <label class="sr-form-label">หมายเหตุ</label>
+                            <textarea name="notes" class="sr-input" rows="4" >{{ sr.notes }}</textarea>
+                        </div>
+
+                        <div class="sr-btn-group">
+                            <button type="submit" name="action" value="save" class="sr-btn sr-btn-primary">
+                                <i class="bi bi-save"></i>
+                                บันทึกการแก้ไข
+                            </button>
+                            <button type="button" class="sr-btn sr-btn-success" onclick="document.getElementById('wo-create-panel').style.display='block'; this.closest('.sr-btn-group').style.display='none';">
+                                <i class="bi bi-check-circle"></i>
+                                รับคำขอบริการ
+                            </button>
+                            <a href="{% url 'service_request_delete' sr.id %}" class="sr-btn sr-btn-danger">
+                                <i class="bi bi-trash"></i>
+                                ลบคำขอนี้
+                            </a>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- สร้างใบงาน (Inline) -->
+                <form method="post" id="wo-create-panel" class="sr-card" style="display:none; border: 2px solid #10b981; border-radius: 18px;">
+                    {% csrf_token %}
+                    <div class="sr-card-header" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%);">
+                        <div class="sr-card-header-left">
+                            <div class="sr-card-icon" style="background: rgba(255,255,255,0.2); color: #fff;">
+                                <i class="bi bi-file-earmark-plus-fill"></i>
+                            </div>
+                            <h3 class="sr-card-title" style="color: #fff;">สร้างใบงานจากคำขอ {{ sr.display_id }}</h3> 
+                        </div>
+                    </div>
+                    <div class="sr-card-body">
+                        <div class="sr-form-group">
+                            <label class="sr-form-label">ปฏิบัติงาน
+                            </label>
+                            <select name="wo_priority" class="sr-input" style="border-radius: 12px; padding: 0.75rem 1rem;">
+                                <option value="intime" selected>ในเวลาราชการ</option>
+                                <option value="overtime">นอกเวลาราชการ</option>
+                            </select>
+                        </div>
+
+                        <div class="sr-form-group">
+                            <label class="sr-form-label">สถานที่ให้บริการ
+                            </label>
+                            <select name="wo_location" class="sr-input" style="border-radius: 12px; padding: 0.75rem 1rem;">
+                                <option value="service_center" selected>หน่วยวิศวกรรมชีวการแพทย์</option>
+                                <option value="on_site">สถานที่ลูกค้า (Onsite)</option>
+                            </select>
+                        </div>         
+
+                        {% if technicians %}
+                        <div class="sr-form-group">
+                            <label class="sr-form-label">มอบหมาย <span style="color: var(--gray-400); font-weight: 400;">(เลือกทีหลังก็ได้)</span></label>
+                            <select name="wo_assigned_to" class="sr-input" style="border-radius: 12px; padding: 0.75rem 1rem;">
+                                <option value="">-- ยังไม่มอบหมาย --</option>
+                                {% for t in technicians %}
+                                    {% if t.user %}
+                                    <option value="{{ t.user.id }}">
+                                        {% if t.prefix_name == 'other' %}{{ t.prefix_name_custom }}{% else %}{{ t.prefix_name }}{% endif %} {{ t.name }}
+                                    </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
+
+                        <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+                            <button type="submit" name="action" value="create_wo" class="sr-btn sr-btn-success" style="flex: 1;">
+                                <i class="bi bi-check2-circle"></i>
+                                สร้างใบงาน
+                            </button>
+                            <button type="button" class="sr-btn sr-btn-outline" style="flex: 0 0 auto;" onclick="document.getElementById('wo-create-panel').style.display='none'; this.closest('.sr-card').previousElementSibling.querySelector('.sr-btn-group').style.display='flex';">
+                                <i class="bi bi-x-lg"></i>
+                                ยกเลิก
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const hiddenTitle = document.getElementById('id_title');
+    const workorderTypePills = document.getElementById('workorderTypePills');
+    const selectedTypesDisplay = document.getElementById('selectedTypesDisplay');
+    if (!workorderTypePills || !hiddenTitle) return;
+
+    let selectedTypes = [];
+    if (hiddenTitle.value && hiddenTitle.value.trim() !== '') {
+        selectedTypes = hiddenTitle.value.split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function updateSelectedTypesDisplay() {
+        hiddenTitle.value = selectedTypes.join(', ');
+        if (!selectedTypes || selectedTypes.length === 0) {
+            selectedTypesDisplay.style.display = 'block';
+            selectedTypesDisplay.innerHTML = '<span style="color: var(--gray-400); font-style: italic; font-size: 0.8125rem;">คลิกเลือกประเภทงานด้านบน</span>';
+        } else {
+            selectedTypesDisplay.style.display = 'flex';
+            selectedTypesDisplay.innerHTML = selectedTypes.map(type => `
+                <span class="selected-type-tag">
+                    <i class="bi bi-check-circle-fill"></i>
+                    ${escapeHtml(type)}
+                    <span class="remove-tag" data-type="${escapeHtml(type)}">
+                        <i class="bi bi-x"></i>
+                    </span>
+                </span>
+            `).join('');
+            selectedTypesDisplay.querySelectorAll('.remove-tag').forEach(node => {
+                node.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    removeWorkType(this.dataset.type);
+                });
+            });
+        }
+    }
+
+    function toggleWorkType(pill, value) {
+        const idx = selectedTypes.indexOf(value);
+        if (idx === -1) {
+            selectedTypes.push(value);
+            pill.classList.add('selected');
+            if (pill.querySelector('i')) pill.querySelector('i').className = 'bi bi-check-circle-fill';
+        } else {
+            selectedTypes.splice(idx, 1);
+            pill.classList.remove('selected');
+            if (pill.querySelector('i')) pill.querySelector('i').className = 'bi bi-circle';
+        }
+        updateSelectedTypesDisplay();
+    }
+
+    window.removeWorkType = function(type) {
+        const idx = selectedTypes.indexOf(type);
+        if (idx !== -1) {
+            selectedTypes.splice(idx, 1);
+            workorderTypePills.querySelectorAll('.worktype-pill').forEach(p => {
+                if (p.dataset.value === type) {
+                    p.classList.remove('selected');
+                    if (p.querySelector('i')) p.querySelector('i').className = 'bi bi-circle';
+                }
+            });
+            updateSelectedTypesDisplay();
+        }
+    };
+
+    fetch('/api/master/items?category=workorder_type')
+        .then(response => response.json())
+        .then(data => {
+            if (data.results && data.results.length > 0) {
+                data.results.forEach(item => {
+                    const pill = document.createElement('div');
+                    pill.className = 'worktype-pill';
+                    pill.dataset.value = item.label;
+                    pill.innerHTML = `<i class="bi bi-circle"></i> ${escapeHtml(item.label)}`;
+                    pill.addEventListener('click', () => toggleWorkType(pill, item.label));
+                    if (selectedTypes.indexOf(item.label) !== -1) {
+                        pill.classList.add('selected');
+                        pill.querySelector('i').className = 'bi bi-check-circle-fill';
+                    }
+                    workorderTypePills.appendChild(pill);
+                });
+            }
+            updateSelectedTypesDisplay();
+        })
+        .catch(() => {
+            updateSelectedTypesDisplay();
+        });
+
+    // Parse and render change logs beautifully
+    document.querySelectorAll('.sr-change-list[data-note]').forEach(container => {
+        const noteData = container.dataset.note;
+        try {
+            const changes = JSON.parse(noteData);
+            if (Array.isArray(changes) && changes.length > 0) {
+                container.innerHTML = changes.map(change => `
+                    <div class="sr-change-item">
+                        <span class="sr-change-field">
+                            <i class="bi bi-pencil-square"></i>
+                            ${escapeHtml(change.field)}
+                        </span>
+                        <div class="sr-change-values">
+                            <span class="sr-change-old" title="${escapeHtml(change.old)}">
+                                <i class="bi bi-x-circle"></i>
+                                ${escapeHtml(change.old)}
+                            </span>
+                            <i class="bi bi-arrow-right sr-change-arrow"></i>
+                            <span class="sr-change-new" title="${escapeHtml(change.new)}">
+                                <i class="bi bi-check-circle"></i>
+                                ${escapeHtml(change.new)}
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                // Not an array, show as plain text
+                container.innerHTML = `<span style="color: var(--gray-600);">${escapeHtml(noteData)}</span>`;
+            }
+        } catch (e) {
+            // Not JSON, show as plain text (backwards compatible with old logs)
+            container.innerHTML = `<span style="color: var(--gray-600);">${escapeHtml(noteData)}</span>`;
+        }
+    });
+});
+</script>
+
+{% endblock %}

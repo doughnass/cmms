@@ -1,0 +1,7 @@
+category,code,label,description,active,order,parent_category,parent_code
+customers,cntu,คณะแพทยศาสตร์ มหาวิทยาลัยเชียงใหม่,Imported customer,true,10,,
+division,cntu_div1,Division 1,,true,20,customers,cntu
+department,cntu_dep1,ภาควิชา X,,true,30,division,cntu_div1
+semi_department,cntu_sem1,งานย่อย A,,true,40,department,cntu_dep1
+section,cntu_sec1,section A,,true,50,semi_department,cntu_sem1
+unit,cntu_unit1,หน่วย 1,,true,60,section,cntu_sec1

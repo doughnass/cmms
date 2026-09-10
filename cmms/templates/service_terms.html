@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}<title>เงื่อนไขการเข้ารับบริการ</title>{% endblock %}
+
+{% block extra_head %}
+<style>
+  .terms-card {
+    max-width: 900px; margin: 0 auto; background: #fff;
+    border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+    border: 1px solid #eef2f7;
+  }
+  .terms-header {
+    padding: 1.25rem 1.5rem; border-bottom: 1px solid #eef2f7;
+    display:flex; align-items:center; justify-content:space-between;
+    background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
+  }
+  .terms-body { padding: 1.5rem; color:#374151; line-height:1.8; }
+  .terms-body ul { margin: 0 0 1rem 1rem; }
+  .terms-body li { margin: 0.4rem 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="container">
+  <div class="terms-card">
+    <div class="terms-header">
+      <h1 class="h5 m-0"><i class="bi bi-shield-check"></i> เงื่อนไขการเข้ารับบริการ</h1>
+      {% if request.user.is_superuser %}
+      <a class="btn btn-sm btn-outline-primary" href="{% url 'service_terms_edit' %}">
+        <i class="bi bi-pencil-square"></i> แก้ไขเงื่อนไข
+      </a>
+      {% endif %}
+    </div>
+    <div class="terms-body" id="termsBody">
+      {% if primary and primary.meta and primary.meta.html %}
+        {{ primary.meta.html|safe }}
+      {% elif primary and primary.description %}
+        {% with txt=primary.description %}
+          {% if "\n" in txt %}
+            <ul>
+            {% for line in txt.splitlines %}
+              {% if line.strip %}<li>{{ line }}</li>{% endif %}
+            {% endfor %}
+            </ul>
+          {% else %}
+            <p>{{ txt }}</p>
+          {% endif %}
+        {% endwith %}
+      {% else %}
+        <p>ยังไม่มีการตั้งค่าเงื่อนไขในระบบ กรุณาเพิ่มรายการใน MasterItem (category = "service_terms").</p>
+      {% endif %}
+    </div>
+    {% if primary and primary.meta and primary.meta.assets %}
+    <div class="p-3 border-top" style="background:#fafafa;">
+      <div class="d-flex align-items-center gap-2 mb-2" style="color:#475569;"><i class="bi bi-paperclip"></i><strong>ไฟล์ประกอบ</strong></div>
+      <ul class="mb-0">
+        {% for a in primary.meta.assets %}
+          <li><a href="{{ a.url }}" target="_blank">{{ a.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,5041 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+<title>อัตรากำลังรายวัน - Daily Capacity Management</title>
+{% endblock %}
+
+{% block content %}
+<style>
+  /* Modern Design System */
+  :root {
+    --primary-color: #4F46E5;
+    --primary-dark: #4338CA;
+    --success-color: #10B981;
+    --warning-color: #F59E0B;
+    --danger-color: #EF4444;
+    --info-color: #3B82F6;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-600: #4B5563;
+    --gray-700: #374151;
+    --gray-900: #111827;
+  }
+
+  .page-header {
+    background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%);
+    color: white;
+    padding: 2rem 2.5rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+  }
+
+  .page-header h1 {
+    margin: 0 0 0.75rem 0;
+    font-size: 2rem;
+    font-weight: 700;
+    position: relative;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .page-header p {
+    margin: 0;
+    opacity: 0.95;
+    font-size: 1rem;
+    position: relative;
+  }
+
+  /* Calendar Navigation */
+  .calendar-nav {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .nav-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .btn-nav {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--gray-200);
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+    color: var(--gray-700);
+  }
+
+  .btn-nav:hover {
+    background: var(--gray-50);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+
+  .current-date {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    min-width: 200px;
+    text-align: center;
+  }
+
+  .view-mode-toggle {
+    display: flex;
+    gap: 0.25rem;
+    background: var(--gray-100);
+    padding: 0.25rem;
+    border-radius: 8px;
+  }
+
+  .view-mode-toggle button {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--gray-600);
+    transition: all 0.2s;
+  }
+
+  .view-mode-toggle button.active {
+    background: white;
+    color: var(--primary-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Calendar Grid View */
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .calendar-day {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.2s;
+    min-height: 150px;
+    border: 2px solid transparent;
+    min-width: 0; /* prevent children from forcing column to grow */
+  }
+
+  .calendar-day:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
+  }
+
+  .calendar-day.today {
+    border-color: var(--info-color);
+    background: linear-gradient(135deg, #EFF6FF 0%, white 100%);
+  }
+
+  .calendar-day.selected {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, #EEF2FF 0%, white 100%);
+  }
+
+  .calendar-day.holiday {
+    background: linear-gradient(135deg, #FEF3C7 0%, white 100%);
+    border-color: var(--warning-color);
+  }
+
+  .calendar-day.blank {
+    background: transparent;
+    box-shadow: none;
+    cursor: default;
+    border: 2px dashed transparent;
+    min-height: 120px;
+    opacity: 0.6;
+  }
+
+  .day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .day-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+  }
+
+  .day-name {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--gray-600);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .capacity-info {
+    margin-top: 0.5rem;
+  }
+
+  .capacity-bar {
+    background: var(--gray-100);
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+  }
+
+  .capacity-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success-color) 0%, var(--info-color) 100%);
+    transition: width 0.3s ease;
+    border-radius: 4px;
+  }
+
+  .capacity-fill.warning {
+    background: linear-gradient(90deg, var(--warning-color) 0%, var(--danger-color) 100%);
+  }
+
+  .capacity-text {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .tech-count {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: var(--gray-50);
+    border-radius: 6px;
+  }
+
+  .tech-count i {
+    color: var(--info-color);
+  }
+
+  /* Stat Cards - Modern Design */
+  .stat-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card-modern {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-left: 5px solid var(--primary-color);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card-modern::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(79, 130, 246, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .stat-card-modern:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .stat-card-modern.success {
+    border-left-color: var(--success-color);
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+  }
+
+  .stat-card-modern.info {
+    border-left-color: var(--info-color);
+    background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+  }
+
+  .stat-card-modern.warning {
+    border-left-color: var(--warning-color);
+    background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+  }
+
+  .stat-card-modern.danger {
+    border-left-color: var(--danger-color);
+    background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+  }
+
+  .stat-icon-modern {
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1;
+  }
+
+  .stat-icon-modern.success {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+  }
+
+  .stat-icon-modern.info {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+  }
+
+  .stat-icon-modern.warning {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+  }
+
+  .stat-icon-modern.danger {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+  }
+
+  .stat-value-modern {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--gray-900);
+    line-height: 1;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+    position: relative;
+    z-index: 1;
+  }
+
+  .stat-label-modern {
+    font-size: 1rem;
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    position: relative;
+    z-index: 1;
+  }
+
+  .stat-sublabel-modern {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .stat-breakdown {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .stat-breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+  }
+
+  .stat-breakdown-label {
+    color: var(--gray-600);
+    font-weight: 500;
+  }
+
+  .stat-breakdown-value {
+    color: var(--gray-900);
+    font-weight: 700;
+  }
+
+  /* Detail Panel */
+  .detail-panel {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    display: none;
+  }
+
+  .detail-panel.active {
+    display: block;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--gray-200);
+  }
+
+  .detail-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--gray-900);
+  }
+
+  .technician-card {
+    background: var(--gray-50);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .technician-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .technician-card.unavailable {
+    opacity: 0.6;
+    background: var(--gray-100);
+  }
+
+  .tech-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .tech-name {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--gray-900);
+  }
+
+  .tech-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--info-color) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 1.125rem;
+  }
+
+  .status-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .status-badge.working {
+    background: #D1FAE5;
+    color: #065F46;
+  }
+
+  .status-badge.off {
+    background: #FEE2E2;
+    color: #991B1B;
+  }
+
+  .status-badge.holiday {
+    background: #FEF3C7;
+    color: #92400E;
+  }
+
+  .tech-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .info-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--gray-600);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .info-value {
+    font-size: 1rem;
+    color: var(--gray-900);
+    font-weight: 500;
+  }
+
+  /* Buttons */
+  .btn-primary-modern {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-primary-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  }
+
+  .btn-outline-modern {
+    background: white;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-outline-modern:hover {
+    background: var(--primary-color);
+    color: white;
+  }
+
+  /* Summary Cards */
+  .summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .summary-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid var(--primary-color);
+  }
+
+  .summary-card.success {
+    border-left-color: var(--success-color);
+  }
+
+  .summary-card.warning {
+    border-left-color: var(--warning-color);
+  }
+
+  .summary-card.danger {
+    border-left-color: var(--danger-color);
+  }
+
+  .summary-label {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+  }
+
+  .summary-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--gray-900);
+  }
+
+  /* Ready Technicians Section */
+  .ready-tech-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+    margin-top: 2rem;
+  }
+
+  .ready-tech-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--gray-200);
+  }
+
+  .ready-tech-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .ready-tech-count {
+    background: var(--success-color);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .ready-tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1rem;
+  }
+
+  .tech-ready-card {
+    background: linear-gradient(135deg, #F0FDF4 0%, white 100%);
+    border: 2px solid var(--success-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tech-ready-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--success-color);
+  }
+
+  .tech-ready-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);
+    border-color: var(--primary-color);
+  }
+
+  .tech-ready-card.limited-capacity {
+    background: linear-gradient(135deg, #FEF3C7 0%, white 100%);
+    border-color: var(--warning-color);
+  }
+
+  .tech-ready-card.limited-capacity::before {
+    background: var(--warning-color);
+  }
+
+  .tech-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .tech-card-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--success-color) 0%, var(--info-color) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+  }
+
+  .tech-card-info {
+    flex: 1;
+  }
+
+  .tech-card-name {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 0.25rem;
+  }
+
+  .tech-card-capacity {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--gray-600);
+  }
+
+  .capacity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: white;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.75rem;
+  }
+
+  .capacity-badge.available {
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
+  }
+
+  .capacity-badge.limited {
+    color: var(--warning-color);
+    border: 1px solid var(--warning-color);
+  }
+
+  .tech-skills-section {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid var(--gray-200);
+  }
+
+  .tech-skills-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.5px;
+  }
+
+  .tech-skills-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .skill-tag {
+    padding: 0.375rem 0.75rem;
+    background: var(--info-color);
+    color: white;
+    border-radius: 6px;
+    font-size: 0.813rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .equipment-match-section {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #EEF2FF 0%, white 100%);
+    border-radius: 8px;
+    border: 1px solid var(--primary-color);
+  }
+
+  .equipment-match-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .equipment-list-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .equipment-item-compact {
+    font-size: 0.875rem;
+    color: var(--gray-700);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .equipment-item-compact::before {
+    content: '✓';
+    color: var(--success-color);
+    font-weight: 700;
+  }
+
+  .no-equipment-match {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+    font-style: italic;
+    text-align: center;
+    padding: 0.5rem;
+  }
+
+  .tech-action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  /* Hours to Tasks Conversion Panel */
+  .conversion-config-panel {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 1000;
+  }
+
+  .conversion-toggle-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.875rem 1.25rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .conversion-toggle-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.5);
+  }
+
+  .conversion-panel-content {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 1rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    padding: 1.5rem;
+    min-width: 320px;
+    display: none;
+    animation: panelSlideUp 0.3s ease;
+  }
+
+  .conversion-panel-content.active {
+    display: block;
+  }
+
+  @keyframes panelSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .conversion-panel-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .conversion-form-group {
+    margin-bottom: 1rem;
+  }
+
+  .conversion-form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+  }
+
+  .conversion-form-input {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 2px solid var(--gray-200);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+  }
+
+  .conversion-form-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  }
+
+  .conversion-form-hint {
+    font-size: 0.75rem;
+    color: var(--gray-600);
+    margin-top: 0.25rem;
+    font-style: italic;
+  }
+
+  .conversion-presets {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .conversion-preset-btn {
+    padding: 0.5rem;
+    background: var(--gray-50);
+    border: 2px solid var(--gray-200);
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .conversion-preset-btn:hover {
+    background: var(--gray-100);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+
+  .conversion-preset-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+  }
+
+  .conversion-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .conversion-btn {
+    flex: 1;
+    padding: 0.625rem 1rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .conversion-btn-primary {
+    background: var(--primary-color);
+    color: white;
+  }
+
+  .conversion-btn-primary:hover {
+    background: var(--primary-dark);
+  }
+
+  .conversion-btn-secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+  }
+
+  .conversion-btn-secondary:hover {
+    background: var(--gray-200);
+  }
+
+  .conversion-preview {
+    background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
+    border: 2px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .conversion-preview-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.5px;
+  }
+
+  .conversion-preview-values {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .conversion-preview-item {
+    text-align: center;
+  }
+
+  .conversion-preview-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+  }
+
+  .conversion-preview-label {
+    font-size: 0.75rem;
+    color: var(--gray-600);
+  }
+
+  .conversion-arrow {
+    font-size: 1.25rem;
+    color: var(--gray-400);
+  }
+
+  /* Hours + Tasks Display Badge */
+  .hours-tasks-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .hours-tasks-badge .hours {
+    color: var(--info-color);
+  }
+
+  .hours-tasks-badge .tasks {
+    color: var(--success-color);
+  }
+
+  .hours-tasks-badge .separator {
+    color: var(--gray-400);
+    font-weight: 400;
+  }
+
+  .btn-assign-work {
+    flex: 1;
+    padding: 0.625rem 1rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .btn-assign-work:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  }
+
+  .btn-assign-work:disabled {
+    background: var(--gray-300);
+    color: var(--gray-500);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn-view-schedule {
+    padding: 0.625rem 1rem;
+    background: white;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-view-schedule:hover {
+    background: var(--gray-50);
+  }
+
+  /* Assignment Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.active {
+    display: flex;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 16px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+  }
+
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-50px) scale(0.9);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .modal-header {
+    padding: 1.5rem;
+    border-bottom: 2px solid var(--gray-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--gray-600);
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+
+  .modal-close:hover {
+    background: var(--gray-100);
+    color: var(--gray-900);
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+
+  .modal-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .modal-section-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--gray-600);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.5px;
+  }
+
+  .equipment-select-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 0.5rem;
+  }
+
+  .equipment-select-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border: 2px solid var(--gray-200);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .equipment-select-item:hover {
+    border-color: var(--primary-color);
+    background: var(--gray-50);
+  }
+
+  .equipment-select-item.selected {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, #EEF2FF 0%, white 100%);
+  }
+
+  .equipment-select-item input[type="checkbox"] {
+    margin-right: 0.75rem;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+  }
+
+  .equipment-select-info {
+    flex: 1;
+  }
+
+  .equipment-select-name {
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 0.25rem;
+  }
+
+  .equipment-select-details {
+    font-size: 0.813rem;
+    color: var(--gray-600);
+  }
+
+  .modal-footer {
+    padding: 1.5rem;
+    border-top: 2px solid var(--gray-200);
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+  }
+
+  .btn-modal {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-modal-primary {
+    background: var(--primary-color);
+    color: white;
+  }
+
+  .btn-modal-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  }
+
+  .btn-modal-secondary {
+    background: white;
+    color: var(--gray-700);
+    border: 2px solid var(--gray-300);
+  }
+
+  .btn-modal-secondary:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+  }
+
+  /* Timeline View */
+  .timeline-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .timeline-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--gray-50);
+    border-radius: 8px;
+    border-left: 4px solid var(--info-color);
+  }
+
+  .timeline-time {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-600);
+    min-width: 80px;
+  }
+
+  .timeline-content {
+    flex: 1;
+  }
+
+  .timeline-task {
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 0.25rem;
+  }
+
+  .timeline-details {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+  }
+
+  /* Toast Notification */
+  .toast-container {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .toast {
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 300px;
+    animation: toastSlideIn 0.3s ease;
+    border-left: 4px solid var(--success-color);
+  }
+
+  .toast.error {
+    border-left-color: var(--danger-color);
+  }
+
+  .toast.warning {
+    border-left-color: var(--warning-color);
+  }
+
+  @keyframes toastSlideIn {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .toast-icon {
+    font-size: 1.5rem;
+  }
+
+  .toast-icon.success {
+    color: var(--success-color);
+  }
+
+  .toast-icon.error {
+    color: var(--danger-color);
+  }
+
+  .toast-icon.warning {
+    color: var(--warning-color);
+  }
+
+  .toast-content {
+    flex: 1;
+  }
+
+  .toast-title {
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 0.25rem;
+  }
+
+  .toast-message {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .calendar-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .calendar-nav {
+      flex-direction: column;
+    }
+
+    .current-date {
+      order: -1;
+    }
+
+    .ready-tech-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="container-fluid py-4">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+      <div
+        style="width: 64px; height: 64px; background: rgba(255,255,255,0.15); border-radius: 16px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
+        <i class="bi bi-calendar3" style="font-size: 2rem; color: white;"></i>
+      </div>
+      <div>
+        <h1
+          style="margin: 0; font-size: 2.5rem; font-weight: 800; color: white; text-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+          อัตรากำลังรายวัน</h1>
+        <p
+          style="margin: 0; font-size: 1.125rem; color: rgba(255,255,255,0.9); text-shadow: 0 1px 4px rgba(0,0,0,0.1);">
+          ดูและจัดการความพร้อมของช่างเทคนิคและอัตรากำลังในแต่ละวัน</p>
+      </div>
+    </div>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem;">
+      <div
+        style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); padding: 0.75rem 1.25rem; border-radius: 12px; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="bi bi-bar-chart-fill" style="color: rgba(255,255,255,0.9);"></i>
+        <span style="color: white; font-weight: 600;">ภาพรวมกำลังคน</span>
+      </div>
+      <div
+        style="background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); padding: 0.75rem 1.25rem; border-radius: 12px; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="bi bi-calendar-week" style="color: rgba(255,255,255,0.9);"></i>
+        <span style="color: white; font-weight: 600;">แสดงข้อมูลแบบรายวัน</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Cards - Modern Design with Clear Capacity Metrics -->
+  <div class="stat-cards-grid">
+
+    <!-- Total Technicians Card -->
+    <div class="stat-card-modern secondary">
+      <div class="stat-icon-modern secondary">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      <div class="stat-value-modern" id="total-technicians">0</div>
+      <div class="stat-label-modern">ช่างเทคนิคทั้งหมด</div>
+      <div class="stat-sublabel-modern">
+        <i class="bi bi-person-badge"></i>
+        <span>จำนวนช่างในระบบ</span>
+      </div>
+    </div>
+
+    <!-- Working Technicians Card -->
+    <div class="stat-card-modern info" onclick="openWorkListModal()" style="cursor: pointer;">
+      <div class="stat-icon-modern info">
+        <i class="bi bi-briefcase-fill"></i>
+      </div>
+      <div class="stat-value-modern" id="work-today">0</div>
+      <div class="stat-label-modern">ทำงานวันนี้</div>
+      <div class="stat-sublabel-modern">
+        <i class="bi bi-clock"></i>
+        <span>คลิกเพื่อดูรายละเอียด</span>
+      </div>
+      <div class="stat-breakdown">
+        <div class="stat-breakdown-item">
+          <span class="stat-breakdown-label">ในเวลาราชการ</span>
+          <span class="stat-breakdown-value" id="work-regular-count">0 คน</span>
+        </div>
+        <div class="stat-breakdown-item">
+          <span class="stat-breakdown-label">ล่วงเวลา (OT)</span>
+          <span class="stat-breakdown-value" id="overtime-today">0 คน</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Capacity Hours Card -->
+    <div class="stat-card-modern info">
+      <div class="stat-icon-modern info">
+        <i class="bi bi-clock-fill"></i>
+      </div>
+      <div class="stat-value-modern" id="total-capacity-hours">0</div>
+      <div class="stat-label-modern">รวมชั่วโมงทำงาน</div>
+      <div class="stat-sublabel-modern">
+        <i class="bi bi-stopwatch"></i>
+        <span>ชั่วโมง (รวมทุกช่าง)</span>
+      </div>
+      <div class="stat-breakdown">
+        <div class="stat-breakdown-item">
+          <span class="stat-breakdown-label">ในเวลาราชการ</span>
+          <span class="stat-breakdown-value" id="capacity-regular-hours">0</span>
+        </div>
+        <div class="stat-breakdown-item">
+          <span class="stat-breakdown-label">ล่วงเวลา (OT)</span>
+          <span class="stat-breakdown-value" id="capacity-overtime-hours">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Capacity Tasks Card -->
+    <div class="stat-card-modern info">
+      <div class="stat-icon-modern info">
+        <i class="bi bi-clipboard-check"></i>
+      </div>
+      <div class="stat-value-modern" id="total-capacity-tasks">0</div>
+      <div class="stat-label-modern">รวมจำนวนงาน</div>
+      <div class="stat-sublabel-modern">
+        <i class="bi bi-box"></i>
+        <span>งาน (แปลงจากชั่วโมง)</span>
+      </div>
+      <div class="stat-breakdown">
+        <div class="stat-breakdown-item">
+          <span class="stat-breakdown-label">ในเวลาราชการ</span>
+          <span class="stat-breakdown-value" id="capacity-regular-tasks">0 งาน</span>
+        </div>
+        <div class="stat-breakdown-item">
+          <span class="stat-breakdown-label">ล่วงเวลา (OT)</span>
+          <span class="stat-breakdown-value" id="capacity-overtime-tasks">0 งาน</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Available Capacity Card -->
+    <div class="stat-card-modern success">
+      <div class="stat-icon-modern success">
+        <i class="bi bi-circle"></i>
+      </div>
+      <div class="stat-value-modern" id="available-capacity-today">0</div>
+      <div class="stat-label-modern">อัตรากำลังคงเหลือ</div>
+      <div class="stat-sublabel-modern">
+        <i class="bi bi-check-circle"></i>
+        <span>งาน (พร้อมรับงานใหม่)</span>
+      </div>
+    </div>
+
+    <!-- Assigned Capacity Card -->
+    <div class="stat-card-modern warning">
+      <div class="stat-icon-modern warning">
+        <i class="bi bi-hourglass-split"></i>
+      </div>
+      <div class="stat-value-modern" id="assigned-capacity-today">0</div>
+      <div class="stat-label-modern">อัตรากำลังที่ใช้ไป</div>
+      <div class="stat-sublabel-modern">
+        <i class="bi bi-check2-circle"></i>
+        <span>งาน (กำลังดำเนินการ)</span>
+      </div>
+    </div>
+
+    <!-- Capacity Utilization Card -->
+    <div class="stat-card-modern danger">
+      <div class="stat-icon-modern danger">
+        <i class="bi bi-speedometer2"></i>
+      </div>
+      <div class="stat-value-modern" id="capacity-utilization">0%</div>
+      <div class="stat-label-modern">อัตราการใช้กำลัง</div>
+      <div class="stat-sublabel-modern">
+        <i class="bi bi-activity"></i>
+        <span id="capacity-utilization-status">กำลังคำนวณ...</span>
+      </div>
+      <div class="stat-breakdown">
+        <div class="stat-breakdown-item">
+          <span class="stat-breakdown-label">ใช้ไปแล้ว</span>
+          <span class="stat-breakdown-value" id="capacity-used-display">0 งาน</span>
+        </div>
+        <div class="stat-breakdown-item">
+          <span class="stat-breakdown-label">คงเหลือ</span>
+          <span class="stat-breakdown-value" id="capacity-remaining-display">0 งาน</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Calendar Navigation -->
+  <!-- Calendar Section Header -->
+  <div class="ready-tech-section">
+   <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+    <div style="width: 4px; height: 64px; background: linear-gradient(180deg, var(--primary-color) 0%, var(--info-color) 100%); ">
+    </div>
+    <div>
+      <h2 style="margin: 0; font-size: 1.75rem; font-weight: 700; color: var(--gray-900);">ปฏิทินอัตรากำลัง (งาน)</h2>
+      <p style="margin: 0; font-size: 0.875rem; color: var(--gray-600);">คลิกวันที่เพื่อดูรายละเอียดและจัดการอัตรากำลัง
+      </p>
+    </div>
+    </div>
+
+  <div class="calendar-nav">
+    <div class="nav-controls">
+      <button class="btn-nav" onclick="previousMonth()">
+        <i class="bi bi-chevron-left"></i> เดือนก่อน
+      </button>
+      <button class="btn-nav" onclick="goToToday()">
+        <i class="bi bi-calendar-event"></i> วันนี้
+      </button>
+      <button class="btn-nav" onclick="nextMonth()">
+        เดือนถัดไป <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+
+    <div class="current-date" id="current-month-year">
+      มกราคม 2568
+    </div>
+
+    <div class="view-mode-toggle">
+      <button class="active" onclick="setViewMode('calendar')">
+        <i class="bi bi-calendar3"></i> ปฏิทิน
+      </button>
+      <button onclick="setViewMode('list')">
+        <i class="bi bi-list-ul"></i> รายการ
+      </button>
+    </div>
+  </div>
+  
+
+      <!-- Calendar Grid View -->
+      <div class="calendar-grid" id="calendar-grid">
+        <!-- Generated by JavaScript -->
+      </div>
+  </div>
+
+
+
+
+
+
+
+
+  <!-- Detail Panel -->
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-header">
+      <div>
+        <div class="detail-title" id="detail-date">วันที่ 1 มกราคม 2568</div>
+        <p class="text-muted mb-0" id="detail-subtitle">ช่างที่พร้อมทำงาน: 0 คน | อัตรากำลัง: 0 งาน</p>
+      </div>
+      <button class="btn-outline-modern" onclick="closeDetailPanel()">
+        <i class="bi bi-x-circle"></i> ปิด
+      </button>
+    </div>
+
+    <!-- Daily Summary Stats -->
+    <div id="daily-summary-stats" style="display: none; margin-bottom: 2rem;">
+      <!-- Generated by JavaScript -->
+    </div>
+
+    <!-- Equipment Schedule Section -->
+    <div id="equipment-schedule-section" style="display: none; margin-bottom: 1rem;">
+      <div onclick="document.getElementById('equipment-list').classList.toggle('collapsed')" 
+           style="cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--gray-50); border-radius: 8px; margin-bottom: 0.5rem;">
+        <h5 style="color: var(--gray-900); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="bi bi-gear-fill" style="color: var(--warning-color);"></i>
+          รายการงานอุปกรณ์
+        </h5>
+        <i class="bi bi-chevron-down equipment-toggle-icon" style="transition: transform 0.3s; font-size: 1rem; color: var(--gray-600);"></i>
+      </div>
+      <div id="equipment-list" class="collapsed" style="background: var(--gray-50); border-radius: 8px; padding: 0rem; max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
+        <!-- Generated by JavaScript -->
+      </div>
+    </div>
+    <style>
+      #equipment-list:not(.collapsed) {
+        max-height: none !important;
+      }
+      #equipment-schedule-section .equipment-toggle-icon {
+        transform: rotate(0deg);
+      }
+      #equipment-schedule-section:has(#equipment-list:not(.collapsed)) .equipment-toggle-icon {
+        transform: rotate(180deg);
+      }
+    </style>
+
+    <div>
+      <div onclick="document.getElementById('technicians-list').classList.toggle('collapsed'); document.getElementById('technician-filter-buttons').classList.toggle('collapsed');" 
+           style="cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--gray-50); border-radius: 8px; margin-bottom: 0.5rem;">
+        <h5 style="color: var(--gray-900); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="bi bi-people-fill" style="color: var(--primary-color);"></i>
+          รายชื่อช่าง
+        </h5>
+        <i class="bi bi-chevron-down toggle-icon" style="transition: transform 0.3s; font-size: 1rem; color: var(--gray-600);"></i>
+      </div>
+      <div id="technician-filter-buttons" class="collapsed" style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; padding: 0 0.5rem; max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
+        <button onclick="filterTechnicians('all')" class="tech-filter-btn active" data-filter="all" style="flex: 1; padding: 0.5rem 1rem; border: 1px solid var(--gray-300); background: var(--primary-color); color: white; border-radius: 6px; cursor: pointer; font-size: 0.875rem; transition: all 0.2s;">
+          <i class="bi bi-people"></i> ทั้งหมด
+        </button>
+        <button onclick="filterTechnicians('ready')" class="tech-filter-btn" data-filter="ready" style="flex: 1; padding: 0.5rem 1rem; border: 1px solid var(--gray-300); background: white; color: var(--gray-700); border-radius: 6px; cursor: pointer; font-size: 0.875rem; transition: all 0.2s;">
+          <i class="bi bi-check-circle"></i> พร้อมทำงาน
+        </button>
+        <button onclick="filterTechnicians('unavailable')" class="tech-filter-btn" data-filter="unavailable" style="flex: 1; padding: 0.5rem 1rem; border: 1px solid var(--gray-300); background: white; color: var(--gray-700); border-radius: 6px; cursor: pointer; font-size: 0.875rem; transition: all 0.2s;">
+          <i class="bi bi-x-circle"></i> ไม่พร้อม
+        </button>
+      </div>
+      <div id="technicians-list" class="collapsed" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
+        <!-- Generated by JavaScript -->
+      </div>
+    </div>
+    <style>
+      #technician-filter-buttons:not(.collapsed) {
+        max-height: 100px !important;
+      }
+      #technicians-list:not(.collapsed) {
+        max-height: none !important;
+      }
+      #technicians-list.collapsed ~ * .toggle-icon,
+      #technicians-list:not(.collapsed) + * .toggle-icon {
+        transform: rotate(0deg);
+      }
+      div:has(> #technicians-list:not(.collapsed)) .toggle-icon {
+        transform: rotate(180deg);
+      }
+      .tech-filter-btn:hover {
+        background: var(--gray-50);
+        border-color: var(--primary-color);
+      }
+      .tech-filter-btn.active {
+        background: var(--primary-color) !important;
+        color: white !important;
+        border-color: var(--primary-color) !important;
+      }
+    </style>
+    <script>
+      function filterTechnicians(filter) {
+        // Update active button
+        document.querySelectorAll('.tech-filter-btn').forEach(btn => {
+          btn.classList.remove('active');
+          btn.style.background = 'white';
+          btn.style.color = 'var(--gray-700)';
+        });
+        const activeBtn = document.querySelector(`.tech-filter-btn[data-filter="${filter}"]`);
+        if (activeBtn) {
+          activeBtn.classList.add('active');
+          activeBtn.style.background = 'var(--primary-color)';
+          activeBtn.style.color = 'white';
+        }
+
+        // Filter technician cards
+        const cards = document.querySelectorAll('#technicians-list .technician-card');
+        cards.forEach(card => {
+          if (filter === 'all') {
+            card.style.display = '';
+          } else if (filter === 'ready') {
+            // Show only cards without 'unavailable' class (พร้อมทำงาน)
+            card.style.display = card.classList.contains('unavailable') ? 'none' : '';
+          } else if (filter === 'unavailable') {
+            // Show only cards with 'unavailable' class (ไม่พร้อม)
+            card.style.display = card.classList.contains('unavailable') ? '' : 'none';
+          }
+        });
+      }
+    </script>
+  </div>
+
+  <!-- Ready Technicians Section (today / selected date) -->
+  <div class="ready-tech-section" id="ready-tech-section">
+    <div class="ready-tech-header">
+      <div class="ready-tech-title">
+        <i class="bi bi-person-check-fill" style="color: var(--success-color);"></i>
+        ช่างพร้อมรับงาน
+        <span class="ready-tech-count" id="ready-tech-count">0</span>
+      </div>
+      <div style="display:flex;gap:0.5rem;align-items:center;">
+        <div style="font-size: 0.875rem; color: var(--gray-600);" id="ready-tech-date">วันนี้</div>
+        <!-- <button class="btn-nav" id="import-availability-btn"
+          title="นำรายชื่อจากรายงานความพร้อมมาแสดง">นำจากรายละเอียดตามวันที่</button> -->
+      </div>
+    </div>
+    <div class="ready-tech-grid" id="ready-tech-grid">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+
+
+  <!-- Assignment Modal -->
+  <div class="modal-overlay" id="assignment-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="bi bi-plus-circle-fill" style="color: var(--primary-color);"></i>
+          มอบหมายงาน
+        </div>
+        <button class="modal-close" onclick="closeAssignmentModal()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-section">
+          <div style="background: var(--gray-50); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+              <div class="tech-card-avatar" style="width: 48px; height: 48px; font-size: 1.25rem;"
+                id="modal-tech-avatar">T</div>
+              <div>
+                <div style="font-weight: 700; font-size: 1.125rem; color: var(--gray-900);" id="modal-tech-name">ช่าง
+                </div>
+                <div style="font-size: 0.875rem; color: var(--gray-600);" id="modal-tech-capacity">ความจุ: 0/0 งาน</div>
+              </div>
+            </div>
+            <div style="font-size: 0.875rem; color: var(--gray-600);">
+              <i class="bi bi-calendar"></i> <span id="modal-work-date">วันที่</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">
+            <i class="bi bi-gear-fill"></i> เลือกอุปกรณ์/งานที่ต้องการมอบหมาย
+          </div>
+          <div class="equipment-select-list" id="modal-equipment-list">
+            <div style="text-align: center; padding: 2rem; color: var(--gray-500);">
+              <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+              กำลังโหลดรายการอุปกรณ์...
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-section" id="modal-notes-section">
+          <div class="modal-section-title">
+            <i class="bi bi-pencil-fill"></i> หมายเหตุ (ถ้ามี)
+          </div>
+          <textarea id="assignment-notes" rows="3"
+            style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: 8px; font-family: inherit; resize: vertical;"
+            placeholder="เพิ่มหมายเหตุหรือคำแนะนำสำหรับช่าง..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-modal btn-modal-secondary" onclick="closeAssignmentModal()">
+          <i class="bi bi-x-circle"></i>
+          ยกเลิก
+        </button>
+        <button class="btn-modal btn-modal-primary" onclick="confirmAssignment()">
+          <i class="bi bi-check-circle-fill"></i>
+          ยืนยันมอบหมายงาน
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schedule Modal -->
+  <div class="modal-overlay" id="schedule-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="bi bi-calendar-week" style="color: var(--info-color);"></i>
+          ตารางงาน
+        </div>
+        <button class="modal-close" onclick="closeScheduleModal()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-section">
+          <div style="background: var(--gray-50); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div class="tech-card-avatar" style="width: 48px; height: 48px; font-size: 1.25rem;"
+                id="schedule-tech-avatar">T</div>
+              <div>
+                <div style="font-weight: 700; font-size: 1.125rem; color: var(--gray-900);" id="schedule-tech-name">ช่าง
+                </div>
+                <div style="font-size: 0.875rem; color: var(--gray-600);">
+                  <i class="bi bi-calendar"></i> <span id="schedule-work-date">วันที่</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-title">
+            <i class="bi bi-clock-history"></i> กำหนดการรายวัน
+          </div>
+          <div class="timeline-container" id="schedule-timeline">
+            <div style="text-align: center; padding: 2rem; color: var(--gray-500);">
+              <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+              กำลังโหลดตารางงาน...
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-modal btn-modal-secondary" onclick="closeScheduleModal()">
+          <i class="bi bi-x-circle"></i>
+          ปิด
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Hours to Tasks Conversion Config Panel -->
+  <div class="conversion-config-panel">
+    <button class="conversion-toggle-btn" onclick="toggleConversionPanel()" title="ตั้งค่าการแปลงชั่วโมงเป็นงาน">
+      <i class="bi bi-calculator"></i>
+      <span>แปลง ชม. → งาน</span>
+    </button>
+    <div class="conversion-panel-content" id="conversion-panel">
+      <div class="conversion-panel-title">
+        <i class="bi bi-sliders"></i>
+        ตั้งค่าอัตราแปลง
+      </div>
+
+      <!-- Presets -->
+      <div class="conversion-form-group">
+        <label class="conversion-form-label">รูปแบบงานทั่วไป</label>
+        <div class="conversion-presets">
+          <button class="conversion-preset-btn" onclick="applyConversionPreset(2)" data-preset="2">
+            <div>2 ชม.</div>
+            <div style="font-size: 0.65rem; color: var(--gray-500);">ต่อ 1 งาน</div>
+          </button>
+          <button class="conversion-preset-btn active" onclick="applyConversionPreset(3)" data-preset="3">
+            <div>3 ชม.</div>
+            <div style="font-size: 0.65rem; color: var(--gray-500);">ต่อ 1 งาน</div>
+          </button>
+          <button class="conversion-preset-btn" onclick="applyConversionPreset(4)" data-preset="4">
+            <div>4 ชม.</div>
+            <div style="font-size: 0.65rem; color: var(--gray-500);">ต่อ 1 งาน</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Custom Input -->
+      <div class="conversion-form-group">
+        <label class="conversion-form-label" for="hours-per-task-input">
+          <i class="bi bi-clock-fill"></i> จำนวนชั่วโมงต่อ 1 งาน
+        </label>
+        <input type="number" id="hours-per-task-input" class="conversion-form-input" min="0.5" max="16" step="0.5"
+          value="3" oninput="updateConversionPreview()" />
+        <div class="conversion-form-hint">ช่วงแนะนำ: 0.5 - 16 ชั่วโมง</div>
+      </div>
+
+      <!-- Preview -->
+      <div class="conversion-preview">
+        <div class="conversion-preview-title">ตัวอย่าง</div>
+        <div class="conversion-preview-values">
+          <div class="conversion-preview-item">
+            <div class="conversion-preview-value" id="preview-hours">6</div>
+            <div class="conversion-preview-label">ชั่วโมง</div>
+          </div>
+          <div class="conversion-arrow">→</div>
+          <div class="conversion-preview-item">
+            <div class="conversion-preview-value" id="preview-tasks">2</div>
+            <div class="conversion-preview-label">งาน</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="conversion-actions">
+        <button class="conversion-btn conversion-btn-secondary" onclick="resetConversionConfig()">
+          <i class="bi bi-arrow-clockwise"></i> รีเซ็ต
+        </button>
+        <button class="conversion-btn conversion-btn-primary" onclick="saveConversionConfig()">
+          <i class="bi bi-check-circle"></i> บันทึก
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Work List Modal -->
+  <div class="modal-overlay" id="work-list-modal">
+    <div class="modal-content"
+      style="max-width: 1400px; border-radius: 1rem; border: none; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
+
+      <!-- Modal Header -->
+      <div class="modal-header" style="background: #fff; border-bottom: 2px solid #e5e7eb; padding: 1.25rem 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <div>
+            <h5 style="margin: 0; font-weight: 700; font-size: 1.25rem; color: #111827;">รายชื่อช่างเทคนิค</h5>
+            <div style="font-size: 0.875rem; margin-top: 0.25rem; color: #6b7280;">
+              <i class="bi bi-calendar-check me-1"></i>
+              <span id="work-list-date-display"></span>
+            </div>
+          </div>
+          <button class="btn-close" onclick="closeWorkListModal()"></button>
+        </div>
+      </div>
+
+      <!-- Summary Stats -->
+      <div style="padding: 1rem 1.5rem; background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;" id="work-list-summary-stats">
+          <!-- Generated by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body" style="padding: 1rem; max-height: 60vh; overflow-y: auto; background: #fff;">
+
+        <!-- Loading State -->
+        <div id="work-list-loading" style="text-align: center; padding: 2rem;">
+          <div
+            style="width: 40px; height: 40px; margin: 0 auto 1rem; border: 3px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite;">
+          </div>
+          <p style="font-size: 0.875rem; color: #6b7280;">กำลังโหลด...</p>
+        </div>
+
+        <!-- Technician List (Timeline Style) -->
+        <div id="work-list-timeline" style="display: none;">
+          <!-- Generated by JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="work-list-empty" style="display: none; text-align: center; padding: 2rem;">
+          <i class="bi bi-inbox" style="font-size: 3rem; color: #d1d5db;"></i>
+          <p style="color: #6b7280; font-size: 0.875rem; margin-top: 1rem;">ไม่มีข้อมูลช่างในวันนี้</p>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer"
+        style="background: #fff; border-top: 1px solid #e5e7eb; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 0.875rem; color: #6b7280;">
+          <i class="bi bi-people-fill me-1"></i>
+          <span id="work-list-total-count" style="font-weight: 600;">รวม 0 คน</span>
+        </div>
+        <button class="btn btn-sm btn-secondary" onclick="closeWorkListModal()">
+          <i class="bi bi-x-circle me-1"></i>ปิด
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+
+<script>
+  // State
+  let currentDate = new Date(); // Today's date
+  let selectedDate = null; // Date selected in calendar
+  let technicianData = []; // Technician records
+  let capacityData = {}; // TechnicianCapacity records
+  let availabilityData = {}; // TechnicianAvailability records
+  let shiftSchedules = {}; // Shift schedules by date
+
+  // ============================================
+  // Hours to Tasks Conversion System
+  // ============================================
+
+  // Conversion configuration (default: 1 hours per task)
+  let conversionConfig = {
+    hoursPerTask: 1,
+    enabled: true
+  };
+
+  // Load config from localStorage on page load
+  function loadConversionConfig() {
+    try {
+      const saved = localStorage.getItem('cmms_hours_to_tasks_config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        conversionConfig = Object.assign({}, conversionConfig, parsed);
+        console.log('Loaded conversion config:', conversionConfig);
+      }
+    } catch (e) {
+      console.warn('Failed to load conversion config:', e);
+    }
+    // Update UI to reflect loaded config
+    const input = document.getElementById('hours-per-task-input');
+    if (input) input.value = conversionConfig.hoursPerTask;
+    updateConversionPreview();
+  }
+
+  // Save config to localStorage
+  function saveConversionConfig() {
+    try {
+      const input = document.getElementById('hours-per-task-input');
+      if (input) {
+        const value = parseFloat(input.value);
+        if (value > 0) {
+          conversionConfig.hoursPerTask = value;
+          localStorage.setItem('cmms_hours_to_tasks_config', JSON.stringify(conversionConfig));
+          showToast('บันทึกสำเร็จ', `ตั้งค่า ${value} ชม./งาน แล้ว`, 'success');
+          // Refresh display
+          updateSummary();
+          if (selectedDate) {
+            selectDate(selectedDate);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to save conversion config:', e);
+      showToast('ผิดพลาด', 'ไม่สามารถบันทึกค่าได้', 'error');
+    }
+  }
+
+  // Reset to default
+  function resetConversionConfig() {
+    conversionConfig = { hoursPerTask: 1, enabled: true };
+    const input = document.getElementById('hours-per-task-input');
+    if (input) input.value = 1;
+    updateConversionPreview();
+    applyConversionPreset(1);
+    showToast('รีเซ็ตแล้ว', 'กลับไปค่าเริ่มต้น 1 ชม./งาน', 'success');
+  }
+
+  // Apply preset
+  function applyConversionPreset(hours) {
+    const input = document.getElementById('hours-per-task-input');
+    if (input) input.value = hours;
+    updateConversionPreview();
+
+    // Update active preset button
+    document.querySelectorAll('.conversion-preset-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if (btn.dataset.preset == hours) {
+        btn.classList.add('active');
+      }
+    });
+  }
+
+  // Update preview display
+  function updateConversionPreview() {
+    const input = document.getElementById('hours-per-task-input');
+    const previewHours = document.getElementById('preview-hours');
+    const previewTasks = document.getElementById('preview-tasks');
+
+    if (input && previewHours && previewTasks) {
+      const hoursPerTask = parseFloat(input.value) || 3;
+      const exampleHours = 6;
+      const exampleTasks = hoursToTasks(exampleHours, hoursPerTask);
+
+      previewHours.textContent = exampleHours;
+      previewTasks.textContent = exampleTasks.toFixed(1);
+    }
+  }
+
+  // Toggle conversion panel
+  function toggleConversionPanel() {
+    const panel = document.getElementById('conversion-panel');
+    if (panel) {
+      panel.classList.toggle('active');
+    }
+  }
+
+  // Close panel when clicking outside
+  document.addEventListener('click', function (e) {
+    const panel = document.getElementById('conversion-panel');
+    const toggleBtn = document.querySelector('.conversion-toggle-btn');
+
+    if (panel && panel.classList.contains('active')) {
+      if (!panel.contains(e.target) && !toggleBtn.contains(e.target)) {
+        panel.classList.remove('active');
+      }
+    }
+  });
+
+  /**
+   * Convert hours to tasks using current configuration
+   * @param {number} hours - Number of hours
+   * @param {number} hoursPerTaskOverride - Optional override for hoursPerTask
+   * @returns {number} Number of tasks (rounded to 1 decimal)
+   */
+  function hoursToTasks(hours, hoursPerTaskOverride) {
+    if (!hours || hours <= 0) return 0;
+    const hoursPerTask = hoursPerTaskOverride || conversionConfig.hoursPerTask || 3;
+    const tasks = hours / hoursPerTask;
+    return Math.round(tasks * 10) / 10; // Round to 1 decimal place
+  }
+
+  /**
+   * Convert tasks to hours using current configuration
+   * @param {number} tasks - Number of tasks
+   * @param {number} hoursPerTaskOverride - Optional override for hoursPerTask
+   * @returns {number} Number of hours (rounded to 1 decimal)
+   */
+  function tasksToHours(tasks, hoursPerTaskOverride) {
+    if (!tasks || tasks <= 0) return 0;
+    const hoursPerTask = hoursPerTaskOverride || conversionConfig.hoursPerTask || 3;
+    const hours = tasks * hoursPerTask;
+    return Math.round(hours * 10) / 10; // Round to 1 decimal place
+  }
+
+  /**
+   * Format hours and tasks for display
+   * @param {number} hours - Number of hours
+   * @param {object} options - Display options
+   * @returns {string} Formatted string (e.g., "6 ชม. (2 งาน)")
+   */
+  function formatHoursAndTasks(hours, options = {}) {
+    const {
+      showTasks = true,
+      showHours = true,
+      separator = ' • ',
+      hoursPerTask = null
+    } = options;
+
+    if (!hours || hours <= 0) return '0 ชม.';
+
+    const tasks = hoursToTasks(hours, hoursPerTask);
+
+    if (showHours && showTasks) {
+      return `${hours} ชม.${separator}${tasks} งาน`;
+    } else if (showHours) {
+      return `${hours} ชม.`;
+    } else if (showTasks) {
+      return `${tasks} งาน`;
+    }
+    return '';
+  }
+
+  /**
+   * Create a badge element showing both hours and tasks
+   * @param {number} hours - Number of hours
+   * @param {object} options - Badge options
+   * @returns {string} HTML string for badge
+   */
+  function createHoursTasksBadge(hours, options = {}) {
+    const {
+      compact = false,
+      showIcon = true,
+      hoursPerTask = null
+    } = options;
+
+    if (!hours || hours <= 0) return '<span class="text-muted">0 ชม.</span>';
+
+    const tasks = hoursToTasks(hours, hoursPerTask);
+
+    if (compact) {
+      return `<span class="hours-tasks-badge">
+      ${showIcon ? '<i class="bi bi-clock"></i>' : ''}
+      <span class="hours">${hours} ชม.</span>
+      <span class="separator">·</span>
+      <span class="tasks">${tasks} งาน</span>
+    </span>`;
+    }
+
+    return `<div style="display: flex; align-items: center; gap: 0.5rem;">
+    <span style="color: var(--info-color); font-weight: 600;">
+      ${showIcon ? '<i class="bi bi-clock"></i> ' : ''}${hours} ชม.
+    </span>
+    <span style="color: var(--gray-400);">·</span>
+    <span style="color: var(--success-color); font-weight: 600;">
+      ${showIcon ? '<i class="bi bi-briefcase"></i> ' : ''}${tasks} งาน
+    </span>
+  </div>`;
+  }
+
+  // ============================================
+  // End of Conversion System
+  // ============================================
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', async function () {
+    // Load conversion config from localStorage
+    loadConversionConfig();
+
+    // Ensure technicians and calendar data are loaded before updating the summary
+    await loadTechnicians();
+    await renderCalendar();
+    await updateSummary();
+    // Show ready technicians for today
+    await renderPresentTechniciansForDate(new Date());
+  });
+
+  // Helper to set summary values safely and log if missing
+  function setSummaryValue(id, text) {
+    const el = document.getElementById(id);
+    if (!el) {
+      console.warn('setSummaryValue: element not found', id, 'text=', text);
+      // fallback: try to find by card role
+      if (id === 'capacity-today') {
+        const fallback = document.querySelector('.summary-card.warning .summary-value');
+        if (fallback) {
+          fallback.textContent = text;
+          return;
+        }
+      }
+      return;
+    }
+
+    // If the element contains a child value element with id `${id}-value`, update that
+    try {
+      const child = el.querySelector(`#${id}-value`);
+      if (child) {
+        child.textContent = text;
+        return;
+      }
+    } catch (e) {
+      // ignore selector errors
+    }
+
+    // Otherwise if the element itself looks like a container with inner summary-value, prefer that
+    const inner = el.querySelector && el.querySelector('.summary-value');
+    if (inner) {
+      inner.textContent = text;
+      return;
+    }
+
+    // Fallback: set textContent directly (may replace inner HTML)
+    el.textContent = text;
+  }
+
+
+  // Helper to format capacity display consistently: prefer "{hours} ชม. / {jobs} งาน"
+  function formatCapacityDisplay(totalCapacity, equipmentHours, fallbackWork) {
+    const hasHours = equipmentHours !== null && equipmentHours !== undefined && Number(equipmentHours) > 0;
+    const hasJobs = totalCapacity !== null && totalCapacity !== undefined && Number(totalCapacity) > 0;
+
+    if (hasHours && hasJobs) return equipmentHours + ' ชม. / ' + totalCapacity + ' งาน';
+    if (hasHours) return equipmentHours + ' ชม.';
+    if (hasJobs) return totalCapacity + ' งาน';
+    if (fallbackWork !== null && fallbackWork !== undefined) return fallbackWork + ' งาน';
+    return '0 งาน';
+  }
+
+  async function loadTechnicians() {
+    try {
+      // Load all technicians (not used in this view, but kept for future)
+      const response = await fetch('/api/technicians/list/');
+      technicianData = await response.json();
+      document.getElementById('total-technicians').textContent = technicianData.length + " คน";
+    } catch (error) {
+      console.error('Error loading technicians:', error);
+    }
+  }
+
+  async function loadAvailabilityForMonth(year, month) {
+    try {
+      // Load availability report data for the entire month
+      const response = await fetch(`/maintenance/technicians/availability/report/?year=${year}&month=${month}`);
+      const html = await response.text();
+
+      // Parse the HTML to extract JSON data (if embedded) or make separate API calls
+      // For now, we'll store availability by date as we load daily capacity
+      return true;
+    } catch (error) {
+      console.error('Error loading availability report:', error);
+      return false;
+    }
+  }
+
+  async function loadCapacityForDate(date) {
+    try {
+      const dateStr = formatDateISO(date);
+      // Use the aggregated availability API which returns technicians[] and dailySummary
+      const response = await fetch(`/api/maintenance/availability/?date=${dateStr}`, {
+        headers: { 'Accept': 'application/json' }
+      });
+      const contentType = response.headers.get('content-type') || '';
+      let data;
+      if (contentType.indexOf('application/json') !== -1) {
+        data = await response.json();
+      } else {
+        // Fallback: return empty array if HTML or unexpected content
+        const text = await response.text();
+        console.warn('loadCapacityForDate: expected JSON but got', contentType);
+        data = { technicians: [], dailySummary: {} };
+      }
+      // Extract technicians array and daily summary from the response
+      try {
+        const techArray = Array.isArray(data.technicians) ? data.technicians : [];
+        const summary = data.dailySummary || {};
+
+        // Debug: log raw technician array for this date
+        console.debug('loadCapacityForDate:', dateStr, 'returned', techArray.length, 'technicians, summary:', summary);
+
+        // Normalize display names
+        techArray.forEach(t => {
+          try { t.__displayName = getTechDisplayName(t); } catch (e) { t.__displayName = (t && (t.name || t.username)) || 'ไม่มีชื่อ'; }
+        });
+
+        // Store summary in capacityData for later use
+        if (!capacityData[dateStr]) capacityData[dateStr] = {};
+        capacityData[dateStr].summary = summary;
+
+        return techArray;
+      } catch (e) {
+        console.error('loadCapacityForDate: parse error', e);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error loading capacity:', error);
+      return [];
+    }
+  }
+
+  async function loadDailySummary(date) {
+    try {
+      const dateStr = formatDateISO(date);
+      const response = await fetch(`/api/maintenance/daily-summary/?date=${dateStr}`, {
+        headers: { 'Accept': 'application/json' }
+      });
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.indexOf('application/json') !== -1) {
+        return await response.json();
+      }
+      // If server returned HTML (e.g. requires session), log and return null so callers fall back
+      console.warn('loadDailySummary: non-json response', contentType);
+      return null;
+    } catch (error) {
+      console.error('Error loading daily summary:', error);
+      return null;
+    }
+  }
+
+  async function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    // Load shift schedules for this month
+    await loadShiftSchedules(year, month + 1);
+
+    // Update header
+    const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+    document.getElementById('current-month-year').textContent =
+      `${thaiMonths[month]} ${year + 543}`;
+
+    // Get first day of month and number of days
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+
+    const grid = document.getElementById('calendar-grid');
+    grid.innerHTML = '';
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Render days and wait for all per-day data to load so capacityData is populated
+    const loadPromises = [];
+    // Insert blank placeholder cells so the 1st of the month aligns under the correct weekday.
+    // We want the week to start on Sunday (getDay() === 0).
+    const firstWeekday = firstDay.getDay(); // 0 = Sunday
+    for (let i = 0; i < firstWeekday; i++) {
+      const blank = document.createElement('div');
+      blank.className = 'calendar-day blank';
+      blank.innerHTML = `
+      <div class="day-header">
+        <div class="day-number"></div>
+        <div class="day-name"></div>
+      </div>
+      <div class="capacity-info"></div>
+    `;
+      grid.appendChild(blank);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dayCard = createDayCard(date, today);
+      grid.appendChild(dayCard);
+
+      // Load capacity, summary and equipment hours for this day
+      const p = Promise.all([
+        loadCapacityForDate(date),
+        loadDailySummary(date),
+        loadEquipmentHoursForDate(date)
+      ]).then(([techData, summary, equipmentHours]) => {
+        updateDayCard(date, techData, summary, equipmentHours);
+      }).catch(err => {
+        console.error('Error loading day data for', formatDateISO(date), err);
+      });
+      loadPromises.push(p);
+    }
+
+    // Await all per-day loads so subsequent calls (like updateSummary) see populated capacityData
+    try {
+      await Promise.all(loadPromises);
+    } catch (e) {
+      // individual day errors are already logged; continue
+    }
+  }
+
+  function createDayCard(date, today) {
+    const div = document.createElement('div');
+    div.className = 'calendar-day';
+    div.dataset.date = formatDateISO(date);
+
+    if (date.getTime() === today.getTime()) {
+      div.classList.add('today');
+    }
+
+    const dayNames = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+
+    div.innerHTML = `
+    <div class="day-header">
+      <div class="day-number">${date.getDate()}</div>
+      <div class="day-name">${dayNames[date.getDay()]}</div>
+    </div>
+    <div class="capacity-info">
+      <!-- Regular Work Section -->
+      <div style="background: linear-gradient(135deg, #EFF6FF 0%, white 100%); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; border-left: 3px solid var(--info-color);">
+        <div style="font-size: 0.7rem; color: var(--gray-700); font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+          <i class="bi bi-briefcase-fill" style="font-size: 0.8rem;"></i>
+          <span>ปกติ</span>
+          <span class="capacity-regular-total" style="margin-left: auto; color: var(--info-color); font-size: 0.85rem;">0</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+          <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <span style="font-size: 0.65rem; color: var(--gray-600); display: block;">ว่าง</span>
+            <strong class="capacity-regular-available" style="color: var(--success-color); font-size: 0.9rem;">0</strong>
+          </div>
+          <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <span style="font-size: 0.65rem; color: var(--gray-600); display: block;">จอง</span>
+            <strong class="capacity-regular-assigned" style="color: var(--warning-color); font-size: 0.9rem;">0</strong>
+          </div>
+        </div>
+      </div>
+      
+      <!-- OT Section -->
+      <div style="background: linear-gradient(135deg, #FEF3C7 0%, white 100%); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; border-left: 3px solid var(--warning-color);">
+        <div style="font-size: 0.7rem; color: var(--gray-700); font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.25rem;">
+          <i class="bi bi-lightning-charge-fill" style="font-size: 0.8rem;"></i>
+          <span>OT</span>
+          <span class="capacity-ot-total" style="margin-left: auto; color: var(--warning-color); font-size: 0.85rem;">0</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+          <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <span style="font-size: 0.65rem; color: var(--gray-600); display: block;">ว่าง</span>
+            <strong class="capacity-ot-available" style="color: var(--success-color); font-size: 0.9rem;">0</strong>
+          </div>
+          <div style="text-align: center; padding: 0.5rem; background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <span style="font-size: 0.65rem; color: var(--gray-600); display: block;">จอง</span>
+            <strong class="capacity-ot-assigned" style="color: var(--warning-color); font-size: 0.9rem;">0</strong>
+          </div>
+        </div>
+      </div>
+      
+      <div class="capacity-bar">
+        <div class="capacity-fill" style="width: 0%"></div>
+      </div>
+      <div class="tech-count">
+        <i class="bi bi-person-fill"></i>
+        <span class="tech-count-value">0</span>
+        <span class="tech-count-unit"> คน</span>
+      </div>
+      <div class="tech-names" style="margin-top:0.5rem;font-size:0.85rem;color:var(--gray-600);"></div>
+    </div>
+  `;
+
+    div.onclick = () => selectDate(date);
+
+    return div;
+  }
+
+  function updateDayCard(date, technicianData, dailySummary, equipmentHours) {
+    const dateStr = formatDateISO(date);
+    const card = document.querySelector(`[data-date="${dateStr}"]`);
+    if (!card) return;
+
+    // Calculate capacity: Total = Available + Assigned
+    // API returns technicians with their capacity and currentTasks
+    const allTechs = (Array.isArray(technicianData) ? technicianData : []);
+    // Ensure each tech has a normalized display name for UI rendering
+    allTechs.forEach(t => { try { t.__displayName = getTechDisplayName(t); } catch (e) { /*ignore*/ } });
+
+    // Count technicians who are ready to work (พร้อมทำงาน)
+    // Backend has inverted logic: available=true means NOT ready, available=false means ready
+    const workingTechs = allTechs.filter(t => {
+      // available=true means NOT ready (ไม่พร้อม)
+      if (t.available === true) return false;
+      // available=false or undefined means ready to work (พร้อมทำงาน)
+      return true;
+    });
+
+    // Check if this is a weekend or holiday
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+    const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+    const isHoliday = dailySummary && (dailySummary.totalHoliday > 0);
+    const isNonWorkingDay = isWeekend || isHoliday;
+
+    // Calculate Total Capacity Tasks from dailySummary if available
+    let totalCapacityTasks;
+    let regularTasks = 0;
+    let otTasks = 0;
+    
+    if (dailySummary && (dailySummary.totalWorkHours || dailySummary.totalOTHours)) {
+      // Use hours from dailySummary (same as updateSummary)
+      const regularHours = dailySummary.totalWorkHours || dailySummary.total_work_hours || 0;
+      const otHours = dailySummary.totalOTHours || dailySummary.total_ot_hours || 0;
+      
+      // Convert to tasks separately for accurate calculation
+      let regularTasksRaw = hoursToTasks(regularHours);
+      let otTasksRaw = hoursToTasks(otHours);
+
+      // On weekends/holidays, all work is considered OT
+      if (isNonWorkingDay) {
+        regularTasks = 0;
+        otTasks = regularTasksRaw + otTasksRaw;
+      } else {
+        regularTasks = regularTasksRaw;
+        otTasks = otTasksRaw;
+      }
+
+      // Total = Regular tasks + OT tasks (avoid double-conversion rounding differences)
+      totalCapacityTasks = Number((regularTasks + otTasks).toFixed(1));
+      
+      console.debug('updateDayCard capacity calc:', dateStr, {
+        regularHours, otHours, regularTasks, otTasks, totalCapacityTasks,
+        isNonWorkingDay, isWeekend, isHoliday,
+        dailySummary: dailySummary
+      });
+    } else {
+      // Fallback: derive regular/OT capacity from technician data
+      const isOtTech = t => {
+        try {
+          const note = (t.note || '').toString().toLowerCase();
+          if (note.includes('ot') || note.includes('ล่วงเวลา')) return true;
+          if (t.ot === true) return true;
+          if (t.ot_type && t.ot_type.toString().toLowerCase().includes('ot')) return true;
+        } catch (e) { }
+        return false;
+      };
+
+      const capacityOT = workingTechs.filter(isOtTech).reduce((sum, t) => sum + (Number.parseInt(t.capacity) || 1), 0);
+      const capacityRegular = workingTechs.filter(t => !isOtTech(t)).reduce((sum, t) => sum + (Number.parseInt(t.capacity) || 1), 0);
+
+      // On weekends/holidays, all work is considered OT
+      if (isNonWorkingDay) {
+        regularTasks = 0;
+        otTasks = capacityRegular + capacityOT;
+      } else {
+        regularTasks = capacityRegular;
+        otTasks = capacityOT;
+      }
+      
+      totalCapacityTasks = capacityRegular + capacityOT;
+      console.debug('updateDayCard using fallback capacity (regular/ot):', dateStr, { 
+        capacityRegular, capacityOT, totalCapacityTasks, isNonWorkingDay 
+      });
+    }
+
+    // Helper to identify OT technicians
+    const isOtTech = t => {
+      try {
+        const note = (t.note || '').toString().toLowerCase();
+        if (note.includes('ot') || note.includes('ล่วงเวลา')) return true;
+        if (t.ot === true) return true;
+        if (t.ot_type && t.ot_type.toString().toLowerCase().includes('ot')) return true;
+      } catch (e) { }
+      return false;
+    };
+
+    // Split technicians into regular and OT groups
+    const regularTechs = workingTechs.filter(t => !isOtTech(t));
+    const otTechs = workingTechs.filter(t => isOtTech(t));
+
+    // Calculate assigned tasks for each group
+    let regularAssigned = regularTechs.reduce((sum, t) => sum + (Number.parseInt(t.currentTasks) || 0), 0);
+    let otAssigned = otTechs.reduce((sum, t) => sum + (Number.parseInt(t.currentTasks) || 0), 0);
+
+    // On weekends/holidays, move all assigned to OT
+    if (isNonWorkingDay) {
+      otAssigned = regularAssigned + otAssigned;
+      regularAssigned = 0;
+    }
+
+    // Calculate available = total - assigned (using tasks from hours conversion or fallback)
+    const regularAvailable = Math.max(0, regularTasks - regularAssigned);
+    const otAvailable = Math.max(0, otTasks - otAssigned);
+
+    // Total assigned and available
+    let assignedCapacity = regularAssigned + otAssigned;
+    let availableCapacity = regularAvailable + otAvailable;
+
+    let techCount = workingTechs.length;
+
+    // If an authoritative daily summary is provided prefer its totalWork
+    // for the visible technician count so the calendar tile matches the
+    // daily-summary report shown in the header.
+    if (dailySummary && typeof dailySummary.totalWork !== 'undefined') {
+      techCount = parseInt(dailySummary.totalWork) || techCount;
+    }
+
+    // Debug: surface counts to help trace where an unexpected total (e.g. 14) originates
+    try {
+      console.debug('updateDayCard:', dateStr, { 
+        allTechs: allTechs.length, 
+        workingTechs: workingTechs.length, 
+        regularTechs: regularTechs.length,
+        otTechs: otTechs.length,
+        dailySummaryTotal: (dailySummary && dailySummary.totalWork) 
+      });
+    } catch (e) { }
+
+    // Update UI with separate Regular and OT sections
+    card.querySelector('.capacity-regular-total').textContent = regularTasks.toFixed(1);
+    card.querySelector('.capacity-regular-available').textContent = regularAvailable.toFixed(1);
+    card.querySelector('.capacity-regular-assigned').textContent = regularAssigned.toFixed(1);
+    
+    card.querySelector('.capacity-ot-total').textContent = otTasks.toFixed(1);
+    card.querySelector('.capacity-ot-available').textContent = otAvailable.toFixed(1);
+    card.querySelector('.capacity-ot-assigned').textContent = otAssigned.toFixed(1);
+    
+    card.querySelector('.tech-count-value').textContent = techCount;
+
+    // Populate compact technician names on the tile (show up to 3, +N overflow) แสดงชื่อช่างเทคนิคแบบย่อบนไทล์ (แสดงสูงสุด 3 ชื่อ +N ที่เหลือ)
+    try {
+      const techsArr = Array.isArray(technicianData) ? technicianData : [];
+      const present = techsArr.filter(t => !(t.available === true));
+      const names = present.map(t => t.__displayName || getTechDisplayName(t));
+      const namesEl = card.querySelector('.tech-names');
+      if (namesEl) {
+        if (!names.length) {
+          namesEl.textContent = '';
+          namesEl.title = '';
+        } else {
+          const show = names.slice(0, 1);
+          const rest = names.length - show.length;
+          namesEl.textContent = show.join(', ') + (rest > 0 ? ` และอีก ${rest} คน` : '');
+          namesEl.title = names.join(', ');
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    // Update capacity bar to show assigned/total ratio (utilization)
+    const utilization = totalCapacityTasks > 0 ? (assignedCapacity / totalCapacityTasks) * 100 : 0;
+    const fill = card.querySelector('.capacity-fill');
+    fill.style.width = `${utilization}%`;
+
+    // Color based on utilization: green if low, yellow if medium, red if high
+    fill.classList.remove('warning');
+    if (utilization >= 90) {
+      fill.classList.add('warning');
+      fill.style.background = 'linear-gradient(90deg, var(--danger-color) 0%, var(--danger-color) 100%)';
+    } else if (utilization >= 70) {
+      fill.classList.add('warning');
+      fill.style.background = 'linear-gradient(90deg, var(--warning-color) 0%, var(--danger-color) 100%)';
+    } else {
+      fill.style.background = 'linear-gradient(90deg, var(--success-color) 0%, var(--info-color) 100%)';
+    }
+
+    // Store data including daily summary
+    capacityData[dateStr] = {
+      technicians: technicianData,
+      totalCapacity: totalCapacityTasks,
+      availableCapacity: availableCapacity,
+      assignedCapacity: assignedCapacity,
+      available: techCount,
+      summary: dailySummary,
+      equipmentHours: equipmentHours || 0
+    };
+
+    // Debug: log per-day parsed values to help diagnose missing data
+    try {
+      console.debug('Day load:', dateStr, {
+        totalCapacity,
+        techCount,
+        technicianHours: capacityData[dateStr].technicianHours,
+        equipmentHours: capacityData[dateStr].equipmentHours,
+        dailySummary: dailySummary
+      });
+    } catch (e) {
+      // ignore logging errors
+    }
+
+    // Update summary if this is today
+    const today = formatDateISO(new Date());
+    if (dateStr === today) {
+      // If there's no authoritative daily summary available, reflect
+      // the calendar card values immediately in the summary cards so
+      // the numbers match the today's calendar tile.
+      if (!dailySummary || typeof dailySummary.totalWork === 'undefined') {
+        try {
+          // Use working technicians (those present) for totals
+          const techArray = Array.isArray(technicianData) ? technicianData : [];
+          const workingList = techArray.filter(t => {
+            if (t.available === false && t.note) return false;
+            return true;
+          });
+
+          // Total working technicians (count each technician once)
+          const totalWorking = workingList.length;
+
+          // OT count = technicians explicitly marked with OT in note
+          const otCount = workingList.filter(t => {
+            const note = (t.note || '').toLowerCase();
+            return note.includes('ot') || note.includes('ล่วงเวลา');
+          }).length;
+
+          // compute OT hours from working technician list for the quick-today update
+          const quickOtHours = workingList.filter(t => {
+            const note = (t.note || '').toLowerCase();
+            return note.includes('ot') || note.includes('ล่วงเวลา');
+          }).reduce((s, t) => {
+            const h = (typeof t.otHours !== 'undefined' && t.otHours !== null) ? Number(t.otHours) : ((typeof t.hours !== 'undefined' && t.hours !== null) ? Number(t.hours) : 0);
+            return s + (isNaN(h) ? 0 : h);
+          }, 0);
+
+          // Regular count: everyone present is considered doing regular work (may also do OT)
+          const regularCount = totalWorking;
+
+          setSummaryValue('work-today', totalWorking + ' คน');
+          setSummaryValue('work-regular-count', regularCount + ' คน');
+          setSummaryValue('overtime-today', otCount + ' คน (' + (quickOtHours || 0) + ' ชม.)');
+
+          // Show hours and jobs separately
+          const eqHours = (typeof equipmentHours !== 'undefined' && equipmentHours) ? equipmentHours : 0;
+          setSummaryValue('capacity-hours-today', eqHours ? `${eqHours} ชม.` : '0 ชม.');
+          setSummaryValue('capacity-jobs-today', `${totalCapacityTasks.toFixed(1)} งาน`);
+
+          // scheduled tasks: sum of currentTasks if available
+          const totalTasks = (Array.isArray(technicianData) ? technicianData : []).reduce((sum, t) => sum + (t.currentTasks || 0), 0);
+          document.getElementById('scheduled-today').textContent = totalTasks;
+        } catch (e) {
+          // If elements are not present yet, skip; updateSummary() will run later
+        }
+      }
+
+      // Still call updateSummary to allow authoritative summary to overwrite if present
+      updateSummary();
+    }
+  }
+
+  async function selectDate(date) {
+    selectedDate = date;
+
+    // Update selected state
+    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
+    const dateStr = formatDateISO(date);
+    document.querySelector(`[data-date="${dateStr}"]`).classList.add('selected');
+
+    // Load and show detail panel
+    const [techData, summary, equipmentHours, equipmentSchedule] = await Promise.all([
+      loadCapacityForDate(date),
+      loadDailySummary(date),
+      loadEquipmentHoursForDate(date),
+      loadEquipmentScheduleForDate(date)
+    ]);
+    // Update present technicians area for the selected date as well
+    try {
+      await renderPresentTechniciansForDate(date);
+    } catch (e) {
+      console.warn('renderPresentTechniciansForDate failed:', e);
+    }
+
+    showDetailPanel(date, techData, summary, equipmentHours, equipmentSchedule);
+  }
+
+  function showDetailPanel(date, technicianData, dailySummary, equipmentHours, equipmentSchedule) {
+    const panel = document.getElementById('detail-panel');
+    panel.classList.add('active');
+
+    // Update header
+    const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+    const dayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+
+    document.getElementById('detail-date').textContent =
+      `วัน${dayNames[date.getDay()]}ที่ ${date.getDate()} ${thaiMonths[date.getMonth()]} ${date.getFullYear() + 543}`;
+
+    const techData = Array.isArray(technicianData) ? technicianData : [];
+
+    // Working techs: those who are working (not explicitly marked as off with note)
+    const workingTechs = techData.filter(t => {
+      if (t.available === false && t.note) return false; // Marked as off
+      return true; // Working or default available
+    });
+
+    // Calculate Total = sum of all capacity, Assigned = sum of currentTasks
+    const totalCapacity = workingTechs.reduce((sum, t) => {
+      const cap = Number.parseInt(t.capacity) || 1;
+      return sum + cap;
+    }, 0);
+
+    const assignedCapacity = workingTechs.reduce((sum, t) => {
+      const current = Number.parseInt(t.currentTasks) || 0;
+      return sum + current;
+    }, 0);
+
+    const availableCapacity = Math.max(0, totalCapacity - assignedCapacity);
+    const availableTechs = techData.filter(t => t.available === true); // Only those who still have capacity left
+
+    // Build subtitle with daily summary if available
+    let subtitleText = `ช่างที่มาปฏิบัติงาน: ${workingTechs.length} คน | <strong>อัตรากำลังทั้งหมด: ${totalCapacity} งาน</strong> (ว่าง: <span style="color: var(--info-color);">${availableCapacity}</span> | จอง: <span style="color: var(--warning-color);">${assignedCapacity}</span>)`;
+
+    if (dailySummary) {
+      subtitleText += `<br><small class="text-muted mt-2" style="display:block;">
+      สรุปวันนี้: ทำงาน ${dailySummary.totalWork || 0} คน | 
+      ล่วงเวลา ${dailySummary.totalOT || 0} คน (${dailySummary.totalOTHours || 0} ชม.) | 
+      ลา ${dailySummary.totalLeave || 0} คน | 
+      เวร ${dailySummary.totalShift || 0} คน
+    </small>`;
+    }
+
+    // Show equipment hours in subtitle if provided (with tasks conversion)
+    if (typeof equipmentHours !== 'undefined' && equipmentHours !== null && equipmentHours > 0) {
+      const formattedHoursAndTasks = formatHoursAndTasks(equipmentHours, { separator: ' ≈ ' });
+      subtitleText += `<br><small class="text-muted mt-2" style="display:block;">รวมจำนวน ชม. จากตาราง: <strong>${formattedHoursAndTasks}</strong></small>`;
+    }
+
+    document.getElementById('detail-subtitle').innerHTML = subtitleText;
+
+    // Render equipment schedule section separately
+    const equipmentSection = document.getElementById('equipment-schedule-section');
+    const equipmentListContainer = document.getElementById('equipment-list');
+
+    // Declare items in function scope so tech matching later can access it
+    let items = null;
+    let equipmentRendered = false;
+
+    if (equipmentSchedule) {
+      try {
+        console.debug('Equipment schedule raw data:', JSON.stringify(equipmentSchedule, null, 2));
+      } catch (e) {
+        console.debug('Equipment schedule raw data (non-serializable):', equipmentSchedule);
+      }
+
+      // Try different property names that the API might use
+      if (Array.isArray(equipmentSchedule.items)) items = equipmentSchedule.items;
+      else if (Array.isArray(equipmentSchedule.equipment)) items = equipmentSchedule.equipment;
+      else if (Array.isArray(equipmentSchedule.appointments)) items = equipmentSchedule.appointments;
+      else if (Array.isArray(equipmentSchedule.schedule)) items = equipmentSchedule.schedule;
+      else if (Array.isArray(equipmentSchedule)) items = equipmentSchedule;
+
+      // If no explicit items array was found, try to discover a candidate array
+      if ((!items || items.length === 0) && typeof equipmentSchedule === 'object') {
+        const findItemsInObject = obj => {
+          if (!obj || typeof obj !== 'object') return null;
+          for (const k of Object.keys(obj)) {
+            try {
+              const v = obj[k];
+              if (Array.isArray(v) && v.length > 0 && typeof v[0] === 'object') {
+                const keys = Object.keys(v[0]).map(x => ('' + x).toLowerCase());
+                const good = ['name', 'equipment', 'title', 'estimated_hours', 'estimatedhours', 'hours', 'duration', 'task_type', 'maintenance_type', 'asset', 'appointments'].some(kk => keys.includes(kk));
+                if (good) return { array: v, path: k };
+              }
+              if (v && typeof v === 'object') {
+                const res = findItemsInObject(v);
+                if (res) return { array: res.array, path: k + '.' + (res.path || '') };
+              }
+            } catch (e) {
+              // ignore
+            }
+          }
+          return null;
+        };
+
+        const discovered = findItemsInObject(equipmentSchedule);
+        if (discovered) {
+          items = discovered.array;
+          console.debug('Discovered candidate items at path:', discovered.path, items);
+        }
+      }
+
+      // If the API returned a totalHours summary key (even if zero) but no itemized list, show the summary
+      const hasTotalKey = Object.prototype.hasOwnProperty.call(equipmentSchedule, 'totalHours') || Object.prototype.hasOwnProperty.call(equipmentSchedule, 'total_hours') || Object.prototype.hasOwnProperty.call(equipmentSchedule, 'total');
+      if ((!items || items.length === 0) && hasTotalKey) {
+        // coerce value to a readable number when possible
+        const rawVal = (typeof equipmentSchedule.totalHours !== 'undefined') ? equipmentSchedule.totalHours : (typeof equipmentSchedule.total_hours !== 'undefined' ? equipmentSchedule.total_hours : (typeof equipmentSchedule.total !== 'undefined' ? equipmentSchedule.total : 0));
+        const parsed = (rawVal === null || rawVal === undefined) ? 0 : (typeof rawVal === 'number' ? rawVal : parseFloat(String(rawVal).replace(/,/g, '') || 0));
+        const totalHoursVal = isNaN(parsed) ? 0 : parsed;
+
+        equipmentSection.style.display = 'block';
+        equipmentListContainer.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:center;padding:1rem;">
+          <div style="font-weight:600;color:var(--gray-900);">สรุปงานอุปกรณ์ (ไม่มีรายการแยก)</div>
+          <div style="color:var(--gray-600);">รวมจำนวนชั่วโมงจากตาราง: <strong>${totalHoursVal} ชม.</strong></div>
+        </div>`;
+        console.debug('Equipment schedule provided totalHours without items (raw):', rawVal, 'parsed:', totalHoursVal);
+        // leave items as an empty array so matching logic still runs but finds nothing
+        items = [];
+        equipmentRendered = true;
+      }
+
+      if (items && items.length > 0) {
+        equipmentSection.style.display = 'block';
+        // Normalize item fields and allow matching against technician skills
+        const norm = s => (s || '').toString().toLowerCase();
+        const itemsNormalized = items.map(it => {
+          const name = it.name || it.equipment_name || it.equipment || it.title || it.asset || it.description || 'อุปกรณ์ไม่ระบุชื่อ';
+          const hrs = (typeof it.estimatedHours !== 'undefined') ? it.estimatedHours : (it.hours || it.estimated_hours || it.duration || null);
+          const taskType = it.task_type || it.type || it.maintenance_type || '';
+          return Object.assign({}, it, {
+            __name: name,
+            __hrs: hrs,
+            __taskType: taskType,
+            __searchText: `${norm(name)} ${norm(taskType)} ${norm(it.description || '')}`
+          });
+        });
+
+        // Build a quick index of items to display and allow later matching
+        // Add a small badge showing the number of items for clarity
+        const itemsCountBadge = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;color:var(--gray-600);">
+        <div></div>
+        <div><strong>${itemsNormalized.length} รายการ</strong></div>
+      </div>`;
+        let listHTML = itemsCountBadge + '<div style="display: grid; gap: 0.75rem;">';
+        itemsNormalized.forEach((it, idx) => {
+          const name = it.__name;
+          const hrs = it.__hrs;
+          const taskType = it.__taskType;
+
+          listHTML += `
+          <div class="equipment-item" data-idx="${idx}" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 6px; border-left: 3px solid var(--primary-color);">
+            <div style="flex: 1;">
+              <div style="font-weight: 600; color: var(--gray-900);">${idx + 1}. ${name}</div>
+              ${taskType ? `<small style="color: var(--gray-600);"><i class="bi bi-tag-fill"></i> ${taskType}</small>` : ''}
+              <div class="equipment-capable" style="margin-top:6px;color:var(--gray-600);font-size:0.85rem;"></div>
+            </div>
+            <div style="text-align: right;">
+              ${hrs ? createHoursTasksBadge(hrs, { compact: false, showIcon: true }) : '<span style="color: var(--gray-600);">ไม่ระบุ</span>'}
+            </div>
+          </div>
+        `;
+        });
+        listHTML += '</div>';
+
+        equipmentListContainer.innerHTML = listHTML;
+
+        // Replace items variable with normalized list for matching below
+        items = itemsNormalized;
+        console.debug('Equipment items normalized:', items);
+      } else {
+        // Only show the empty-items placeholder and debug keys when
+        // we haven't already rendered a totalHours summary above.
+        if (!equipmentRendered) {
+          equipmentSection.style.display = 'block';
+          equipmentListContainer.innerHTML = '<p style="color: var(--gray-600); text-align: center; padding: 1rem; margin: 0;">\n        <i class="bi bi-inbox"></i> ไม่มีงานอุปกรณ์ในวันนี้</p>';
+          try {
+            const keys = Object.keys(equipmentSchedule || {});
+            console.warn('Equipment schedule exists but no items found. Raw data keys:', JSON.stringify(keys));
+            // Log a short inspect of each key to help debugging (type, small sample)
+            for (const k of keys) {
+              try {
+                const v = equipmentSchedule[k];
+                if (Array.isArray(v)) {
+                  console.warn('  key:', k, '-> array, length=', v.length, 'sample0=', v[0]);
+                } else if (v && typeof v === 'object') {
+                  console.warn('  key:', k, '-> object, keys=', JSON.stringify(Object.keys(v).slice(0, 20)));
+                } else {
+                  console.warn('  key:', k, '->', typeof v, String(v).slice(0, 200));
+                }
+              } catch (e) {
+                console.warn('  key:', k, '-> (unable to inspect)', e);
+              }
+            }
+          } catch (e) {
+            console.warn('Equipment schedule exists but no items found. Raw data (non-enumerable)');
+          }
+        }
+      }
+    } else {
+      equipmentSection.style.display = 'none';
+      console.log('No equipment schedule data returned for this date');
+    }
+
+    // Render daily summary stats cards
+    const summaryStatsContainer = document.getElementById('daily-summary-stats');
+    if (dailySummary && summaryStatsContainer) {
+      summaryStatsContainer.style.display = 'grid';
+      summaryStatsContainer.style.gridTemplateColumns = 'repeat(auto-fit, minmax(220px, 1fr))';
+      summaryStatsContainer.style.gap = '1rem';
+
+      summaryStatsContainer.innerHTML = `
+      <div class="stat-card-modern success">
+        <div class="stat-icon-modern success">
+          <i class="bi bi-briefcase-fill"></i>
+        </div>
+        <div class="stat-value-modern">${dailySummary.totalWork || 0}</div>
+        <div class="stat-label-modern">ทำงานปกติ</div>
+        <div class="stat-sublabel-modern">
+          <i class="bi bi-clock"></i>
+          <span>${formatHoursAndTasks(dailySummary.totalWorkHours || 0, { separator: ' ≈ ' })}</span>
+        </div>
+      </div>
+      
+      <div class="stat-card-modern warning">
+        <div class="stat-icon-modern warning">
+          <i class="bi bi-lightning-charge-fill"></i>
+        </div>
+        <div class="stat-value-modern">${dailySummary.totalOT || 0}</div>
+        <div class="stat-label-modern">ล่วงเวลา (OT)</div>
+        <div class="stat-sublabel-modern">
+          <i class="bi bi-clock-history"></i>
+          <span>${formatHoursAndTasks(dailySummary.totalOTHours || 0, { separator: ' ≈ ' })}</span>
+        </div>
+        <div class="stat-breakdown">
+          <div class="stat-breakdown-item">
+            <span class="stat-breakdown-label">วันปกติ</span>
+            <span class="stat-breakdown-value">${dailySummary.totalOTWeekday || 0} คน</span>
+          </div>
+          <div class="stat-breakdown-item">
+            <span class="stat-breakdown-label">วันหยุด</span>
+            <span class="stat-breakdown-value">${dailySummary.totalOTHoliday || 0} คน</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="stat-card-modern danger">
+        <div class="stat-icon-modern danger">
+          <i class="bi bi-person-x-fill"></i>
+        </div>
+        <div class="stat-value-modern">${dailySummary.totalLeave || 0}</div>
+        <div class="stat-label-modern">ลาหยุด</div>
+        <div class="stat-sublabel-modern">
+          <i class="bi bi-calendar-x"></i>
+          <span>รายการขอลา</span>
+        </div>
+        <div class="stat-breakdown">
+          <div class="stat-breakdown-item">
+            <span class="stat-breakdown-label">ลาป่วย</span>
+            <span class="stat-breakdown-value">${dailySummary.totalLeaveSick || 0} คน</span>
+          </div>
+          <div class="stat-breakdown-item">
+            <span class="stat-breakdown-label">ลากิจ</span>
+            <span class="stat-breakdown-value">${dailySummary.totalLeavePersonal || 0} คน</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="stat-card-modern info">
+        <div class="stat-icon-modern info">
+          <i class="bi bi-clock-history"></i>
+        </div>
+        <div class="stat-value-modern">${dailySummary.totalShift || 0}</div>
+        <div class="stat-label-modern">ขึ้นเวร</div>
+        <div class="stat-sublabel-modern">
+          <i class="bi bi-stopwatch"></i>
+          <span>${dailySummary.totalShiftHours || 0} ชั่วโมง</span>
+        </div>
+        <div class="stat-breakdown">
+          <div class="stat-breakdown-item">
+            <span class="stat-breakdown-label">เวรเช้า</span>
+            <span class="stat-breakdown-value">${dailySummary.totalShiftMorning || 0} คน</span>
+          </div>
+          <div class="stat-breakdown-item">
+            <span class="stat-breakdown-label">เวรบ่าย</span>
+            <span class="stat-breakdown-value">${dailySummary.totalShiftAfternoon || 0} คน</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="stat-card-modern" style="border-left-color: #8B5CF6;">
+        <div class="stat-icon-modern" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.2) 100%);">
+          <i class="bi bi-calendar-event-fill" style="color: #8B5CF6;"></i>
+        </div>
+        <div class="stat-value-modern">${dailySummary.totalHoliday || 0}</div>
+        <div class="stat-label-modern">วันหยุดราชการ</div>
+        <div class="stat-sublabel-modern">
+          <i class="bi bi-bookmark-star"></i>
+          <span>วันหยุดประจำปี</span>
+        </div>
+      </div>
+    `;
+    }
+
+    // Render technician list
+    const list = document.getElementById('technicians-list');
+
+    // Prepare skill matching helpers
+    const splitSkills = s => {
+      if (!s) return [];
+      if (Array.isArray(s)) return s.map(x => ('' + x).toLowerCase().trim()).filter(Boolean);
+      // split by comma, slash, semicolon or whitespace
+      return ('' + s).toLowerCase().split(/[,;\/|]+|\s+/).map(x => x.trim()).filter(Boolean);
+    };
+
+    const techs = Array.isArray(techData) ? techData : [];
+
+    // For each technician, compute which equipment items they can handle
+    const techMatches = techs.map(tech => {
+      const skills = splitSkills(tech.skills || tech.skill || '');
+      const matches = (items || []).filter(it => {
+        // If no skills, assume generic and don't match
+        if (!skills.length) return false;
+        return skills.some(skill => it.__searchText.indexOf(skill) !== -1 || (it.__taskType && it.__taskType.toLowerCase().indexOf(skill) !== -1));
+      });
+      return { tech, skills, matches };
+    });
+
+    console.debug('Technician matches computed:', techMatches);
+
+    // Annotate equipment items with capable techs
+    if (items && items.length) {
+      items.forEach((it, idx) => {
+        const capable = techMatches.filter(tm => tm.matches.some(m => m === it)).map(tm => tm.tech.name || tm.tech.username || 'ไม่ระบุ');
+        const container = equipmentListContainer.querySelector(`.equipment-item[data-idx=\"${idx}\"] .equipment-capable`);
+        if (container) {
+          container.innerHTML = capable.length ? `สามารถโดย: <strong>${capable.join(', ')}</strong>` : '<em>ยังไม่มีช่างที่ตรงทักษะ</em>';
+        }
+      });
+    }
+
+    list.innerHTML = techMatches.map(tm => {
+      // Display availability note which may contain shift information
+      const tech = tm.tech;
+      const statusText = tech.available ? 'ไม่พร้อม' : 'พร้อมทำงาน';
+      const statusClass = tech.available ? 'off' : 'working';
+      const matched = tm.matches || [];
+      const matchedHtml = matched.length ? `<div style="margin-top:0.75rem;"><strong>สามารถทำ:</strong> ${matched.map(it => it.__name).slice(0, 5).join(', ')}${matched.length > 5 ? ' …' : ''}</div>` : `<div style="margin-top:0.75rem;color:var(--gray-600);">ยังไม่มีงานที่ตรงทักษะ</div>`;
+
+      return `
+    <div class="technician-card ${!tech.available ? '' : 'unavailable'}">
+      <div class="tech-header">
+        <div class="tech-name">
+          <div class="tech-avatar">${(tech.name || '-').charAt(0).toUpperCase()}</div>
+          <div>
+            <div>${tech.name || 'ไม่มีชื่อ'}</div>
+            ${tech.note ? `<small class="text-muted"><i class="bi bi-info-circle"></i> ${tech.note}</small>` : ''}
+          </div>
+        </div>
+        <span class="status-badge ${statusClass}">
+          <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i>
+          ${statusText}
+        </span>
+      </div>
+      <div class="tech-info">
+        <div class="info-item">
+          <div class="info-label" onclick="this.nextElementSibling.classList.toggle('collapsed')" style="cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between;">
+            <span>ทักษะ/ความเชี่ยวชาญ</span>
+            <i class="bi bi-chevron-down skills-toggle-icon" style="transition: transform 0.3s; font-size: 0.75rem; color: var(--gray-500);"></i>
+          </div>
+          <div class="info-value collapsed" style="max-height: 1.5em; overflow: hidden; transition: max-height 0.3s ease;">${tech.skills || '-'}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">อัตรากำลัง/วัน</div>
+          <div class="info-value">${tech.capacity || 1} งาน</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">งานที่รับไว้แล้ว</div>
+          <div class="info-value">${tech.currentTasks || 0} งาน</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">คงเหลือ</div>
+          <div class="info-value">${Math.max(0, (parseInt(tech.capacity) || 1) - (tech.currentTasks || 0))} งาน</div>
+        </div>
+      </div>
+      <style>
+        .info-value:not(.collapsed) {
+          max-height: 500px !important;
+        }
+        .info-label:has(+ .info-value:not(.collapsed)) .skills-toggle-icon {
+          transform: rotate(180deg);
+        }
+      </style>
+      ${matchedHtml}
+    </div>
+  `;
+    }).join('');
+
+    // Scroll to panel
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function closeDetailPanel() {
+    document.getElementById('detail-panel').classList.remove('active');
+    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
+    selectedDate = null;
+  }
+
+  async function updateSummary() {
+    // Get today's capacity from the API
+    const today = formatDateISO(new Date());
+    const todayData = capacityData[today];
+    // Preferred: fetch the report-style daily summary (authoritative)
+    try {
+      const summary = await loadDailySummary(new Date());
+      if (summary && typeof summary.totalWork !== 'undefined') {
+        // Prefer per-technician counts from cached todayData when available
+        const totalWork = summary.totalWork || 0;
+        const totalOT = summary.totalOT || 0;
+
+        const allTechs = todayData && Array.isArray(todayData.technicians) ? todayData.technicians : [];
+        const computedRegular = allTechs.filter(t => {
+          if (t.available === false && t.note) return false;
+          const note = (t.note || '').toLowerCase();
+          // กรองเฉพาะช่างที่มีชั่วโมงทำงาน > 0
+          const hours = (typeof t.hours !== 'undefined' && t.hours !== null) ? Number(t.hours) : 0;
+          if (hours <= 0) return false;
+          return !note.includes('ot') && !note.includes('ล่วงเวลา');
+        }).length;
+        const computedOT = allTechs.filter(t => {
+          if (t.available === false && t.note) return false;
+          const note = (t.note || '').toLowerCase();
+          // กรองเฉพาะช่างที่มีชั่วโมง OT > 0
+          const hours = (typeof t.hours !== 'undefined' && t.hours !== null) ? Number(t.hours) : 0;
+          if (hours <= 0) return false;
+          return note.includes('ot') || note.includes('ล่วงเวลา');
+        }).length;
+
+        // Determine OT hours: prefer summary field, fallback to summing per-tech hours for OT-marked techs
+        let computedOTHours = 0;
+        if (summary) {
+          computedOTHours = summary.totalOTHours || summary.total_ot_hours || 0;
+        }
+        if (!computedOTHours) {
+          try {
+            const otTechsForHours = allTechs.filter(t => {
+              if (t.available === false && t.note) return false;
+              const note = (t.note || '').toLowerCase();
+              return note.includes('ot') || note.includes('ล่วงเวลา');
+            });
+            computedOTHours = otTechsForHours.reduce((s, t) => {
+              const h = (typeof t.otHours !== 'undefined' && t.otHours !== null) ? Number(t.otHours) : ((typeof t.hours !== 'undefined' && t.hours !== null) ? Number(t.hours) : 0);
+              return s + (isNaN(h) ? 0 : h);
+            }, 0);
+          } catch (e) { computedOTHours = 0; }
+        }
+
+        const computedTotal = (computedRegular + computedOT) || totalWork;
+
+        // Determine regular hours: prefer summary field, fallback to summing per-tech hours for regular techs
+        let computedRegularHours = 0;
+        if (summary) {
+          computedRegularHours = summary.totalWorkHours || summary.total_work_hours || 0;
+        }
+        if (!computedRegularHours) {
+          try {
+            const regTechsForHours = allTechs.filter(t => {
+              if (t.available === false && t.note) return false;
+              const note = (t.note || '').toLowerCase();
+              return !note.includes('ot') && !note.includes('ล่วงเวลา');
+            });
+            computedRegularHours = regTechsForHours.reduce((s, t) => {
+              const h = (typeof t.regHours !== 'undefined' && t.regHours !== null) ? Number(t.regHours) : ((typeof t.hours !== 'undefined' && t.hours !== null) ? Number(t.hours) : 0);
+              return s + (isNaN(h) ? 0 : h);
+            }, 0);
+          } catch (e) { computedRegularHours = 0; }
+        }
+
+        setSummaryValue('work-today', computedTotal + ' คน');
+        setSummaryValue('work-regular-count', (computedRegular || Math.max(0, totalWork)) + ' คน');
+        setSummaryValue('overtime-today', (computedOT || totalOT) + ' คน');
+
+        // แปลง computedRegularHours เป็นจำนวนงาน
+        const regularTasksFromHours = hoursToTasks(computedRegularHours || 0);
+        const otTasksFromHours = hoursToTasks(computedOTHours || 0);
+
+        // capacity and scheduled values still come from cached todayData when available
+        // Prefer equipmentHours if available (user requested capacity from equipment schedule hours)
+        let equipmentHours = todayData && typeof todayData.equipmentHours !== 'undefined' ? todayData.equipmentHours : null;
+        // If we don't have cached equipment hours yet, fetch them now so capacity-today updates reliably
+        if ((equipmentHours === null || equipmentHours === undefined) || equipmentHours === 0) {
+          try {
+            equipmentHours = await loadEquipmentHoursForDate(new Date());
+          } catch (e) {
+            console.warn('Could not load equipment hours in updateSummary', e);
+            equipmentHours = equipmentHours || 0;
+          }
+        }
+
+        // Calculate Total/Available/Assigned for today using new model
+        const totalCap = todayData && typeof todayData.totalCapacity !== 'undefined' ? todayData.totalCapacity : 0;
+        const availableCap = todayData && typeof todayData.availableCapacity !== 'undefined' ? todayData.availableCapacity : 0;
+        const assignedCap = todayData && typeof todayData.assignedCapacity !== 'undefined' ? todayData.assignedCapacity : 0;
+
+        // Calculate capacity breakdown by regular hours and OT
+        const regularTechs = allTechs.filter(t => {
+          if (t.available === false && t.note) return false;
+          const note = (t.note || '').toLowerCase();
+          return !note.includes('ot') && !note.includes('ล่วงเวลา');
+        });
+        const otTechs = allTechs.filter(t => {
+          if (t.available === false && t.note) return false;
+          const note = (t.note || '').toLowerCase();
+          return note.includes('ot') || note.includes('ล่วงเวลา');
+        });
+
+        const capacityRegular = regularTechs.reduce((sum, t) => sum + (parseInt(t.capacity) || 1), 0);
+        const capacityOT = otTechs.reduce((sum, t) => sum + (parseInt(t.capacity) || 1), 0);
+
+        // แสดงผลชั่วโมงและงานแยกกันที่ total-capacity-hours และ total-capacity-tasks
+        const totalCapacityHours = (computedRegularHours || 0) + (computedOTHours || 0);
+        const totalCapacityTasks = hoursToTasks(totalCapacityHours);
+        setSummaryValue('total-capacity-hours', totalCapacityHours.toFixed(0) + ' ชม.');
+        setSummaryValue('total-capacity-tasks', totalCapacityTasks.toFixed(0) + ' งาน');
+        // แสดงจำนวนงานแยกตามเวลาราชการและ OT
+        setSummaryValue('capacity-regular-tasks', regularTasksFromHours.toFixed(0) + ' งาน');
+        setSummaryValue('capacity-overtime-tasks', otTasksFromHours.toFixed(0) + ' งาน');
+        setSummaryValue('capacity-regular-hours', (Number(computedRegularHours || 0).toFixed(0) + ' ชม.'));
+        setSummaryValue('capacity-overtime-hours', (Number(computedOTHours || 0).toFixed(0) + ' ชม.'));
+        setSummaryValue('assigned-capacity-today', assignedCap + ' งาน');
+        // Calculate available = total tasks - assigned tasks
+        const availableCapacityTasks = Math.max(0, totalCapacityTasks - assignedCap);
+        setSummaryValue('available-capacity-today', availableCapacityTasks.toFixed(0) + ' งาน');
+
+        // Calculate and display capacity utilization
+        updateCapacityUtilization(totalCapacityTasks, assignedCap, availableCapacityTasks);
+
+        // Sync ready badge to the regular working count so UI numbers match
+        try {
+          const readyBadge = document.getElementById('ready-tech-count');
+          const regEl = document.getElementById('work-regular-count');
+          if (readyBadge && regEl) {
+            const m = (regEl.textContent || '').match(/(\d+)/);
+            if (m) readyBadge.textContent = Number(m[1]);
+          }
+        } catch (e) { /* ignore sync failures */ }
+
+        try {
+          await renderPresentTechniciansForDate(new Date());
+        } catch (e) {
+          console.warn('renderPresentTechniciansForDate failed in updateSummary (summary branch):', e);
+        }
+        return;
+      }
+    } catch (err) {
+      console.warn('Daily summary API failed, falling back to local data', err);
+    }
+
+    // Fallback: use loaded capacityData when the API isn't available yet
+    if (todayData) {
+      const allTechs = (Array.isArray(todayData.technicians) ? todayData.technicians : []);
+      const workCount = allTechs.filter(t => {
+        if (t.available === false && t.note) return false;
+        const note = (t.note || '').toLowerCase();
+        // กรองเฉพาะช่างที่มีชั่วโมงทำงาน > 0
+        const hours = (typeof t.hours !== 'undefined' && t.hours !== null) ? Number(t.hours) : 0;
+        if (hours <= 0) return false;
+        return !note.includes('ot') && !note.includes('ล่วงเวลา');
+      }).length;
+      const otCount = allTechs.filter(t => {
+        if (t.available === false && t.note) return false;
+        const note = (t.note || '').toLowerCase();
+        // กรองเฉพาะช่างที่มีชั่วโมง OT > 0
+        const hours = (typeof t.hours !== 'undefined' && t.hours !== null) ? Number(t.hours) : 0;
+        if (hours <= 0) return false;
+        return note.includes('ot') || note.includes('ล่วงเวลา');
+      }).length;
+      const totalWork = workCount + otCount;
+
+      // compute OT hours as fallback by summing per-tech hours for OT-marked techs
+      const fallbackOtHours = allTechs.filter(t => {
+        if (t.available === false && t.note) return false;
+        const note = (t.note || '').toLowerCase();
+        return note.includes('ot') || note.includes('ล่วงเวลา');
+      }).reduce((s, t) => {
+        const h = (typeof t.otHours !== 'undefined' && t.otHours !== null) ? Number(t.otHours) : ((typeof t.hours !== 'undefined' && t.hours !== null) ? Number(t.hours) : 0);
+        return s + (isNaN(h) ? 0 : h);
+      }, 0);
+
+      // compute regular hours fallback as sum of per-tech hours for non-OT techs
+      const fallbackRegularHours = allTechs.filter(t => {
+        if (t.available === false && t.note) return false;
+        const note = (t.note || '').toLowerCase();
+        return !note.includes('ot') && !note.includes('ล่วงเวลา');
+      }).reduce((s, t) => {
+        const h = (typeof t.regHours !== 'undefined' && t.regHours !== null) ? Number(t.regHours) : ((typeof t.hours !== 'undefined' && t.hours !== null) ? Number(t.hours) : 0);
+        return s + (isNaN(h) ? 0 : h);
+      }, 0);
+
+      setSummaryValue('work-today', totalWork + ' คน');
+      setSummaryValue('work-regular-count', workCount + ' คน (' + (fallbackRegularHours || 0) + ' ชม.)');
+      setSummaryValue('overtime-today', otCount + ' คน (' + (fallbackOtHours || 0) + ' ชม.)');
+
+      // Use new capacity model
+      const totalCap = todayData.totalCapacity || 0;
+      const availableCap = todayData.availableCapacity || 0;
+      const assignedCap = todayData.assignedCapacity || 0;
+
+      // Calculate capacity breakdown by regular hours and OT
+      const regularTechs = allTechs.filter(t => {
+        if (t.available === false && t.note) return false;
+        const note = (t.note || '').toLowerCase();
+        return !note.includes('ot') && !note.includes('ล่วงเวลา');
+      });
+      const otTechs = allTechs.filter(t => {
+        if (t.available === false && t.note) return false;
+        const note = (t.note || '').toLowerCase();
+        return note.includes('ot') || note.includes('ล่วงเวลา');
+      });
+
+      const capacityRegular = regularTechs.reduce((sum, t) => sum + (parseInt(t.capacity) || 1), 0);
+      const capacityOT = otTechs.reduce((sum, t) => sum + (parseInt(t.capacity) || 1), 0);
+
+      // แสดงผลชั่วโมงและงานแยกกันที่ total-capacity-hours และ total-capacity-tasks
+      const totalCapacityHours = (fallbackRegularHours || 0) + (fallbackOtHours || 0);
+      const totalCapacityTasks = hoursToTasks(totalCapacityHours);
+      const fallbackRegularTasks = hoursToTasks(fallbackRegularHours || 0);
+      const fallbackOtTasks = hoursToTasks(fallbackOtHours || 0);
+      setSummaryValue('total-capacity-hours', totalCapacityHours.toFixed(1));
+      setSummaryValue('total-capacity-tasks', totalCapacityTasks.toFixed(1));
+      setSummaryValue('capacity-regular-hours', formatHoursAndTasks(fallbackRegularHours || 0, { separator: ' ≈ ' }));
+      setSummaryValue('capacity-overtime-hours', formatHoursAndTasks(fallbackOtHours || 0, { separator: ' ≈ ' }));
+      setSummaryValue('capacity-regular-tasks', fallbackRegularTasks.toFixed(1) + ' งาน');
+      setSummaryValue('capacity-overtime-tasks', fallbackOtTasks.toFixed(1) + ' งาน');
+      setSummaryValue('assigned-capacity-today', assignedCap + ' งาน');
+      // Calculate available = total tasks - assigned tasks
+      const availableCapacityTasks = Math.max(0, totalCapacityTasks - assignedCap);
+      setSummaryValue('available-capacity-today', availableCapacityTasks.toFixed(1) + ' งาน');
+
+      // Calculate and display capacity utilization
+      updateCapacityUtilization(totalCapacityTasks, assignedCap, availableCapacityTasks);
+
+      // Ensure ready badge follows regular work count when falling back to cached data
+      try {
+        const readyBadge = document.getElementById('ready-tech-count');
+        const regEl = document.getElementById('work-regular-count');
+        if (readyBadge && regEl) {
+          const m = (regEl.textContent || '').match(/(\d+)/);
+          if (m) readyBadge.textContent = Number(m[1]);
+        }
+      } catch (e) { /* ignore */ }
+    } else {
+      setSummaryValue('work-today', '0 คน');
+      setSummaryValue('work-regular-count', '0 คน (0 ชม.)');
+      setSummaryValue('overtime-today', '0 คน (0 ชม.)');
+      setSummaryValue('total-capacity-hours', '0');
+      setSummaryValue('total-capacity-tasks', '0');
+      setSummaryValue('capacity-regular-hours', '0 ชม. ≈ 0 งาน');
+      setSummaryValue('capacity-overtime-hours', '0 ชม. ≈ 0 งาน');
+      setSummaryValue('capacity-regular-tasks', '0 งาน');
+      setSummaryValue('capacity-overtime-tasks', '0 งาน');
+      setSummaryValue('available-capacity-today', '0 งาน');
+      setSummaryValue('assigned-capacity-today', '0 งาน');
+      updateCapacityUtilization(0, 0, 0);
+      try {
+        await renderPresentTechniciansForDate(new Date());
+      } catch (e) {
+        console.warn('renderPresentTechniciansForDate failed in updateSummary (no data):', e);
+      }
+    }
+  }
+
+  // Helper function to update capacity utilization card
+  function updateCapacityUtilization(totalCap, assignedCap, availableCap) {
+    const utilizationPercent = totalCap > 0 ? Math.round((assignedCap / totalCap) * 100) : 0;
+
+    setSummaryValue('capacity-utilization', utilizationPercent + '%');
+    setSummaryValue('capacity-used-display', assignedCap + ' งาน');
+    setSummaryValue('capacity-remaining-display', availableCap + ' งาน');
+
+    // Update status text based on utilization percentage
+    const statusEl = document.getElementById('capacity-utilization-status');
+    if (statusEl) {
+      let statusText = '';
+      if (utilizationPercent >= 90) {
+        statusText = 'ใกล้เต็มกำลัง';
+      } else if (utilizationPercent >= 70) {
+        statusText = 'ใช้งานสูง';
+      } else if (utilizationPercent >= 50) {
+        statusText = 'ใช้งานปานกลาง';
+      } else if (utilizationPercent >= 25) {
+        statusText = 'ใช้งานต่ำ';
+      } else {
+        statusText = 'ยังมีกำลังเหลือมาก';
+      }
+      statusEl.textContent = statusText;
+    }
+  }
+
+  // Load equipment total hours for a given date via equipment schedule API
+  async function loadEquipmentHoursForDate(date) {
+    try {
+      const dateStr = formatDateISO(date);
+      const resp = await fetch(`/api/equipment/maintenance-schedule/?due_date=${dateStr}`, {
+        headers: { 'Accept': 'application/json' }
+      });
+      const contentType = resp.headers.get('content-type') || '';
+      let data = null;
+      if (contentType.indexOf('application/json') !== -1) {
+        data = await resp.json();
+      } else {
+        // Non-JSON response: try HTML fallback parsing to extract JSON or numeric hours
+        const text = await resp.text();
+        // Try to locate an embedded JSON object that contains totalHours/items
+        try {
+          const jsonMatch = text.match(/({[\s\S]*?(?:"totalHours"|"total_hours"|"items"|"equipment"|"appointments")[\s\S]*?})/);
+          if (jsonMatch) {
+            try {
+              data = JSON.parse(jsonMatch[1]);
+            } catch (e) {
+              // If JSON.parse fails, fall through to other heuristics
+              console.warn('loadEquipmentHoursForDate: JSON.parse failed on embedded JSON', e);
+            }
+          }
+
+          // If still no data, try to find a numeric totalHours in the HTML/JS text
+          if (!data) {
+            const numMatch = text.match(/totalHours\s*[:=]\s*([0-9]+(?:\.[0-9]+)?)/i) || text.match(/total_hours\s*[:=]\s*([0-9]+(?:\.[0-9]+)?)/i);
+            if (numMatch) return parseFloat(numMatch[1]);
+
+            // Look for common patterns like "12 ชม." in the HTML
+            const htmlNum = text.match(/>([0-9]+(?:\.[0-9]+)?)\s*ชม\.?/i) || text.match(/>([0-9]+(?:\.[0-9]+)?)\s*hours?/i);
+            if (htmlNum) return parseFloat(htmlNum[1]);
+          }
+        } catch (err) {
+          console.warn('loadEquipmentHoursForDate: HTML fallback parse error', err);
+        }
+      }
+      if (!data) return 0;
+
+      // Helper to coerce numeric-looking values to number
+      const toNumber = v => {
+        if (v == null) return 0;
+        if (typeof v === 'number') return v;
+        if (typeof v === 'string') {
+          const n = parseFloat(v.replace(/,/g, ''));
+          return isNaN(n) ? 0 : n;
+        }
+        return 0;
+      };
+
+      // If response is an array of items, try to sum common hour fields
+      if (Array.isArray(data)) {
+        return data.reduce((sum, item) => {
+          return sum + (toNumber(item.estimated_hours) || toNumber(item.estimatedHours) || toNumber(item.hours) || toNumber(item.duration_hours) || toNumber(item.duration) || 0);
+        }, 0);
+      }
+
+      // Try common places for a total hours value (camelCase, snake_case, etc.)
+      const possibleTotals = [
+        data.totalHours,
+        data.total_hours,
+        data.total,
+        data.hours,
+        data.totalEstimatedHours,
+        (data.summary && data.summary.totalHours),
+        (data.summary && data.summary.total_hours)
+      ];
+      for (const v of possibleTotals) {
+        const n = toNumber(v);
+        if (n) return n;
+      }
+
+      // If the object contains an items-like array, sum its estimated hours
+      const items = data.items || data.equipment || data.appointments || data.schedule || data.results;
+      if (Array.isArray(items)) {
+        return items.reduce((sum, item) => {
+          return sum + (toNumber(item.estimated_hours) || toNumber(item.estimatedHours) || toNumber(item.hours) || toNumber(item.duration_hours) || toNumber(item.duration) || 0);
+        }, 0);
+      }
+
+      return 0;
+    } catch (err) {
+      console.error('Error loading equipment hours:', err);
+      return 0;
+    }
+  }
+
+  // Load full equipment schedule (items) for a given date so we can list each equipment and its estimated hours
+  async function loadEquipmentScheduleForDate(date) {
+    try {
+      const dateStr = formatDateISO(date);
+      const resp = await fetch(`/api/equipment/maintenance-schedule/?due_date=${dateStr}`, {
+        headers: { 'Accept': 'application/json' }
+      });
+      const contentType = resp.headers.get('content-type') || '';
+      if (contentType.indexOf('application/json') === -1) {
+        console.warn('loadEquipmentScheduleForDate: non-json response', contentType);
+        return null;
+      }
+      const data = await resp.json();
+      // Expecting object with .items or array; return as-is for caller to interpret
+      return data;
+    } catch (err) {
+      console.error('Error loading equipment schedule:', err);
+      return null;
+    }
+  }
+
+  function previousMonth() {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar();
+  }
+
+  function nextMonth() {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderCalendar();
+  }
+
+  function goToToday() {
+    currentDate = new Date();
+    renderCalendar();
+  }
+
+  function setViewMode(mode) {
+    document.querySelectorAll('.view-mode-toggle button').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    event.target.closest('button').classList.add('active');
+
+    // TODO: Implement list view
+    if (mode === 'list') {
+      alert('รูปแบบรายการจะพัฒนาในเวอร์ชันถัดไป');
+    }
+  }
+
+  function formatDateISO(date) {
+    // Use local date components rather than toISOString() which converts
+    // to UTC and can shift the date depending on the client timezone.
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  // Global helper to get a stable display name for a technician object
+  function getTechDisplayName(tech) {
+    if (!tech || typeof tech !== 'object') return 'ไม่มีชื่อ';
+    if (tech.__displayName) return tech.__displayName;
+
+    // Check if technician data is nested (e.g., availability record with technician field)
+    if (tech.technician && typeof tech.technician === 'object') {
+      const nested = tech.technician;
+      if (nested.name && ('' + nested.name).trim()) return ('' + nested.name).trim();
+      if (nested.full_name && ('' + nested.full_name).trim()) return ('' + nested.full_name).trim();
+    }
+
+    // Common top-level name fields (extended)
+    const topCandidates = ['name', 'full_name', 'fullName', 'display_name', 'displayName', 'display', 'username', 'user_name', 'first_name', 'firstname', 'last_name', 'lastname', 'email', 'title'];
+    for (const k of topCandidates) {
+      try { if (tech[k] && ('' + tech[k]).trim()) return ('' + tech[k]).trim(); } catch (e) { }
+    }
+
+    // If first/last exist, combine
+    try {
+      const first = (tech.first_name || tech.firstname || tech.first || '') && ('' + (tech.first_name || tech.firstname || tech.first)).trim();
+      const last = (tech.last_name || tech.lastname || tech.last || '') && ('' + (tech.last_name || tech.lastname || tech.last)).trim();
+      const full = ((first || '') + ' ' + (last || '')).trim();
+      if (full) return full;
+    } catch (e) { }
+
+    // Try common nested containers and deeper inspection
+    const nameKeys = ['name', 'full_name', 'fullName', 'display_name', 'displayName', 'username', 'first_name', 'firstname', 'last_name', 'lastname', 'email'];
+    const nestedKeys = ['user', 'profile', 'technician', 'employee', 'person', 'account', 'contact'];
+    try {
+      // quick scan of first-level nested objects
+      for (const k of Object.keys(tech)) {
+        const v = tech[k];
+        if (v && typeof v === 'object') {
+          for (const nk of nameKeys) {
+            if (v[nk] && ('' + v[nk]).trim()) return ('' + v[nk]).trim();
+          }
+        }
+      }
+
+      // inspect known nested containers
+      for (const nk of nestedKeys) {
+        const container = tech[nk] || (tech[nk + 's'] || null);
+        if (container && typeof container === 'object') {
+          // container might be object or array
+          if (Array.isArray(container) && container.length > 0) {
+            const c = container[0];
+            for (const k of nameKeys) if (c && c[k] && ('' + c[k]).trim()) return ('' + c[k]).trim();
+          } else {
+            for (const k of nameKeys) if (container[k] && ('' + container[k]).trim()) return ('' + container[k]).trim();
+          }
+        }
+      }
+
+      // Fallback: try to stringify small object values that look like a name
+      for (const k of Object.keys(tech)) {
+        try {
+          const v = tech[k];
+          // Avoid using \p{L} (Unicode property escapes) for broader compatibility.
+          // Use ranges that include Latin accents and Thai block as a pragmatic heuristic.
+          const nameLikeRegex = /[A-Za-z\u00C0-\u024F\u0E00-\u0E7F\s\-\.']+/;
+          if (v && typeof v === 'string' && v.length > 1 && v.length < 100 && nameLikeRegex.test(v)) {
+            return v.trim();
+          }
+        } catch (e) { }
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    return 'ไม่มีชื่อ';
+  }
+
+  async function loadShiftSchedules(year, month) {
+    try {
+      // Note: Currently no dedicated API for shift schedules
+      // Data will be loaded per-day from the technician availability API
+      // which includes shift information in the 'note' field
+      shiftSchedules = {};
+    } catch (error) {
+      console.error('Error loading shift schedules:', error);
+      shiftSchedules = {};
+    }
+  }
+
+  function formatDate(date) {
+    const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+      'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    return `${date.getDate()} ${thaiMonths[date.getMonth()]} ${date.getFullYear() + 543}`;
+  }
+
+  // Render the list of ready/available technicians for a given date with full details
+  async function renderPresentTechniciansForDate(date) {
+    const section = document.getElementById('ready-tech-section');
+    const grid = document.getElementById('ready-tech-grid');
+    const countBadge = document.getElementById('ready-tech-count');
+    const dateLabel = document.getElementById('ready-tech-date');
+
+    if (!section || !grid) return;
+
+    grid.innerHTML = '';
+    const dateStr = formatDateISO(date);
+
+    // Update date label
+    const today = formatDateISO(new Date());
+    if (dateStr === today) {
+      dateLabel.textContent = 'วันนี้';
+    } else {
+      const d = new Date(date);
+      const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+      dateLabel.textContent = `${d.getDate()} ${thaiMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
+    }
+
+    // Attempt to import the same technicians list used by the availability report page
+    // Fetches the report HTML and extracts the JSON embedded by the template under
+    // <script id="technicians-data" type="application/json">...<\/script>
+    async function importTechniciansFromAvailabilityReport(date) {
+      const dateStr = formatDateISO(date);
+      try {
+        const url = `/maintenance/technicians/availability/report/?date=${dateStr}`;
+        const resp = await fetch(url, { credentials: 'same-origin' });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const text = await resp.text();
+
+        // Try to extract script tag with id technicians-data
+        const re = /<script[^>]*id=["']technicians-data["'][^>]*>([\s\S]*?)<\/script>/i;
+        const m = text.match(re);
+        if (!m) {
+          console.warn('importTechniciansFromAvailabilityReport: technicians-data script not found in report HTML');
+          return null;
+        }
+
+        const jsonText = m[1].trim();
+        // The django json_script helper will HTML-escape the content; replace HTML entities
+        const unescaped = jsonText.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+        const technicians = JSON.parse(unescaped || '[]');
+
+        // Store into capacityData for the date so other functions reuse it
+        if (!capacityData[dateStr]) capacityData[dateStr] = {};
+        capacityData[dateStr].technicians = technicians;
+
+        // Re-render the present/ready technicians grid using the imported list
+        await renderPresentTechniciansForDate(date);
+        return technicians;
+      } catch (err) {
+        console.error('Error importing technicians from availability report:', err);
+        return null;
+      }
+    }
+
+    // Wire import button (if present)
+    const importBtn = document.getElementById('import-availability-btn');
+    if (importBtn) {
+      importBtn.addEventListener('click', async function () {
+        try {
+          importBtn.disabled = true;
+          importBtn.textContent = 'กำลังนำข้อมูล...';
+          await importTechniciansFromAvailabilityReport(new Date());
+        } catch (e) {
+          console.warn(e);
+        } finally {
+          importBtn.disabled = false;
+          importBtn.textContent = 'นำจากรายละเอียดตามวันที่';
+        }
+      });
+    }
+
+    // Load technician data
+    let data = capacityData[dateStr] && capacityData[dateStr].technicians ? capacityData[dateStr].technicians : null;
+    if (!data) {
+      try {
+        data = await loadCapacityForDate(date);
+      } catch (e) {
+        console.warn('Could not load technicians for ready list:', e);
+        data = [];
+      }
+    }
+
+    const techs = Array.isArray(data) ? data : [];
+
+    // If an external technician-availability report injected a JS summary
+    // (e.g. `technicianSummary`, `TECHNICIAN_SUMMARY`, etc.), merge its
+    // per-technician fields into our `techs` objects so the ready grid shows
+    // the authoritative capacity/currentTasks/skills available in that report.
+    try {
+      const candidateNames = ['TECHNICIAN_SUMMARY', 'technicianSummary', 'technician_availability_summary', 'technicianAvailabilitySummary', 'technician_report_data', 'technicianAvailabilityReport'];
+      let external = null;
+      for (const n of candidateNames) {
+        if (typeof window !== 'undefined' && typeof window[n] !== 'undefined' && window[n]) { external = window[n]; break; }
+      }
+      if (external) {
+        let extArr = Array.isArray(external) ? external : (external.results || external.data || external.items || []);
+        if (!Array.isArray(extArr) && typeof external === 'object') {
+          for (const k of Object.keys(external)) {
+            if (Array.isArray(external[k])) { extArr = external[k]; break; }
+          }
+        }
+
+        if (Array.isArray(extArr) && extArr.length) {
+          const map = new Map();
+          extArr.forEach(e => {
+            const key = (e.id || e.username || e.user_id || e.employee_code || e.code || '') + '';
+            if (key) map.set(key, e);
+          });
+
+          techs.forEach(t => {
+            const keys = [t.id, t.username, t.user_id, t.employee_code, t.code].map(x => x == null ? '' : ('' + x));
+            for (const k of keys) {
+              if (!k) continue;
+              const e = map.get(k);
+              if (!e) continue;
+              if (!t.capacity && (e.capacity || e.max_capacity || e.max_tasks)) t.capacity = e.capacity || e.max_capacity || e.max_tasks;
+              if (!t.currentTasks && (e.currentTasks || e.current_tasks || e.assigned || e.assigned_tasks)) t.currentTasks = e.currentTasks || e.current_tasks || e.assigned || e.assigned_tasks;
+              if (!t.skills && (e.skills || e.skill || e.expertise || e.abilities)) t.skills = e.skills || e.skill || e.expertise || e.abilities;
+              if (typeof t.available === 'undefined' && typeof e.available !== 'undefined') t.available = e.available;
+              if (!t.note && (e.note || e.status_note || e.statusText)) t.note = e.note || e.status_note || e.statusText;
+              if (!t.__displayName && (e.name || e.display_name || e.fullName || e.username)) t.__displayName = e.name || e.display_name || e.fullName || e.username;
+              break;
+            }
+          });
+          console.debug('Merged external technician summary into ready-tech-grid rendering; external entries=', extArr.length);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to merge external technician summary for ready grid', e);
+    }
+
+    // Prefer the global normalizer but keep a local fallback
+    const getTechDisplayNameLocal = t => {
+      if (!t) return 'ไม่มีชื่อ';
+      if (t.__displayName) return t.__displayName;
+      return getTechDisplayName(t);
+    };
+
+    // Helper to split skills into array
+    const splitSkills = s => {
+      if (!s) return [];
+      if (Array.isArray(s)) return s.map(x => ('' + x).trim()).filter(Boolean);
+      return ('' + s).split(/[,;|]+/).map(x => x.trim()).filter(Boolean);
+    };
+
+    // Determine working technicians using same heuristic as other places
+    const workingTechs = techs.filter(t => {
+      // If explicitly marked off with a note, treat as not working
+      if (t.available === false && t.note) return false;
+      // Otherwise count as working/present
+      return true;
+    });
+
+    // Count only ready technicians (พร้อมทำงาน)
+    // Backend has inverted logic: available=true means NOT ready, available=false means ready
+    const readyToWorkTechs = techs.filter(t => {
+      // available=true means NOT ready (ไม่พร้อม)
+      if (t.available === true) return false;
+      // available=false or undefined means ready to work (พร้อมทำงาน)
+      return true;
+    });
+
+    // Use workingTechs for display (this matches the calendar tile counts)
+    // But compute "ready" as those with remaining capacity > 0
+    const readyTechs = workingTechs.filter(t => {
+      const cap = parseInt(t.capacity) || 1;
+      const current = Number(t.currentTasks) || 0;
+      return (cap - current) > 0;
+    });
+
+    // Update badge: show the number of technicians who are ready to work (พร้อมทำงาน)
+    countBadge.textContent = readyToWorkTechs.length;
+
+    // If nobody is ready, show a gentle notice above the grid but still render present technicians
+    if (!readyTechs.length) {
+      const notice = document.createElement('div');
+      notice.style.cssText = 'text-align:center;padding:1rem;margin-bottom:1rem;color:var(--gray-600);background:var(--gray-50);border-radius:8px;border:1px solid var(--gray-100);';
+      notice.innerHTML = '<strong>ไม่มีช่างพร้อมรับงาน</strong><div style="font-size:0.9rem;color:var(--gray-600);">ช่างทั้งหมดเต็มความจุหรือไม่พร้อมทำงานในวันนี้ แต่คุณสามารถดูช่างที่มาปฏิบัติงานได้ด้านล่าง</div>';
+      grid.appendChild(notice);
+    }
+
+    // Load equipment schedule to match with technicians
+    let equipmentItems = [];
+    try {
+      const equipmentSchedule = await loadEquipmentScheduleForDate(date);
+      if (equipmentSchedule) {
+        // Try to extract items array
+        if (Array.isArray(equipmentSchedule.items)) equipmentItems = equipmentSchedule.items;
+        else if (Array.isArray(equipmentSchedule.equipment)) equipmentItems = equipmentSchedule.equipment;
+        else if (Array.isArray(equipmentSchedule)) equipmentItems = equipmentSchedule;
+      }
+    } catch (e) {
+      console.warn('Could not load equipment schedule for matching:', e);
+    }
+
+    // Normalize equipment items for matching
+    const norm = s => (s || '').toString().toLowerCase();
+    const normalizedEquipment = equipmentItems.map(it => ({
+      name: it.name || it.equipment_name || it.equipment || it.title || 'อุปกรณ์ไม่ระบุ',
+      searchText: norm(`${it.name || ''} ${it.equipment_name || ''} ${it.equipment || ''} ${it.title || ''} ${it.task_type || ''} ${it.type || ''} ${it.description || ''}`)
+    }));
+
+    // Build cards for each ready to work technician (พร้อมทำงาน only)
+    const frag = document.createDocumentFragment();
+
+    readyToWorkTechs.forEach(t => {
+      const displayName = getTechDisplayName(t);
+      // Ensure we use normalized name if available
+      const nameToShow = t.__displayName || displayName;
+      const skills = splitSkills(t.skills || t.skill || '');
+      const capacity = parseInt(t.capacity) || 1;
+      const otCapacity = parseInt(t.otCapacity || t.ot_capacity || t.capacityOT || 0) || 0;
+      const currentTasks = t.currentTasks || 0;
+      const remaining = Math.max(0, capacity - currentTasks);
+
+      // Debug: log OT capacity for troubleshooting
+      console.log('Tech:', nameToShow, 'Regular capacity:', capacity, 'OT capacity:', otCapacity, 'Raw data:', {
+        otCapacity: t.otCapacity,
+        ot_capacity: t.ot_capacity,
+        capacityOT: t.capacityOT
+      });
+
+      // Match equipment based on skills
+      const matchedEquipment = normalizedEquipment.filter(eq => {
+        if (!skills.length) return false;
+        return skills.some(skill => eq.searchText.indexOf(norm(skill)) !== -1);
+      });
+
+      // Create card
+      const card = document.createElement('div');
+      card.className = remaining <= 1 ? 'tech-ready-card limited-capacity' : 'tech-ready-card';
+
+      // Build capacity display with OT
+      let capacityDisplay = capacity.toString();
+      if (otCapacity > 0) {
+        capacityDisplay += ' <span style="font-size: 1rem; color: var(--warning-color);">+' + otCapacity + ' OT</span>';
+      }
+
+      card.innerHTML = `
+      <div class="tech-card-header">
+        <div class="tech-card-avatar">${(nameToShow || '?').charAt(0).toUpperCase()}</div>
+        <div class="tech-card-info">
+          <div class="tech-card-name">${nameToShow}</div>
+          <div class="tech-card-capacity">
+            <span class="capacity-badge ${remaining > 1 ? 'available' : 'limited'}">
+              <i class="bi bi-briefcase"></i>
+              ${currentTasks}/${capacity} งาน
+            </span>
+            <span style="color: ${remaining > 1 ? 'var(--success-color)' : 'var(--warning-color)'}; font-weight: 600;">
+              • เหลือ ${remaining} งาน
+            </span>
+          </div>
+        </div>
+      </div>
+
+      ${skills.length > 0 ? `
+        <div class="tech-skills-section collapsed">
+          <div class="tech-skills-label" onclick="this.parentElement.classList.toggle('collapsed')" style="cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between;">
+            <span><i class="bi bi-tools"></i> ทักษะ/ความเชี่ยวชาญ (${skills.length})</span>
+            <i class="bi bi-chevron-down" style="transition: transform 0.3s; font-size: 0.875rem;"></i>
+          </div>
+          <div class="tech-skills-tags" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
+            ${skills.map(skill => `<span class="skill-tag"><i class="bi bi-check-circle-fill"></i> ${skill}</span>`).join('')}
+          </div>
+        </div>
+        <style>
+          .tech-skills-section:not(.collapsed) .tech-skills-tags {
+            max-height: 500px !important;
+            margin-top: 0.5rem;
+          }
+          .tech-skills-section:not(.collapsed) .tech-skills-label i.bi-chevron-down {
+            transform: rotate(180deg);
+          }
+        </style>
+      ` : ''}
+
+      <div class="equipment-match-section">
+        <div class="equipment-match-label">
+          <i class="bi bi-gear-fill"></i>
+          อุปกรณ์ที่สามารถดูแลได้ในวันนี้
+          ${matchedEquipment.length > 0 ? `<span style="background: var(--primary-color); color: white; padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.75rem;">${matchedEquipment.length}</span>` : ''}
+        </div>
+        ${matchedEquipment.length > 0 ? `
+          <div class="equipment-list-compact">
+            ${matchedEquipment.slice(0, 5).map(eq => `<div class="equipment-item-compact">${eq.name}</div>`).join('')}
+            ${matchedEquipment.length > 5 ? `<div style="text-align: center; color: var(--gray-600); font-size: 0.813rem; margin-top: 0.25rem;">และอีก ${matchedEquipment.length - 5} รายการ...</div>` : ''}
+          </div>
+        ` : `
+          <div class="no-equipment-match">
+            <i class="bi bi-inbox"></i> ไม่มีอุปกรณ์ที่ตรงกับทักษะในวันนี้
+          </div>
+        `}
+      </div>
+
+      <div style="margin-top: 1rem; padding: 0.75rem; background: var(--gray-50); border-radius: 8px; display: flex; justify-content: space-around; align-items: center;">
+        <div style="text-align: center;">
+          <div style="font-size: 0.75rem; color: var(--gray-600);">อัตรากำลังทั้งหมด</div>
+          <div style="font-size: 1.5rem; font-weight: 700; color: var(--success-color);">
+            ${capacityDisplay}
+          </div>
+        </div>
+        <div style="font-size: 1.5rem; color: var(--gray-400);">=</div>
+        <div style="text-align: center;">
+          <div style="font-size: 0.75rem; color: var(--gray-600);">ว่าง</div>
+          <div style="font-size: 1.5rem; font-weight: 700; color: var(--info-color);">${remaining}</div>
+        </div>
+        <div style="font-size: 1.5rem; color: var(--gray-400);">+</div>
+        <div style="text-align: center;">
+          <div style="font-size: 0.75rem; color: var(--gray-600);">จอง</div>
+          <div style="font-size: 1.5rem; font-weight: 700; color: var(--warning-color);">${currentTasks}</div>
+        </div>
+      </div>
+
+      <div class="tech-action-buttons">
+        <button class="btn-assign-work" onclick="assignWorkToTechnician('${t.id || t.username}', '${dateStr}')" ${remaining === 0 ? 'disabled' : ''}>
+          <i class="bi bi-plus-circle"></i>
+          ${remaining > 0 ? 'มอบหมายงาน' : 'เต็มแล้ว'}
+        </button>
+        <button class="btn-view-schedule" onclick="viewTechnicianSchedule('${t.id || t.username}', '${dateStr}')" title="ดูตารางงาน">
+          <i class="bi bi-calendar-week"></i>
+        </button>
+      </div>
+    `;
+
+      frag.appendChild(card);
+    });
+
+    grid.appendChild(frag);
+
+    // Log for debugging: how many ready to work vs how many actually ready (have remaining capacity)
+    console.debug('Ready to work technicians rendered:', readyToWorkTechs.length, 'ready count:', readyTechs.length, 'with equipment matches');
+  }
+
+  // Global state for assignment modal
+  let currentAssignment = {
+    techId: null,
+    techName: null,
+    date: null,
+    selectedEquipment: [],
+    allEquipment: []
+  };
+
+  // Show assignment modal
+  async function assignWorkToTechnician(techId, date) {
+    const modal = document.getElementById('assignment-modal');
+    if (!modal) return;
+
+    // Find technician data
+    const dateStr = formatDateISO(new Date(date));
+    let techData = null;
+
+    if (capacityData[dateStr] && capacityData[dateStr].technicians) {
+      techData = capacityData[dateStr].technicians.find(t => (t.id || t.username) === techId);
+    }
+
+    if (!techData) {
+      showToast('ไม่พบข้อมูลช่าง', 'กรุณาลองใหม่อีกครั้ง', 'error');
+      return;
+    }
+
+    // Set current assignment data
+    currentAssignment.techId = techId;
+    currentAssignment.techName = techData.name || techData.username || 'ช่าง';
+    currentAssignment.date = date;
+    currentAssignment.selectedEquipment = [];
+
+    // Update modal header info
+    const avatar = document.getElementById('modal-tech-avatar');
+    const name = document.getElementById('modal-tech-name');
+    const capacity = document.getElementById('modal-tech-capacity');
+    const workDate = document.getElementById('modal-work-date');
+
+    if (avatar) avatar.textContent = currentAssignment.techName.charAt(0).toUpperCase();
+    if (name) name.textContent = currentAssignment.techName;
+    if (capacity) {
+      const cap = parseInt(techData.capacity) || 1;
+      const current = techData.currentTasks || 0;
+      capacity.textContent = `ความจุ: ${current}/${cap} งาน (เหลือ ${Math.max(0, cap - current)} งาน)`;
+    }
+    if (workDate) {
+      const d = new Date(date);
+      const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+      workDate.textContent = `วัน${['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][d.getDay()]}ที่ ${d.getDate()} ${thaiMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
+    }
+
+    // Load equipment for this date
+    await loadEquipmentForAssignment(date, techData);
+
+    // Show modal
+    modal.classList.add('active');
+  }
+
+  // Load equipment list for assignment
+  async function loadEquipmentForAssignment(date, techData) {
+    const listContainer = document.getElementById('modal-equipment-list');
+    if (!listContainer) return;
+
+    listContainer.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--gray-500);"><i class="bi bi-hourglass-split" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>กำลังโหลดรายการอุปกรณ์...</div>';
+
+    try {
+      const equipmentSchedule = await loadEquipmentScheduleForDate(new Date(date));
+      let items = [];
+
+      if (equipmentSchedule) {
+        if (Array.isArray(equipmentSchedule.items)) items = equipmentSchedule.items;
+        else if (Array.isArray(equipmentSchedule.equipment)) items = equipmentSchedule.equipment;
+        else if (Array.isArray(equipmentSchedule)) items = equipmentSchedule;
+      }
+
+      // Filter equipment that matches technician skills
+      const techSkills = (techData.skills || techData.skill || '').toLowerCase().split(/[,;|]+/).map(s => s.trim()).filter(Boolean);
+      const norm = s => (s || '').toString().toLowerCase();
+
+      const matchedItems = items.filter(it => {
+        if (!techSkills.length) return true; // Show all if no skills defined
+        const searchText = norm(`${it.name || ''} ${it.equipment_name || ''} ${it.equipment || ''} ${it.title || ''} ${it.task_type || ''} ${it.type || ''}`);
+        return techSkills.some(skill => searchText.indexOf(skill) !== -1);
+      });
+
+      currentAssignment.allEquipment = matchedItems;
+
+      if (!matchedItems.length) {
+        listContainer.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--gray-500);"><i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>ไม่มีอุปกรณ์ที่ตรงกับทักษะของช่างในวันนี้</div>';
+        return;
+      }
+
+      // Render equipment list
+      listContainer.innerHTML = matchedItems.map((item, idx) => {
+        const name = item.name || item.equipment_name || item.equipment || item.title || 'อุปกรณ์ไม่ระบุชื่อ';
+        const hours = item.estimated_hours || item.estimatedHours || item.hours || item.duration || null;
+        const taskType = item.task_type || item.type || item.maintenance_type || '';
+
+        return `
+        <div class="equipment-select-item" onclick="toggleEquipmentSelection(${idx})" data-idx="${idx}">
+          <input type="checkbox" onclick="event.stopPropagation(); toggleEquipmentSelection(${idx})" id="eq-${idx}">
+          <div class="equipment-select-info">
+            <div class="equipment-select-name">${name}</div>
+            <div class="equipment-select-details">
+              ${taskType ? `<i class="bi bi-tag"></i> ${taskType}` : ''}
+              ${hours ? ` | ${createHoursTasksBadge(hours, { compact: true, showIcon: true })}` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+      }).join('');
+
+    } catch (error) {
+      console.error('Error loading equipment:', error);
+      listContainer.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--danger-color);"><i class="bi bi-exclamation-triangle" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
+    }
+  }
+
+  // Toggle equipment selection
+  function toggleEquipmentSelection(idx) {
+    const checkbox = document.getElementById(`eq-${idx}`);
+    const item = document.querySelector(`.equipment-select-item[data-idx="${idx}"]`);
+
+    if (checkbox && item) {
+      checkbox.checked = !checkbox.checked;
+
+      if (checkbox.checked) {
+        item.classList.add('selected');
+        if (!currentAssignment.selectedEquipment.includes(idx)) {
+          currentAssignment.selectedEquipment.push(idx);
+        }
+      } else {
+        item.classList.remove('selected');
+        currentAssignment.selectedEquipment = currentAssignment.selectedEquipment.filter(i => i !== idx);
+      }
+    }
+  }
+
+  // Confirm assignment
+  async function confirmAssignment() {
+    if (!currentAssignment.selectedEquipment.length) {
+      showToast('กรุณาเลือกอุปกรณ์', 'เลือกอย่างน้อย 1 รายการที่ต้องการมอบหมาย', 'warning');
+      return;
+    }
+
+    const notes = document.getElementById('assignment-notes')?.value || '';
+
+    // Prepare assignment data
+    const selectedItems = currentAssignment.selectedEquipment.map(idx => currentAssignment.allEquipment[idx]);
+
+    const assignmentData = {
+      technician_id: currentAssignment.techId,
+      technician_name: currentAssignment.techName,
+      date: currentAssignment.date,
+      equipment: selectedItems.map(item => ({
+        name: item.name || item.equipment_name || item.equipment || item.title,
+        estimated_hours: item.estimated_hours || item.estimatedHours || item.hours || item.duration || 0,
+        task_type: item.task_type || item.type || item.maintenance_type || ''
+      })),
+      notes: notes,
+      assigned_at: new Date().toISOString()
+    };
+
+    console.log('Assignment data:', assignmentData);
+
+    // TODO: Send to backend API
+    // const response = await fetch('/api/maintenance/assign-work/', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(assignmentData)
+    // });
+
+    // Simulate success
+    showToast(
+      'มอบหมายงานสำเร็จ',
+      `มอบหมาย ${selectedItems.length} รายการให้ ${currentAssignment.techName}`,
+      'success'
+    );
+
+    // Update technician's current tasks count (optimistic update)
+    const dateStr = formatDateISO(new Date(currentAssignment.date));
+    if (capacityData[dateStr] && capacityData[dateStr].technicians) {
+      const tech = capacityData[dateStr].technicians.find(t => (t.id || t.username) === currentAssignment.techId);
+      if (tech) {
+        tech.currentTasks = (tech.currentTasks || 0) + selectedItems.length;
+      }
+    }
+
+    // Refresh the ready technicians display
+    await renderPresentTechniciansForDate(new Date(currentAssignment.date));
+
+    // Close modal
+    closeAssignmentModal();
+  }
+
+  // Close assignment modal
+  function closeAssignmentModal() {
+    const modal = document.getElementById('assignment-modal');
+    if (modal) modal.classList.remove('active');
+
+    // Reset
+    currentAssignment = {
+      techId: null,
+      techName: null,
+      date: null,
+      selectedEquipment: [],
+      allEquipment: []
+    };
+
+    const notes = document.getElementById('assignment-notes');
+    if (notes) notes.value = '';
+  }
+
+  // View technician schedule
+  async function viewTechnicianSchedule(techId, date) {
+    const modal = document.getElementById('schedule-modal');
+    if (!modal) return;
+
+    // Find technician data
+    const dateStr = formatDateISO(new Date(date));
+    let techData = null;
+
+    if (capacityData[dateStr] && capacityData[dateStr].technicians) {
+      techData = capacityData[dateStr].technicians.find(t => (t.id || t.username) === techId);
+    }
+
+    if (!techData) {
+      showToast('ไม่พบข้อมูลช่าง', 'กรุณาลองใหม่อีกครั้ง', 'error');
+      return;
+    }
+
+    const techName = techData.name || techData.username || 'ช่าง';
+
+    // Update modal header
+    const avatar = document.getElementById('schedule-tech-avatar');
+    const name = document.getElementById('schedule-tech-name');
+    const workDate = document.getElementById('schedule-work-date');
+
+    if (avatar) avatar.textContent = techName.charAt(0).toUpperCase();
+    if (name) name.textContent = techName;
+    if (workDate) {
+      const d = new Date(date);
+      const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+      workDate.textContent = `วัน${['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'][d.getDay()]}ที่ ${d.getDate()} ${thaiMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
+    }
+
+    // Load and display schedule
+    await loadTechnicianSchedule(techId, date, techData);
+
+    // Show modal
+    modal.classList.add('active');
+  }
+
+  // Load technician's schedule
+  async function loadTechnicianSchedule(techId, date, techData) {
+    const timeline = document.getElementById('schedule-timeline');
+    if (!timeline) return;
+
+    timeline.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--gray-500);"><i class="bi bi-hourglass-split" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>กำลังโหลดตารางงาน...</div>';
+
+    try {
+      // TODO: Fetch from backend API
+      // const response = await fetch(`/api/maintenance/technician-schedule/?tech_id=${techId}&date=${date}`);
+      // const schedule = await response.json();
+
+      // Simulate schedule data (replace with real API call)
+      const currentTasks = techData.currentTasks || 0;
+      const capacity = parseInt(techData.capacity) || 1;
+
+      // Generate mock schedule
+      const scheduleItems = [];
+
+      if (currentTasks === 0) {
+        timeline.innerHTML = `
+        <div style="text-align: center; padding: 3rem; color: var(--gray-500);">
+          <i class="bi bi-calendar-check" style="font-size: 3rem; display: block; margin-bottom: 1rem; color: var(--success-color);"></i>
+          <div style="font-size: 1.125rem; font-weight: 600; color: var(--gray-700); margin-bottom: 0.5rem;">ยังไม่มีงานที่มอบหมาย</div>
+          <div style="font-size: 0.875rem; color: var(--gray-600);">ช่างพร้อมรับงานได้สูงสุด ${capacity} งาน</div>
+        </div>
+      `;
+        return;
+      }
+
+      // Show current tasks (mock data - replace with real data)
+      for (let i = 0; i < currentTasks; i++) {
+        const startHour = 8 + (i * 2);
+        const endHour = startHour + 2;
+        scheduleItems.push({
+          time: `${String(startHour).padStart(2, '0')}:00 - ${String(endHour).padStart(2, '0')}:00`,
+          task: `งานซ่อมบำรุงรายการที่ ${i + 1}`,
+          details: 'รายละเอียดงานจะแสดงเมื่อเชื่อมต่อกับ API'
+        });
+      }
+
+      timeline.innerHTML = scheduleItems.map(item => `
+      <div class="timeline-item">
+        <div class="timeline-time">
+          <i class="bi bi-clock"></i> ${item.time}
+        </div>
+        <div class="timeline-content">
+          <div class="timeline-task">${item.task}</div>
+          <div class="timeline-details">${item.details}</div>
+        </div>
+      </div>
+    `).join('');
+
+    } catch (error) {
+      console.error('Error loading schedule:', error);
+      timeline.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--danger-color);"><i class="bi bi-exclamation-triangle" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
+    }
+  }
+
+  // Close schedule modal
+  function closeScheduleModal() {
+    const modal = document.getElementById('schedule-modal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  // Show toast notification
+  function showToast(title, message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+
+    const iconClass = type === 'success' ? 'bi-check-circle-fill' : (type === 'error' ? 'bi-x-circle-fill' : 'bi-exclamation-triangle-fill');
+
+    toast.innerHTML = `
+    <div class="toast-icon ${type}">
+      <i class="bi ${iconClass}"></i>
+    </div>
+    <div class="toast-content">
+      <div class="toast-title">${title}</div>
+      <div class="toast-message">${message}</div>
+    </div>
+  `;
+
+    container.appendChild(toast);
+
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+      toast.style.animation = 'toastSlideIn 0.3s ease reverse';
+      setTimeout(() => toast.remove(), 300);
+    }, 4000);
+  }
+
+  // Close modal when clicking outside
+  document.addEventListener('click', function (event) {
+    const assignModal = document.getElementById('assignment-modal');
+    const scheduleModal = document.getElementById('schedule-modal');
+    const workModal = document.getElementById('work-list-modal');
+
+    if (event.target === assignModal) {
+      closeAssignmentModal();
+    }
+    if (event.target === scheduleModal) {
+      closeScheduleModal();
+    }
+    if (event.target === workModal) {
+      closeWorkListModal();
+    }
+  });
+
+  // Work list modal functions
+  function openWorkListModal(date) {
+    const modal = document.getElementById('work-list-modal');
+    if (!modal) return;
+    // If date is provided, use it; otherwise use today (not selectedDate)
+    const dateObj = date ? new Date(date) : new Date();
+    renderWorkListForDate(dateObj).then(() => {
+      modal.classList.add('active');
+    }).catch(err => {
+      console.error('openWorkListModal:', err);
+      modal.classList.add('active');
+    });
+  }
+
+  function closeWorkListModal() {
+    const modal = document.getElementById('work-list-modal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  async function renderWorkListForDate(date) {
+    const dateStr = formatDateISO(date);
+
+    // Update date display
+    const dateDisplayEl = document.getElementById('work-list-date-display');
+    if (dateDisplayEl) {
+      try {
+        const d = new Date(date);
+        const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+          'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        const dayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+        dateDisplayEl.textContent = `วัน${dayNames[d.getDay()]}ที่ ${d.getDate()} ${thaiMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
+      } catch (e) {
+        dateDisplayEl.textContent = dateStr;
+      }
+    }
+
+    // Show loading state
+    const loadingEl = document.getElementById('work-list-loading');
+    const timelineEl = document.getElementById('work-list-timeline');
+    const emptyEl = document.getElementById('work-list-empty');
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (timelineEl) timelineEl.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    // Try to get technicians from capacityData, otherwise load
+    let techs = capacityData[dateStr] && capacityData[dateStr].technicians ? capacityData[dateStr].technicians : null;
+    if (!techs) {
+      try {
+        techs = await loadCapacityForDate(date);
+      } catch (e) {
+        console.warn('renderWorkListForDate: failed to load technicians', e);
+        techs = [];
+      }
+    }
+
+    // Filter for working technicians on this specific date
+    let workTechs = (Array.isArray(techs) ? techs : []).filter(t => {
+      // Check if technician is explicitly marked as unavailable with a note
+      if (t.available === false && t.note) return false;
+
+      // If technician has a date field, verify it matches the requested date
+      if (t.date && t.date !== dateStr) return false;
+      if (t.work_date && t.work_date !== dateStr) return false;
+
+      return true;
+    });
+
+    // Prefer the technician availability report (HTML page) as the authoritative
+    // source when it is available. That report embeds a JSON script with id
+    // `availabilities-data` which we can extract and use to render the timeline so
+    // it matches the availability report (technician_availability_report.html).
+    // We also need to extract shift_schedules and use the same calculation logic.
+    try {
+      const reportUrl = `/maintenance/technicians/availability/report/?date=${dateStr}`;
+      const rep = await fetch(reportUrl, { credentials: 'same-origin' });
+      if (rep && rep.ok) {
+        const text = await rep.text();
+
+        // Extract availabilities-data
+        const availRe = /<script[^>]*id=["']availabilities-data["'][^>]*>([\s\S]*?)<\/script>/i;
+        const availMatch = text.match(availRe);
+
+        // Extract shift-schedules-data  
+        const shiftRe = /<script[^>]*id=["']shift-schedules-data["'][^>]*>([\s\S]*?)<\/script>/i;
+        const shiftMatch = text.match(shiftRe);
+
+        if (availMatch && availMatch[1]) {
+          const jsonText = availMatch[1].trim();
+          const unescaped = jsonText.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+          try {
+            const parsed = JSON.parse(unescaped || '[]');
+            const availArr = Array.isArray(parsed) ? parsed : (parsed.results || parsed.availabilities || parsed.data || []);
+
+            // Parse shift schedules if available
+            let shiftSchedules = {};
+            if (shiftMatch && shiftMatch[1]) {
+              try {
+                const shiftJson = shiftMatch[1].trim();
+                const shiftUnescaped = shiftJson.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+                shiftSchedules = JSON.parse(shiftUnescaped || '{}');
+              } catch (e) {
+                console.warn('renderWorkListForDate: failed to parse shift-schedules-data', e);
+              }
+            }
+
+            if (Array.isArray(availArr) && availArr.length) {
+              // Use the EXACT same logic as technician_availability_report.html
+
+              // Helper functions (copied from report)
+              function classifyStatusFull(avail) {
+                const status = (avail.status || '').toString().toLowerCase();
+                const note = (avail.note || '').toString().toLowerCase();
+                const text = `${status} ${note}`;
+                if (/\boff_|holiday|วันหยุด|หยุดราชการ|หยุด/i.test(text)) return 'holiday';
+                if (/\bleave|ลา\b|ลากิจ|ป่วย|sick|personal|vacation|annual|พักร้อน/i.test(text)) return 'leave';
+                return 'work';
+              }
+
+              function getOTHoursRobust(avail) {
+                const rawNote = (avail.note || '').toString();
+                const rawStatus = (avail.status || '').toString();
+                const note = rawNote.toLowerCase();
+                const status = rawStatus.toLowerCase();
+
+                let m = note.match(/\bot[:_\s-]*?(\d{1,2})\b/) || status.match(/\bot[:_\s-]*?(\d{1,2})\b/);
+                if (m) return parseInt(m[1], 10);
+
+                m = note.match(/\bovertime[:_\s-]*?(\d{1,2})\b/) || status.match(/\bovertime[:_\s-]*?(\d{1,2})\b/);
+                if (m) return parseInt(m[1], 10);
+
+                m = note.match(/(\d{1,2})\s*(h|hr|hrs|hour|hours|ชม|ชั่วโมง)\b/i) || status.match(/(\d{1,2})\s*(h|hr|hrs|hour|hours|ชม|ชั่วโมง)\b/i);
+                if (m) return parseInt(m[1], 10);
+
+                m = note.match(/\((\d{1,2})\)/) || status.match(/\((\d{1,2})\)/);
+                if (m) return parseInt(m[1], 10);
+
+                m = note.match(/ot\D{0,3}(\d{1,2})/) || status.match(/ot\D{0,3}(\d{1,2})/);
+                if (m) return parseInt(m[1], 10);
+
+                if (/\bot\b|overtime|ล่วงเวลา|ล่วง/i.test(note) || /\bot\b|overtime|ล่วงเวลา|ล่วง/i.test(status)) {
+                  return 4;
+                }
+
+                m = note.match(/(?:\b|^)([1-9]|1[0-2])(?:\b|$)/);
+                if (m && (note.includes('ot') || note.includes('ชม') || note.includes('ชั่วโมง') || note.includes('h'))) {
+                  return parseInt(m[1], 10);
+                }
+
+                return 0;
+              }
+
+              // Process each availability record and calculate hours using report logic
+              availArr.forEach(a => {
+                try {
+                  const statusCat = classifyStatusFull(a);
+                  const otHours = getOTHoursRobust(a) || 0;
+
+                  // Calculate total hours for this technician using report logic
+                  if (statusCat === 'leave') {
+                    a.hours = 0; // Leave days don't count as work hours
+                  } else if (otHours > 0) {
+                    a.hours = otHours; // OT hours
+                  } else if (statusCat === 'work') {
+                    a.hours = 7; // Regular work day = 7 hours
+                  } else if (statusCat === 'holiday') {
+                    a.hours = 0; // Holiday = 0 hours
+                  } else {
+                    a.hours = 0;
+                  }
+
+                  // Add shift hours if applicable
+                  const shifts = shiftSchedules[dateStr];
+                  if (shifts && Array.isArray(shifts)) {
+                    const techShift = shifts.find(s => {
+                      const techId = s.technician_id || (s.technician && s.technician.id);
+                      const availTechId = a.technician && a.technician.id;
+                      return techId === availTechId;
+                    });
+                    if (techShift) {
+                      if (techShift.shift === 'morning') {
+                        a.hours += 8;
+                      } else if (techShift.shift === 'afternoon') {
+                        a.hours += 16;
+                      } else {
+                        a.hours += 8;
+                      }
+                    }
+                  }
+
+                  a.__displayName = getTechDisplayName(a);
+                  a.statusCat = statusCat;
+                  a.otHours = otHours;
+                } catch (e) {
+                  console.warn('renderWorkListForDate: error processing availability', e);
+                }
+              });
+
+              // store into cache so other renderers reuse the authoritative list
+              if (!capacityData[dateStr]) capacityData[dateStr] = {};
+              capacityData[dateStr].technicians = availArr;
+
+              // กรองเฉพาะช่างที่มีชั่วโมงทำงาน > 0 (ตรงกับ report: work days หรือ OT days)
+              workTechs = availArr.filter(a => {
+                // ถ้าเป็นวันลา ไม่นับเป็นวันทำงาน
+                if (a.statusCat === 'leave') return false;
+
+                // กรองเฉพาะที่มีชั่วโมงทำงาน > 0
+                const hours = (typeof a.hours !== 'undefined' && a.hours !== null) ? Number(a.hours) : 0;
+                if (hours <= 0) return false;
+
+                return true;
+              });
+
+              // If there are specific technicians we expect to see today,
+              // prefer and move them to the front of the list in the order
+              // we expect. This helps ensure names like ชาญยุทธ etc. appear
+              // prominently when present in the report.
+              try {
+                const preferredNames = ['ชาญยุทธ', 'ฐิติพงศ์', 'นัษฎา', 'อนุรักษ์'];
+                const prefSet = new Set();
+                const preferredOrdered = [];
+                for (const want of preferredNames) {
+                  const found = workTechs.find(a => {
+                    const displayName = a.__displayName || '';
+                    const techName = (a.technician && a.technician.name) || a.name || '';
+                    return displayName.includes(want) || techName.includes(want);
+                  });
+                  if (found && !prefSet.has(found)) {
+                    preferredOrdered.push(found);
+                    prefSet.add(found);
+                  }
+                }
+                if (preferredOrdered.length) {
+                  // remove preferred ones from their original positions
+                  workTechs = workTechs.filter(a => !prefSet.has(a));
+                  // place preferred at the front in the requested order
+                  workTechs = preferredOrdered.concat(workTechs);
+                }
+              } catch (e) {
+                console.warn('renderWorkListForDate: preferred ordering failed', e);
+              }
+              console.debug('renderWorkListForDate: using availability report data, count=', workTechs.length, 'filtered by hours > 0');
+            }
+          } catch (e) {
+            console.warn('renderWorkListForDate: failed to parse availabilities-data JSON from report', e);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('renderWorkListForDate: could not fetch availability report', e);
+    }
+
+    // Try aggregated API if needed
+    try {
+      const summary = capacityData[dateStr] && capacityData[dateStr].summary ? capacityData[dateStr].summary : null;
+      if (summary && typeof summary.totalWork !== 'undefined' && Number(summary.totalWork) > workTechs.length) {
+        try {
+          const resp = await fetch(`/api/maintenance/availability/?date=${dateStr}`, { headers: { 'Accept': 'application/json' } });
+          const ct = resp.headers.get('content-type') || '';
+          if (resp.ok && ct.indexOf('application/json') !== -1) {
+            const json = await resp.json();
+            if (json && Array.isArray(json.technicians) && json.technicians.length) {
+              json.technicians.forEach(t => { try { t.__displayName = getTechDisplayName(t); } catch (e) { /* ignore */ } });
+              const fallback = json.technicians.filter(t => !(t.available === false && t.note));
+              if (fallback.length) {
+                workTechs = fallback;
+                if (!capacityData[dateStr]) capacityData[dateStr] = {};
+                capacityData[dateStr].technicians = json.technicians;
+                capacityData[dateStr].summary = capacityData[dateStr].summary || json.dailySummary || json.summary || summary;
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('renderWorkListForDate: aggregated availability fetch failed', err);
+        }
+      }
+    } catch (e) {
+      console.warn('renderWorkListForDate: summary fallback check failed', e);
+    }
+
+    // Calculate summary statistics
+    // Separate regular (in-time) and OT technicians
+    // Prefer the displayed regular-work count element when present so the
+    // modal summary matches the header breakdown. Fall back to computing
+    // from the loaded technicians list if the DOM element isn't available.
+    let workCount;
+    try {
+      const regEl = document.getElementById('work-regular-count');
+      if (regEl) {
+        const txt = (regEl.textContent || regEl.innerText || '').trim();
+        const m = txt.match(/(\d+)/);
+        if (m) workCount = Number(m[1]);
+      }
+    } catch (e) { /* ignore DOM read errors */ }
+    if (typeof workCount === 'undefined') {
+      workCount = workTechs.filter(t => {
+        const note = (t.note || '').toLowerCase();
+        return !note.includes('ot') && !note.includes('ล่วงเวลา');
+      }).length;
+    }
+
+    // Prefer reading OT count from the summary DOM if present so the
+    // modal matches the header. Fallback to computing from workTechs.
+    let otCount;
+    try {
+      const otEl = document.getElementById('overtime-today');
+      if (otEl) {
+        const txt = (otEl.textContent || otEl.innerText || '').trim();
+        const m = txt.match(/(\d+)/);
+        if (m) otCount = Number(m[1]);
+      }
+    } catch (e) { /* ignore DOM read errors */ }
+    if (typeof otCount === 'undefined') {
+      // Count technicians with OT hours (using calculated otHours from report logic)
+      otCount = workTechs.filter(a => {
+        const otHrs = (typeof a.otHours !== 'undefined' && a.otHours !== null) ? Number(a.otHours) : 0;
+        return otHrs > 0;
+      }).length;
+    }
+
+    const totalTechs = workTechs.length;
+    // Prefer reading regular-hours from the summary DOM (`#capacity-regular-hours`)
+    // since that may come from equipment-based calculations. Fallback to
+    // summing per-technician hours when the DOM value is not available.
+    let totalHours;
+    try {
+      const regHoursEl = document.getElementById('capacity-regular-hours');
+      if (regHoursEl) {
+        const txt = (regHoursEl.textContent || regHoursEl.innerText || '').trim();
+        const m = txt.match(/([0-9]+(?:\.[0-9]+)?)/);
+        if (m) totalHours = Number(m[1]);
+      }
+    } catch (e) { /* ignore DOM read errors */ }
+    if (typeof totalHours === 'undefined') {
+      totalHours = workTechs.reduce((sum, t) => {
+        const hours = (typeof t.hours !== 'undefined' && t.hours !== null) ? Number(t.hours) : ((t.currentTasks || 0) * 2);
+        return sum + hours;
+      }, 0);
+    }
+    const avgHours = totalTechs > 0 ? (totalHours / totalTechs).toFixed(1) : 0;
+
+    // Compute total OT hours for modal summary. Prefer DOM value if present,
+    // otherwise sum per-tech OT hours as a fallback.
+    let otHours;
+    try {
+      const otHoursEl = document.getElementById('capacity-overtime-hours');
+      if (otHoursEl) {
+        const txt = (otHoursEl.textContent || otHoursEl.innerText || '').trim();
+        const m = txt.match(/([0-9]+(?:\.[0-9]+)?)/);
+        if (m) otHours = Number(m[1]);
+      }
+    } catch (e) { /* ignore DOM read errors */ }
+    if (typeof otHours === 'undefined') {
+      // Sum OT hours from availabilities (using calculated otHours from report logic)
+      otHours = workTechs.reduce((s, a) => {
+        const h = (typeof a.otHours !== 'undefined' && a.otHours !== null) ? Number(a.otHours) : 0;
+        return s + h;
+      }, 0);
+    }
+    // Hide loading, show content
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    if (workTechs.length === 0) {
+      if (emptyEl) emptyEl.style.display = 'block';
+      return workTechs;
+    }
+
+    if (timelineEl) timelineEl.style.display = 'block';
+
+    // Render summary stats
+    const summaryStatsEl = document.getElementById('work-list-summary-stats');
+    if (summaryStatsEl) {
+      summaryStatsEl.innerHTML = `
+      <div style="padding: 0.5rem 1rem; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 6px; flex: 1; min-width: 140px;">
+        <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">เวลาปกติ</div>
+        <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">${workCount} <span style="font-size: 0.875rem; color: #6b7280;">คน</span></div>
+      </div>
+      
+      <div style="padding: 0.5rem 1rem; background: #eff6ff; border-left: 3px solid #3b82f6; border-radius: 6px; flex: 1; min-width: 140px;">
+        <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">รวมชั่วโมง</div>
+        <div style="font-size: 1.5rem; font-weight: 700; color: #3b82f6;">${totalHours} <span style="font-size: 0.875rem; color: #6b7280;">ชม.</span></div>
+      </div>
+      
+      <div style="padding: 0.5rem 1rem; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 6px; flex: 1; min-width: 140px;">
+        <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">OT</div>
+        <div style="font-size: 1.5rem; font-weight: 700; color: #f59e0b;">${otCount} <span style="font-size: 0.875rem; color: #6b7280;">คน</span> / ${otHours} <span style="font-size: 0.875rem; color: #6b7280;">ชม.</span></div>
+      </div>
+    `;
+    }
+
+    // Render timeline-style technician cards
+    if (timelineEl) {
+      // Prefer to render the same number of technicians as shown in the
+      // main summary (`#work-today`) when possible. This keeps the modal
+      // timeline consistent with the header badge. If `#work-today` is not
+      // present or can't be parsed, render all loaded workTechs.
+      let displayedTechs = workTechs;
+      try {
+        const workTodayEl = document.getElementById('work-today');
+        if (workTodayEl) {
+          const txt = (workTodayEl.textContent || workTodayEl.innerText || '').trim();
+          const m = txt.match(/(\d+)/);
+          if (m) {
+            const desired = Number(m[1]);
+            if (!isNaN(desired) && desired >= 0 && desired < workTechs.length) {
+              // Order regular techs before OT techs so regulars are shown first
+              // Use calculated otHours instead of parsing note
+              const regular = workTechs.filter(a => {
+                const otHrs = (typeof a.otHours !== 'undefined' && a.otHours !== null) ? Number(a.otHours) : 0;
+                return otHrs <= 0;
+              });
+              const ots = workTechs.filter(a => {
+                const otHrs = (typeof a.otHours !== 'undefined' && a.otHours !== null) ? Number(a.otHours) : 0;
+                return otHrs > 0;
+              });
+              const ordered = regular.concat(ots);
+              displayedTechs = ordered.slice(0, desired);
+              console.debug('renderWorkListForDate: limiting timeline to', desired, 'entries based on #work-today');
+            }
+          }
+        }
+      } catch (e) { /* ignore DOM read errors */ }
+
+      timelineEl.innerHTML = displayedTechs.map((a, idx) => {
+        // Extract data from availability record (with nested technician object)
+        const name = a.__displayName || ((a.technician && a.technician.name) || a.name || a.full_name || a.username || '(ไม่มีชื่อ)');
+        const hours = (typeof a.hours !== 'undefined' && a.hours !== null) ? Number(a.hours) : 0;
+        const note = a.note || '';
+        const capacity = (a.technician && a.technician.capacity) || a.capacity || 1;
+        const currentTasks = a.currentTasks || 0;
+        const remaining = Math.max(0, capacity - currentTasks);
+
+        // Determine if OT using calculated otHours (same as report)
+        const otHrs = (typeof a.otHours !== 'undefined' && a.otHours !== null) ? Number(a.otHours) : 0;
+        const isOT = otHrs > 0;
+        const statusColor = isOT ? '#f59e0b' : '#10b981';
+        const statusBg = isOT ? '#fffbeb' : '#f0fdf4';
+        const statusLabel = isOT ? `OT (${otHrs} ชม.)` : 'ปกติ';
+
+        return `
+        <div style="background: white; border: 1px solid #e5e7eb; border-left: 3px solid ${statusColor}; border-radius: 6px; padding: 1rem; margin-bottom: 0.75rem;">
+          <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem; margin-bottom: 0.75rem;">
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                <span style="font-weight: 700; font-size: 1rem; color: #111827;">${idx + 1}. ${escapeHtml(name)}</span>
+                <span style="padding: 0.125rem 0.5rem; background: ${statusBg}; color: ${statusColor}; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">${statusLabel}</span>
+              </div>
+              ${note ? `<div style="font-size: 0.813rem; color: #6b7280; margin-top: 0.25rem;"><i class="bi bi-chat-left-text me-1"></i>${escapeHtml(note)}</div>` : ''}
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 1.5rem; font-weight: 700; color: ${statusColor};">${hours} <span style="font-size: 0.875rem; color: #6b7280;">ชม.</span></div>
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 1rem; padding-top: 0.75rem; border-top: 1px solid #f3f4f6;">
+            <div style="flex: 1; text-align: center;">
+              <div style="font-size: 0.75rem; color: #6b7280;">อัตรากำลัง</div>
+              <div style="font-size: 1.25rem; font-weight: 700; color: #3b82f6;">${capacity}</div>
+            </div>
+            <div style="flex: 1; text-align: center;">
+              <div style="font-size: 0.75rem; color: #6b7280;">รับไว้แล้ว</div>
+              <div style="font-size: 1.25rem; font-weight: 700; color: #f59e0b;">${currentTasks}</div>
+            </div>
+            <div style="flex: 1; text-align: center;">
+              <div style="font-size: 0.75rem; color: #6b7280;">คงเหลือ</div>
+              <div style="font-size: 1.25rem; font-weight: 700; color: ${remaining > 0 ? '#10b981' : '#ef4444'};">${remaining}</div>
+            </div>
+          </div>
+        </div>
+      `;
+      }).join('');
+    }
+
+    // Update footer count to show regular (in-time) technicians
+    const totalCountEl = document.getElementById('work-list-total-count');
+    if (totalCountEl) totalCountEl.textContent = `รวม ${workCount} คน`;
+
+    // Update outer summary card if present (keep original id fallback)
+    const workValue = document.getElementById('work-today');
+    // Do not overwrite the main summary card here — summary should be
+    // controlled by updateSummary(). Overwriting on modal open causes
+    // inconsistent values (before vs after onclick). Keep a debug hint instead.
+    if (workValue) console.debug('renderWorkListForDate: would update work-today to', totalTechs + ' คน', '(skipped to avoid overwrite)');
+
+    return workTechs;
+  }
+
+  // small helper to escape HTML when rendering into innerHTML
+  function escapeHtml(s) {
+    if (s == null) return '';
+    return ('' + s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // Initialize work list button and debug hook
+  document.addEventListener('DOMContentLoaded', function () {
+    try {
+      const btn = document.querySelector('#work-today button');
+      if (btn) {
+        btn.addEventListener('click', function (ev) {
+          console.debug('work list button clicked');
+          openWorkListModal();
+        });
+      } else {
+        console.debug('work list button not found on DOMContentLoaded');
+      }
+    } catch (e) {
+      console.warn('init work list button error', e);
+    }
+  });
+
+</script>
+
+{% endblock %}

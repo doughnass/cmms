@@ -1,0 +1,5131 @@
+{% extends 'base.html' %}
+{% block title %}<title>รายการเครื่องมือที่ครบกำหนดบำรุงรักษา</title>{% endblock %}
+{% block content %}
+<style>
+:root {
+  /* Primary Palette - Deep Ocean */
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-light: #eef2ff;
+  --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  
+  /* Semantic Colors */
+  --success: #10b981;
+  --success-light: #ecfdf5;
+  --success-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  
+  --warning: #f59e0b;
+  --warning-light: #fffbeb;
+  --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  
+  --danger: #ef4444;
+  --danger-light: #fef2f2;
+  --danger-gradient: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  
+  --info: #0ea5e9;
+  --info-light: #f0f9ff;
+  --info-gradient: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+  
+  /* Neutral Palette */
+  --bg-body: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-elevated: #ffffff;
+  --border: #e2e8f0;
+  --border-light: #f1f5f9;
+  
+  /* Text Colors */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow: 0 4px 16px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.04);
+  --shadow-xl: 0 24px 48px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.06);
+  
+  /* Border Radius */
+  --radius-sm: 0.5rem;
+  --radius: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-full: 9999px;
+  
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* === Page Layout === */
+.page-wrapper {
+  min-height: 100vh;
+  background: var(--bg-body);
+  padding: 2rem;
+}
+
+@media (max-width: 768px) {
+  .page-wrapper {
+    padding: 1rem;
+  }
+}
+
+.page-container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* === Hero Header === */
+.hero-header {
+  background: var(--primary-gradient);
+  border-radius: var(--radius-2xl);
+  padding: 2.5rem 3rem;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.hero-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.hero-header::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: 10%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.hero-title {
+  color: var(--text-inverse);
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.hero-title .icon-wrapper {
+  width: 56px;
+  height: 56px;
+  background: rgba(255,255,255,0.2);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.hero-subtitle {
+  color: rgba(255,255,255,0.9);
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* === Stats Grid === */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  margin-top: -3rem;
+  position: relative;
+  z-index: 10;
+}
+
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    margin-top: -2rem;
+  }
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  transition: var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.stat-card.danger::before { background: var(--danger-gradient); }
+.stat-card.warning::before { background: var(--warning-gradient); }
+.stat-card.success::before { background: var(--success-gradient); }
+.stat-card.info::before { background: var(--info-gradient); }
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.stat-icon.danger { background: var(--danger-light); color: var(--danger); }
+.stat-icon.warning { background: var(--warning-light); color: var(--warning); }
+.stat-icon.success { background: var(--success-light); color: var(--success); }
+.stat-icon.info { background: var(--info-light); color: var(--info); }
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* === Search & Filter Section (Redesigned) === */
+.search-section {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 0;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  border: 1px solid #f0f0f5;
+  overflow: hidden;
+}
+
+/* Top search bar with chips */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  flex-wrap: wrap;
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1 1 320px;
+  min-width: 200px;
+}
+
+.search-input-wrapper .search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 1rem 0 2.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background: #fafbfc;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #6366f1;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+
+.filter-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.filter-chip:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.filter-chip.active {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.25);
+}
+
+.filter-chip i {
+  font-size: 0.9rem;
+}
+
+.search-bar > .btn-modern {
+  margin-left: auto;
+}
+
+/* Advanced Filters Panel */
+.filters-panel {
+  background: #fafbfc;
+  border-top: 1px solid #f0f0f5;
+  padding: 1rem 1.25rem;
+}
+
+.filters-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.filters-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f59e0b;
+  background: #fffbeb;
+  padding: 0.4rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid #fef3c7;
+}
+
+.filters-title i {
+  font-size: 0.85rem;
+}
+
+.filters-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-end;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 140px;
+}
+
+.filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.filter-select {
+  height: 40px;
+  padding: 0 2rem 0 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E") no-repeat right 10px center;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  font-size: 0.9rem;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-select:hover {
+  border-color: #cbd5e1;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+
+/* Orange action button */
+.btn-orange {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 42px;
+  padding: 0 1.25rem;
+  background: linear-gradient(180deg, #f9a825 0%, #f57c00 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(245,124,0,0.3);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-orange:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(245,124,0,0.35);
+}
+
+.btn-orange i {
+  font-size: 1rem;
+}
+
+/* Reset button style */
+.btn-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-reset:hover {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+/* Table header section */
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.table-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.table-title i {
+  color: #6366f1;
+}
+
+.count-badge {
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .filters-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-group {
+    width: 100%;
+  }
+  .btn-orange {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .search-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-input-wrapper {
+    flex: 1 1 100%;
+  }
+  .filter-chips {
+    justify-content: flex-start;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 0.25rem;
+  }
+  .search-bar > .btn-modern {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* === Modern Button System === */
+.btn-modern {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: var(--transition-base);
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-modern:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary-modern {
+  background: var(--primary-gradient);
+  color: white;
+}
+
+.btn-success-modern {
+  background: var(--success-gradient);
+  color: white;
+}
+
+.btn-warning-modern {
+  background: var(--warning-gradient);
+  color: white;
+}
+
+.btn-outline-modern {
+  background: white;
+  color: var(--text-primary);
+  border: 2px solid var(--border);
+}
+
+.btn-outline-modern:hover {
+  background: var(--bg-body);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-glass {
+  background: rgba(255,255,255,0.15);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+}
+
+.btn-glass:hover {
+  background: rgba(255,255,255,0.25);
+  transform: translateY(-2px);
+}
+
+.pagination-info {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.pagination-info strong {
+  color: var(--text-primary);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.per-page-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.per-page-selector select {
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: white;
+  cursor: pointer;
+}
+
+.pagination-nav {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.page-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.page-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.page-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* === Empty State === */
+.empty-state {
+  text-align: center;
+  padding: 5rem 2rem;
+  color: var(--text-muted);
+}
+
+.empty-state-icon {
+  font-size: 5rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.3;
+}
+
+.empty-state h4 {
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+  color: var(--text-muted);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* === Loading Skeleton Animation === */
+.loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.loading-row td {
+  padding: 1rem !important;
+}
+
+.skeleton-line {
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.skeleton-line.short { width: 60%; }
+.skeleton-line.medium { width: 80%; }
+.skeleton-line.pill { width: 70px; height: 28px; border-radius: 20px; }
+
+/* === Equipment Table - Modern Redesign === */
+.table-section {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 20px;
+  padding: 0;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  overflow: hidden;
+}
+
+.equipment-table-wrapper {
+  background: transparent;
+  border-radius: 0;
+  overflow-x: auto;
+  box-shadow: none;
+  border: none;
+}
+
+.equipment-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.equipment-table thead th {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  padding: 1rem 0.75rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  border-bottom: none;
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.equipment-table thead th:first-child {
+  border-radius: 0;
+}
+
+.equipment-table thead th:last-child {
+  border-radius: 0;
+}
+
+.equipment-table tbody td {
+  padding: 1rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  vertical-align: middle;
+  font-size: 0.875rem;
+  background: #fff;
+}
+
+.equipment-table tbody tr {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.equipment-table tbody tr:hover td {
+  background: linear-gradient(90deg, #f0f9ff 0%, #ffffff 100%);
+}
+
+.equipment-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* === Pagination Controls === */
+.pagination-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding: 0.5rem 0.75rem;
+}
+
+.pagination-info {
+  margin-right: auto;
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.pagination {
+  display: flex;
+  list-style: none;
+  gap: 0.375rem;
+  padding: 0;
+  margin: 0;
+  align-items: center;
+}
+
+.pagination .page-item .page-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pagination .page-item .page-link:hover:not(.disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.pagination .page-item.active .page-link {
+  background: var(--primary);
+  color: var(--text-inverse);
+  border-color: var(--primary);
+}
+
+.pagination .page-item.disabled .page-link {
+  opacity: 0.55;
+  cursor: default;
+  pointer-events: none;
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+.pagination .page-item.dots .page-link {
+  background: transparent;
+  border: none;
+  min-width: 28px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.items-per-page,
+#jumpToPage {
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  height: 36px;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+  .pagination-wrapper { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+  .pagination-info { margin-right: 0; justify-content: space-between; }
+  .pagination { justify-content: center; }
+}
+
+/* === Equipment Card (Mobile) - Modern Design === */
+.equipment-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 0;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-left: 5px solid #e2e8f0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.equipment-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px);
+}
+
+.equipment-card.overdue {
+  border-left-color: #ef4444;
+}
+
+.equipment-card.due-soon {
+  border-left-color: #f59e0b;
+}
+
+.equipment-card.scheduled {
+  border-left-color: #22c55e;
+}
+
+/* Hide desktop table on mobile, show cards */
+@media (max-width: 992px) {
+  .equipment-table-wrapper {
+    display: none;
+  }
+  .equipment-cards-mobile {
+    display: block;
+  }
+}
+
+@media (min-width: 993px) {
+  .equipment-cards-mobile {
+    display: none;
+  }
+}
+
+.equipment-card.overdue {
+  border-left-color: var(--danger);
+}
+
+.equipment-card.scheduled {
+  border-left-color: var(--success);
+}
+
+.equipment-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.equipment-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+/* === Status Badge - Minimal Pill Design === */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.status-badge i {
+  font-size: 0.75rem;
+}
+
+.status-badge.due-soon {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+}
+
+.status-badge.overdue {
+  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+  color: #991b1b;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+  animation: pulse-warning 2s infinite;
+}
+
+@keyframes pulse-warning {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.status-badge.scheduled {
+  background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
+  color: #166534;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);
+}
+
+/* === New Table Row Status Styling === */
+.equipment-table tbody tr.row-overdue td {
+  background: linear-gradient(90deg, #ffffff 0%, #ffffff 100%);
+}
+.equipment-table tbody tr.row-overdue td:first-child {
+  border-left: 4px solid #ef4444;
+}
+.equipment-table tbody tr.row-due-soon td {
+  background: linear-gradient(90deg, #fffbeb 0%, #ffffff 100%);
+}
+.equipment-table tbody tr.row-due-soon td:first-child {
+  border-left: 4px solid #f59e0b;
+}
+.equipment-table tbody tr.row-overdue:hover td {
+  background: linear-gradient(90deg, #ecfdf5 0%, #ecfdf5 100%);
+}
+.equipment-table tbody tr.row-due-soon:hover td {
+  background: linear-gradient(90deg, #fef3c7 0%, #ffffff 100%);
+}
+.equipment-table tbody tr.row-scheduled td {
+  background: linear-gradient(90deg, #f0fdf4 0%, #ffffff 100%);
+}
+.equipment-table tbody tr.row-scheduled td:first-child {
+  border-left: 4px solid #22c55e;
+}
+
+.due-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.15s;
+}
+.due-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.date-picker-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.date-picker-btn:hover {
+  border-color: #3b82f6;
+  border-style: solid;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+.date-picker-btn i {
+  font-size: 1rem;
+}
+
+.scheduled-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #16a34a;
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15);
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+.action-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.action-btn:hover::before {
+  opacity: 1;
+}
+.action-btn-primary {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
+}
+.action-btn-primary:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.45);
+}
+.action-btn-primary:disabled {
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.action-btn-secondary {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+.action-btn-secondary:hover {
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  color: #1e293b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Compact due cell styles - Pill Design */
+.due-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+.due-row {
+  display: inline-flex;
+  gap: 0;
+  align-items: center;
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 2px;
+  border: 1px solid #e2e8f0;
+}
+.due-tag {
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.due-tag.pm-tag {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #fff;
+}
+.due-tag.cal-tag {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  color: #fff;
+}
+.due-date {
+  color: #334155;
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 4px 10px 4px 6px;
+}
+.due-date.no-date {
+  color: #94a3b8;
+  font-weight: 400;
+}
+.due-muted { color: #94a3b8; font-size: 0.75rem; }
+
+.status-badge.completed {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  color: #3730a3;
+}
+
+/* === Date Picker Trigger === */
+.date-picker-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-width: 180px;
+}
+
+.date-picker-trigger:hover {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  color: var(--primary);
+}
+
+.date-picker-trigger.has-date {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+/* === Available Dates Modal === */
+#availableDatesModal .modal-content {
+  border-radius: var(--radius-xl);
+  border: none;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+
+#availableDatesModal .modal-header {
+  background: var(--success-gradient);
+  color: white;
+  padding: 1.5rem 2rem;
+  border: none;
+}
+
+#availableDatesModal .modal-title {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+#availableDatesModal .modal-body {
+  padding: 2rem;
+  background: #f8fafc;
+}
+
+/* Equipment Info Card in Modal */
+.equipment-info-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.equipment-info-card .eq-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 0.25rem;
+}
+
+.equipment-info-card .eq-skill {
+  font-size: 0.8rem;
+  color: var(--success);
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* Available Dates Grid */
+.available-dates-section {
+  margin-top: 1rem;
+}
+
+.available-dates-section h6 {
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.available-dates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+/* Date Chip */
+.date-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.date-chip:hover {
+  border-color: var(--success);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.date-chip.selected {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-color: var(--success);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.date-chip .date-day {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.date-chip .date-month {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.date-chip .date-capacity {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 1rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--success);
+}
+
+/* Modal Footer */
+#availableDatesModal .modal-footer {
+  background: white;
+  border-top: 1px solid var(--border-light);
+  padding: 1.25rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.selected-date-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-radius: var(--radius);
+  font-weight: 600;
+  color: var(--success);
+}
+
+.selected-date-preview.hidden {
+  display: none;
+}
+
+/* === Loading State === */
+.dates-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+.no-dates-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: white;
+  border-radius: var(--radius);
+  border: 2px dashed var(--border);
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .equipment-table-wrapper {
+    display: none;
+  }
+
+  .equipment-cards-mobile {
+    display: block;
+  }
+}
+
+@media (min-width: 769px) {
+  .equipment-cards-mobile {
+    display: none;
+  }
+}
+
+.per-page-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.per-page-selector select {
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: white;
+  cursor: pointer;
+}
+
+.pagination-nav {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.page-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.page-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.page-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* === Empty State === */
+.empty-state {
+  text-align: center;
+  padding: 5rem 2rem;
+  color: var(--text-muted);
+}
+
+.empty-state-icon {
+  font-size: 5rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.3;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.empty-state h4 {
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+}
+
+.empty-state p {
+  color: var(--text-muted);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* === Bulk Edit Mode === */
+.bulk-edit-checkbox-col {
+  display: none;
+  width: 50px;
+  text-align: center;
+}
+
+body.bulk-edit-mode .bulk-edit-checkbox-col {
+  display: table-cell;
+}
+
+.bulk-control-bar {
+  display: none;
+  background: linear-gradient(135deg, var(--warning-light) 0%, #fef3c7 100%);
+  border: 2px solid rgba(245, 158, 11, 0.2);
+  border-radius: var(--radius-xl);
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+body.bulk-edit-mode .bulk-control-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.bulk-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bulk-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(245, 158, 11, 0.2);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--warning);
+  font-size: 1.25rem;
+}
+
+.bulk-text {
+  font-weight: 700;
+  color: #92400e;
+}
+
+.bulk-count {
+  background: var(--warning);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-left: 0.5rem;
+}
+
+.bulk-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.checkbox-modern {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+/* === Loading Spinner === */
+.loading-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spinner 0.6s linear infinite;
+}
+
+@keyframes spinner {
+  to { transform: rotate(360deg); }
+}
+
+/* === Date Picker Modal - Premium === */
+#availableDatesModal .modal-content {
+  border-radius: var(--radius-2xl);
+  border: none;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+
+#availableDatesModal .modal-header {
+  background: var(--success-gradient);
+  color: white;
+  padding: 1.75rem 2rem;
+  border: none;
+}
+
+#availableDatesModal .modal-title {
+  font-weight: 700;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+#availableDatesModal .modal-body {
+  padding: 2rem;
+  background: #f8fafc;
+}
+
+.equipment-info-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.equipment-info-card .eq-code {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.equipment-info-card .eq-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 0.25rem;
+}
+
+.equipment-info-card .eq-skill {
+  font-size: 0.85rem;
+  color: var(--success);
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.available-dates-section h6 {
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+
+.available-dates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.75rem;
+}
+
+.date-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.25rem 1rem;
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.date-chip::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--success);
+  opacity: 0;
+  transition: var(--transition-fast);
+}
+
+.date-chip:hover {
+  border-color: var(--success);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.date-chip:hover::before {
+  opacity: 1;
+}
+
+.date-chip.selected {
+  background: var(--success-light);
+  border-color: var(--success);
+  box-shadow: var(--shadow-success-glow);
+}
+
+.date-chip.selected::before {
+  opacity: 1;
+}
+
+.date-chip .date-day {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.date-chip .date-number {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  margin: 0.25rem 0;
+}
+
+.date-chip .date-month {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.date-chip .date-availability {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.75rem;
+  padding: 0.375rem 0.75rem;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--success);
+}
+
+.availability-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.availability-dot.high { background: var(--success); }
+.availability-dot.medium { background: var(--warning); }
+.availability-dot.low { background: var(--danger); }
+
+.dates-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  color: var(--text-muted);
+}
+
+.dates-loading .spinner-grow {
+  width: 3rem;
+  height: 3rem;
+  color: var(--success);
+}
+
+.dates-loading p {
+  margin-top: 1.25rem;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.no-dates-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 2px dashed var(--border);
+}
+
+.no-dates-state i {
+  font-size: 4rem;
+  color: var(--text-muted);
+  opacity: 0.4;
+}
+
+.no-dates-state h5 {
+  margin-top: 1.25rem;
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.no-dates-state p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  max-width: 350px;
+  margin: 0.5rem auto 0;
+}
+
+#availableDatesModal .modal-footer {
+  background: white;
+  border-top: 1px solid var(--border-light);
+  padding: 1.25rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.selected-date-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--success-light);
+  border-radius: var(--radius);
+  font-weight: 600;
+  color: var(--success);
+}
+
+.selected-date-preview i {
+  font-size: 1.25rem;
+}
+
+.selected-date-preview.hidden {
+  display: none;
+}
+
+/* === Print Styles === */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .page-wrapper {
+    padding: 0;
+    background: white;
+  }
+
+  .hero-header {
+    background: #f8fafc !important;
+    color: var(--text-primary) !important;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .hero-title, .hero-subtitle {
+    color: var(--text-primary) !important;
+    text-shadow: none;
+  }
+
+  .stat-card, .table-section {
+    box-shadow: none;
+    border: 1px solid var(--border);
+  }
+}
+
+/* === Additional Styles for Modal and Table === */
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  z-index: 1;
+}
+
+.stat-icon.warning { background: var(--warning-light); color: var(--warning); }
+.stat-icon.danger { background: var(--danger-light); color: var(--danger); }
+.stat-icon.success { background: var(--success-light); color: var(--success); }
+.stat-icon.info { background: var(--info-light); color: var(--info); }
+
+.stat-value {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+  position: relative;
+  z-index: 1;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+}
+
+/* === Filter Bar === */
+.filter-bar {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 2rem;
+  border: 1px solid var(--border-light);
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.25rem;
+  align-items: end;
+}
+
+.form-group-modern label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-control-modern {
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  background: white;
+  font-weight: 500;
+  color: var(--text-primary);
+  width: 100%;
+}
+
+.form-control-modern:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+/* === Equipment Table === */
+.equipment-table-wrapper {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-light);
+}
+
+.equipment-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.equipment-table thead th {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 0.75rem 0.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border);
+  text-align: left;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.equipment-table tbody td {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid var(--border-light);
+  transition: all 0.2s ease;
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.equipment-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.equipment-table tbody tr:hover {
+  background: linear-gradient(90deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* === Equipment Item Card (Mobile) === */
+.equipment-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--warning);
+  transition: all 0.2s ease;
+}
+
+.equipment-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.equipment-card.overdue {
+  border-left-color: var(--danger);
+}
+
+.equipment-card.scheduled {
+  border-left-color: var(--success);
+}
+
+.equipment-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.equipment-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.equipment-code {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-family: 'Courier New', monospace;
+}
+
+.equipment-card-body {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.info-value {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* === Status Badge === */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem 0.875rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  box-shadow: var(--shadow-sm);
+}
+
+.status-badge.due-soon {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.status-badge.overdue {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.status-badge.scheduled {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  border: 1px solid #86efac;
+}
+
+.status-badge.completed {
+  background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+  color: #3730a3;
+  border: 1px solid #a5b4fc;
+}
+
+/* === Priority Indicator === */
+.priority-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.priority-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.priority-high .priority-dot { background: var(--danger); }
+.priority-medium .priority-dot { background: var(--warning); }
+.priority-low .priority-dot { background: var(--success); }
+
+/* === Date Picker Inline === */
+.date-picker-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.date-input-wrapper {
+  position: relative;
+  flex: 1;
+  max-width: 200px;
+}
+
+.date-input-modern {
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  padding: 0.625rem 1rem;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  background: white;
+  width: 100%;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.date-input-modern:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.date-input-modern:disabled {
+  background: var(--bg-light);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* === Action Buttons === */
+.btn-modern {
+  border-radius: var(--radius);
+  font-weight: 600;
+  padding: 0.625rem 1.25rem;
+  transition: all 0.2s ease;
+  border: none;
+  box-shadow: var(--shadow-sm);
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-modern:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-primary-modern {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+}
+
+.btn-success-modern {
+  background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+  color: white;
+}
+
+.btn-warning-modern {
+  background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+  color: white;
+}
+
+.btn-outline-modern {
+  background: white;
+  color: var(--text-primary);
+  border: 2px solid var(--border);
+}
+
+.btn-outline-modern:hover {
+  background: var(--bg-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* === Action Bar === */
+.action-bar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .card-body-modern {
+    padding: 1.5rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .equipment-table-wrapper {
+    display: none;
+  }
+
+  .equipment-cards-mobile {
+    display: block;
+  }
+
+  .card-header-modern {
+    padding: 1.5rem 1.75rem;
+  }
+
+  .card-header-modern h3 {
+    font-size: 1.35rem;
+  }
+}
+
+@media (min-width: 769px) {
+  .equipment-cards-mobile {
+    display: none;
+  }
+}
+
+/* === Empty State === */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-muted);
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.empty-state h4 {
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+/* === Bulk Actions Bar === */
+.bulk-actions-bar {
+  background: linear-gradient(135deg, var(--primary-light) 0%, #e0e7ff 100%);
+  border-radius: var(--radius);
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  box-shadow: var(--shadow-sm);
+}
+
+.bulk-actions-bar.hidden {
+  display: none;
+}
+
+/* === Bulk Edit Mode === */
+.bulk-edit-checkbox-col {
+  display: none;
+  width: 50px;
+  text-align: center;
+}
+
+body.bulk-edit-mode .bulk-edit-checkbox-col {
+  display: table-cell;
+}
+
+#bulkEditControlBar {
+  display: none;
+}
+
+body.bulk-edit-mode #bulkEditControlBar {
+  display: block;
+}
+
+/* === Bulk Edit Mode === */
+.bulk-edit-checkbox-col {
+  display: none;
+  width: 50px;
+  text-align: center;
+}
+
+body.bulk-edit-mode .bulk-edit-checkbox-col {
+  display: table-cell;
+}
+
+#bulkEditControlBar {
+  display: none;
+}
+
+body.bulk-edit-mode #bulkEditControlBar {
+  display: block;
+}
+
+.bulk-select-info {
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.bulk-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* === Checkbox Modern === */
+.checkbox-modern {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+/* === Loading Spinner === */
+.loading-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spinner 0.6s linear infinite;
+}
+
+@keyframes spinner {
+  to { transform: rotate(360deg); }
+}
+
+/* === Print Styles === */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white;
+  }
+
+  .card-modern {
+    box-shadow: none;
+    border: 1px solid var(--border);
+    page-break-inside: avoid;
+  }
+}
+
+/* === Date Picker Modal - Professional UX/UI === */
+.date-picker-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-width: 180px;
+}
+
+.date-picker-trigger:hover {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  color: var(--primary);
+}
+
+.date-picker-trigger.has-date {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.date-picker-trigger i {
+  font-size: 1rem;
+}
+
+.date-picker-trigger .selected-date-text {
+  flex: 1;
+}
+
+/* Available Dates Modal */
+#availableDatesModal .modal-content {
+  border-radius: var(--radius-xl);
+  border: none;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+
+#availableDatesModal .modal-header {
+  background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+  color: white;
+  padding: 1.5rem 2rem;
+  border: none;
+}
+
+#availableDatesModal .modal-title {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+#availableDatesModal .modal-body {
+  padding: 2rem;
+  background: #f8fafc;
+}
+
+/* Equipment Info Card in Modal */
+.equipment-info-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.equipment-info-card .eq-code {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.equipment-info-card .eq-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 0.25rem;
+}
+
+.equipment-info-card .eq-skill {
+  font-size: 0.8rem;
+  color: var(--success);
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* Available Dates Grid */
+.available-dates-section {
+  margin-top: 1rem;
+}
+
+.available-dates-section h6 {
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.available-dates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+/* Date Chip - Professional Design */
+.date-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.date-chip::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--success);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.date-chip:hover {
+  border-color: var(--success);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.date-chip:hover::before {
+  opacity: 1;
+}
+
+.date-chip.selected {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-color: var(--success);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.date-chip.selected::before {
+  opacity: 1;
+}
+
+.date-chip .date-day {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.date-chip .date-month {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+}
+
+.date-chip .date-weekday {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.125rem;
+}
+
+.date-chip .date-capacity {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 1rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--success);
+}
+
+.date-chip .date-capacity i {
+  font-size: 0.75rem;
+}
+
+.date-chip.low-capacity .date-capacity {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
+}
+
+/* Loading State */
+.dates-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+.dates-loading .spinner-grow {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--success);
+}
+
+.dates-loading p {
+  margin-top: 1rem;
+  font-weight: 500;
+}
+
+/* No Dates State */
+.no-dates-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: white;
+  border-radius: var(--radius);
+  border: 2px dashed var(--border);
+}
+
+.no-dates-state i {
+  font-size: 3rem;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.no-dates-state h5 {
+  margin-top: 1rem;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.no-dates-state p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Modal Footer */
+#availableDatesModal .modal-footer {
+  background: white;
+  border-top: 1px solid var(--border-light);
+  padding: 1.25rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.selected-date-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-radius: var(--radius);
+  font-weight: 600;
+  color: var(--success);
+}
+
+.selected-date-preview i {
+  font-size: 1.25rem;
+}
+
+.selected-date-preview.hidden {
+  display: none;
+}
+</style>
+
+<div class="page-wrapper">
+  <div class="page-container">
+    
+    <!-- Hero Header -->
+    <div class="hero-header no-print">
+      <div class="hero-content">
+        <div>
+          <h1 class="hero-title">
+            <span class="icon-wrapper">
+              <i class="bi bi-calendar-check"></i>
+            </span>
+            รายการเครื่องมือครบกำหนดบำรุงรักษา
+          </h1>
+          <p class="hero-subtitle">จัดการและติดตามการนัดหมายบำรุงรักษาเครื่องมือแพทย์ทั้งหมด</p>
+        </div>
+        <div class="hero-actions">
+          <button onclick="window.print()" class="btn-glass">
+            <i class="bi bi-printer-fill"></i>
+            <span>พิมพ์</span>
+          </button>
+          <button onclick="exportToExcel()" class="btn-glass">
+            <i class="bi bi-file-earmark-excel"></i>
+            <span>ส่งออก Excel</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid mt-4">
+      <div class="stat-card danger">
+        <div class="stat-header">
+          <div class="stat-icon danger">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+          <span class="stat-badge danger">เร่งด่วน</span>
+        </div>
+        <div class="stat-value" id="overdue-count">0</div>
+        <div class="stat-label">เครื่องมือเกินกำหนด</div>
+      </div>
+      
+      <div class="stat-card warning">
+        <div class="stat-header">
+          <div class="stat-icon warning">
+            <i class="bi bi-clock-fill"></i>
+          </div>
+          <span class="stat-badge warning">เตือน</span>
+        </div>
+        <div class="stat-value" id="due-soon-count">0</div>
+        <div class="stat-label">ครบกำหนดเร็วๆ นี้</div>
+      </div>
+      
+      <div class="stat-card success">
+        <div class="stat-header">
+          <div class="stat-icon success">
+            <i class="bi bi-calendar-check-fill"></i>
+          </div>
+          <span class="stat-badge success">เรียบร้อย</span>
+        </div>
+        <div class="stat-value" id="scheduled-count">0</div>
+        <div class="stat-label">กำหนดการแล้ว</div>
+      </div>
+      
+      <div class="stat-card info">
+        <div class="stat-header">
+          <div class="stat-icon info">
+            <i class="bi bi-calendar2-week"></i>
+          </div>
+          <span class="stat-badge info">ทั้งหมด</span>
+        </div>
+        <div class="stat-value" id="this-month-count">0</div>
+        <div class="stat-label">เดือนนี้ทั้งหมด</div>
+      </div>
+    </div>
+
+    <!-- Search Section -->
+    <form id="filter-form" class="search-section no-print">
+      <div class="search-bar">
+        <div class="search-input-wrapper">
+          <i class="bi bi-search search-icon"></i>
+          <input 
+            type="text" 
+            class="search-input" 
+            id="search-filter" 
+            placeholder="ค้นหารหัสเครื่องมือ, ชื่อ, แผนก...">
+        </div>
+        <div class="filter-chips">
+          <button type="button" class="filter-chip active" data-status="" onclick="filterByStatus('')">
+            <i class="bi bi-grid-3x3-gap"></i>
+            ทั้งหมด
+          </button>
+          <button type="button" class="filter-chip" data-status="overdue" onclick="filterByStatus('overdue')">
+            <i class="bi bi-exclamation-circle"></i>
+            เกินกำหนด
+          </button>
+          <button type="button" class="filter-chip" data-status="due-soon" onclick="filterByStatus('due-soon')">
+            <i class="bi bi-clock"></i>
+            ครบกำหนดเร็วๆ นี้
+          </button>
+          <button type="button" class="filter-chip" data-status="scheduled" onclick="filterByStatus('scheduled')">
+            <i class="bi bi-check-circle"></i>
+            กำหนดการแล้ว
+          </button>
+        </div>
+        <button type="button" class="btn-modern btn-outline-modern" data-bs-toggle="collapse" data-bs-target="#advanced-filters">
+          <i class="bi bi-sliders"></i>
+          ตัวกรองเพิ่มเติม
+        </button>
+      </div>
+
+    <!-- Advanced Filters Panel -->
+    <div class="collapse" id="advanced-filters">
+      <div class="filters-panel no-print">
+        <div class="filters-header">
+          <span class="filters-title">
+            <i class="bi bi-funnel-fill"></i>
+            ตัวกรองขั้นสูง
+          </span>
+          <button type="button" class="btn-reset" onclick="clearFilters()" title="ล้างตัวกรอง">
+            <i class="bi bi-arrow-clockwise"></i>
+            รีเซ็ต
+          </button>
+        </div>
+        <div class="filters-body">
+          <div class="filter-group">
+            <label class="filter-label">เดือน</label>
+            <select class="filter-select" id="month-filter" title="เลือกเดือน">
+              <option value="">ทั้งหมด</option>
+              <option value="1">มกราคม</option>
+              <option value="2">กุมภาพันธ์</option>
+              <option value="3">มีนาคม</option>
+              <option value="4">เมษายน</option>
+              <option value="5">พฤษภาคม</option>
+              <option value="6">มิถุนายน</option>
+              <option value="7">กรกฎาคม</option>
+              <option value="8">สิงหาคม</option>
+              <option value="9">กันยายน</option>
+              <option value="10">ตุลาคม</option>
+              <option value="11">พฤศจิกายน</option>
+              <option value="12">ธันวาคม</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">ปี (พ.ศ.)</label>
+            <select class="filter-select" id="year-filter" title="เลือกปี">
+              <!-- Years populated by JavaScript -->
+            </select>
+          </div>
+          <div class="filter-group" style="flex:1; min-width:180px;">
+            <label class="filter-label">ผู้ใช้งาน</label>
+            <select class="filter-select" id="department-filter" title="เลือกแผนก" style="width:100%;">
+              <option value="">ทั้งหมด</option>
+              {% for dept in departments %}
+              <option value="{{ dept }}">{{ dept }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="button" id="toggleBulkEditBtn" class="btn-orange" onclick="toggleBulkEditMode()" style="margin-left:auto;">
+            <i class="bi bi-pencil-square"></i>
+            แก้ไขแบบกลุ่ม
+          </button>
+        </div>
+      </div>
+    </div>
+    </form>
+
+    <!-- Table Header (outside filters) -->
+    <div class="table-header" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border-radius: 16px; padding: 1rem 1.5rem; margin-bottom: 0.5rem;">
+      <div class="table-title" style="color: #fff;">
+        <i class="bi bi-cpu" style="color: #60a5fa; font-size: 1.25rem;"></i>
+        รายการเครื่องมือ
+        <span class="count-badge" id="totalItemsInFilter" style="background: rgba(255,255,255,0.15); color: #fff; backdrop-filter: blur(10px);">0</span>
+      </div>
+      <button type="button" class="btn-reset" onclick="loadEquipmentData()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff;">
+        <i class="bi bi-arrow-clockwise"></i>
+        รีเฟรช
+      </button>
+    </div>
+
+    <!-- Bulk Edit Control Bar -->
+    <div class="bulk-control-bar" id="bulkEditControlBar">
+      <div class="bulk-info">
+        <div class="bulk-icon">
+          <i class="bi bi-pencil-square"></i>
+        </div>
+        <span class="bulk-text">
+          โหมดแก้ไขแบบกลุ่ม
+          <span class="bulk-count" id="selectedCountNumber">0</span>
+        </span>
+      </div>
+      <div class="bulk-actions">
+        <button type="button" class="btn-orange" onclick="openBulkScheduleModal()" id="bulkEditButton" disabled>
+          <i class="bi bi-calendar-check"></i>
+          กำหนดวันที่พร้อมกัน
+        </button>
+        <button type="button" class="btn-reset" onclick="toggleBulkEditMode()">
+          <i class="bi bi-x-circle"></i>
+          ยกเลิก
+        </button>
+      </div>
+    </div>
+
+    <!-- Equipment Table Section -->
+    <div class="table-section">
+      
+      <!-- Desktop Table -->
+      <div class="equipment-table-wrapper">
+        <table class="equipment-table" id="equipment-table">
+          <thead>
+            <tr>
+              <th class="bulk-edit-checkbox-col" style="width: 50px;">
+                <input type="checkbox" class="checkbox-modern" id="select-all-bulk" onchange="toggleSelectAllBulk()" title="เลือกทั้งหมด">
+              </th>
+              <th style="width: 50px; text-align: center;">#</th>
+              <th style="min-width: 180px;"><i class="bi bi-cpu me-1" style="opacity:0.7;"></i>เครื่องมือ</th>
+              <th style="min-width: 120px;"><i class="bi bi-building me-1" style="opacity:0.7;"></i>ผู้ใช้งาน</th>
+              <th style="text-align: center; min-width: 140px;"><i class="bi bi-calendar-event me-1" style="opacity:0.7;"></i>ครบกำหนด</th>
+              <th style="text-align: center; min-width: 130px;"><i class="bi bi-flag me-1" style="opacity:0.7;"></i>สถานะ</th>
+              <th style="text-align: center; min-width: 130px;"><i class="bi bi-calendar-check me-1" style="opacity:0.7;"></i>นัดหมาย</th>
+              <th style="text-align: center; width: 80px;"><i class="bi bi-gear me-1" style="opacity:0.7;"></i></th>
+            </tr>
+          </thead>
+          <tbody id="equipment-tbody">
+            <!-- Generated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Cards -->
+      <div class="equipment-cards-mobile" id="equipment-cards">
+        <!-- Generated by JavaScript -->
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" id="empty-state" style="display: none; padding: 4rem 2rem;">
+        <div style="width: 120px; height: 120px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <i class="bi bi-inbox" style="font-size: 3rem; color: #94a3b8;"></i>
+        </div>
+        <h4 style="font-weight: 700; color: #334155; margin-bottom: 0.5rem; font-size: 1.25rem;">ไม่พบข้อมูลเครื่องมือ</h4>
+        <p style="color: #64748b; max-width: 300px; margin: 0 auto 1.5rem;">ลองปรับเปลี่ยนตัวกรองหรือค้นหาด้วยคำค้นอื่น</p>
+        <button class="btn-reset" onclick="clearFilters()" style="padding: 0.75rem 1.5rem; border-radius: 10px;">
+          <i class="bi bi-arrow-clockwise"></i>
+          ล้างตัวกรอง
+        </button>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination-section" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-top: 1px solid #e2e8f0; padding: 1rem 1.5rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;">
+        <div class="pagination-info" style="font-size: 0.875rem; color: #64748b;">
+          <span style="background: #e2e8f0; padding: 0.25rem 0.75rem; border-radius: 8px;">
+            <strong id="showingFrom" style="color: #1e293b;">0</strong> - <strong id="showingTo" style="color: #1e293b;">0</strong>
+          </span>
+          <span style="margin: 0 0.5rem;">จาก</span>
+          <strong id="totalItems" style="color: #3b82f6;">0</strong> รายการ
+        </div>
+        <div class="pagination-controls" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+          <div class="per-page-selector" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #64748b;">
+            <span>แสดง</span>
+            <select id="itemsPerPage" title="จำนวนรายการต่อหน้า" style="padding: 0.5rem 0.75rem; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; font-weight: 600;">
+              <option value="10" selected>10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="all">ทั้งหมด</option>
+            </select>
+            <span>รายการ</span>
+          </div>
+          <nav class="pagination-nav" id="paginationNav" style="display: flex; gap: 0.25rem;">
+            <!-- Pagination buttons generated by JavaScript -->
+          </nav>
+          <select id="jumpToPage" class="filter-select" style="width: auto; min-width: 90px; padding: 0.5rem 0.75rem; border-radius: 10px; border: 1px solid #e2e8f0; font-weight: 600;" title="ไปยังหน้า">
+            <option value="1">หน้า 1</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+
+<!-- Available Dates Picker Modal - Professional UX/UI -->
+<style>
+  /* Calendar styles for Available Dates modal */
+  .calendar-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .calendar-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:1rem;
+  }
+  .calendar-nav button { background: transparent; border: none; font-size: 1.25rem; }
+  .calendar-month { font-weight:600; font-size:1.05rem }
+  .calendar-grid {
+    display:grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap:6px;
+  }
+  .calendar-weekday { text-align:center; font-size:0.85rem; color:var(--muted,#6c757d); }
+  .calendar-day {
+    min-height:56px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+    align-items:flex-start;
+    padding:6px 8px;
+    border-radius:8px;
+    background:var(--card-bg,#fff);
+    border:1px solid transparent;
+    cursor:pointer;
+  }
+  .calendar-day.disabled { opacity:0.35; cursor:not-allowed; }
+  .calendar-day.today { outline: 2px dashed var(--primary,#0d6efd); }
+  .calendar-day.selected { border-color:var(--primary,#0d6efd); box-shadow:0 2px 8px rgba(13,110,253,0.08); }
+  .calendar-day .day-num { font-weight:600; margin-bottom:4px; }
+  .calendar-day .avail { margin-top:auto; font-size:0.8rem; display:flex; gap:6px; align-items:center; }
+  .availability-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .availability-dot.high { background:#198754; }
+  .availability-dot.medium { background:#ffc107; }
+  .availability-dot.low { background:#dc3545; }
+
+  /* Confirm Send Modal */
+  .confirm-send-modal .modal-content {
+    border-radius: 20px;
+    border: none;
+    overflow: hidden;
+  }
+  .confirm-send-modal .modal-header {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 1.25rem 1.5rem;
+  }
+  .confirm-send-modal .modal-header .btn-close {
+    filter: brightness(0) invert(1);
+  }
+  .confirm-send-modal .modal-body {
+    padding: 1.5rem;
+  }
+  .confirm-send-preview {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-radius: 16px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .confirm-send-preview h6 {
+    color: #047857;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .preview-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed rgba(16,185,129,0.2);
+  }
+  .preview-row:last-child { border-bottom: none; }
+  .preview-label {
+    color: #64748b;
+    font-size: 0.875rem;
+  }
+  .preview-value {
+    color: #1e293b;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-align: right;
+    max-width: 60%;
+    word-break: break-word;
+  }
+  .due-badge {
+    margin-left: 0.5rem;
+    padding: 0.18rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .due-badge.overdue {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid rgba(220,38,38,0.08);
+  }
+  .due-badge.due-soon {
+    background: #fff7ed;
+    color: #92400e;
+    border: 1px solid rgba(245,158,11,0.08);
+  }
+  .confirm-send-note {
+    background: #fefce8;
+    border: 1px solid #fde047;
+    border-radius: 12px;
+    padding: 1rem;
+    font-size: 0.875rem;
+    color: #854d0e;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .confirm-send-note i {
+    font-size: 1.25rem;
+    color: #eab308;
+  }
+  .confirm-send-modal .modal-footer {
+    border: none;
+    padding: 1rem 1.5rem 1.5rem;
+    gap: 0.75rem;
+  }
+  .btn-confirm-send {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+  }
+  .btn-confirm-send:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+    color: white;
+  }
+  .btn-confirm-cancel {
+    background: white;
+    color: #64748b;
+    border: 2px solid #e2e8f0;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .btn-confirm-cancel:hover {
+    border-color: #cbd5e1;
+    color: #475569;
+  }
+</style>
+<div class="modal fade" id="availableDatesModal" tabindex="-1" aria-labelledby="availableDatesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="availableDatesModalLabel">
+          <i class="bi bi-calendar-check"></i>
+          เลือกวันที่นัดหมาย
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Equipment Info -->
+        <div class="equipment-info-card" id="modalEquipmentInfo">
+          <div class="eq-code" id="modalEqCode">-</div>
+          <div class="eq-name" id="modalEqName">-</div>
+          <div class="eq-skill" id="modalEqSkill">
+            <i class="bi bi-person-gear"></i>
+            <span>กำลังตรวจสอบช่างที่มีทักษะตรงกัน...</span>
+          </div>
+        </div>
+        
+        <!-- Available Dates Section -->
+        <div class="available-dates-section">
+          <h6>
+            <i class="bi bi-calendar2-week text-success"></i>
+            ปฏิทินนัดหมาย
+          </h6>
+          
+          <!-- Loading State -->
+          <div class="dates-loading" id="datesLoading">
+            <div class="spinner-grow" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>กำลังค้นหาวันที่ช่างว่าง...</p>
+          </div>
+          
+          <!-- Dates Grid -->
+          <div class="available-dates-grid" id="availableDatesGrid" style="display: none;">
+            <!-- Date chips will be rendered here by JavaScript -->
+          </div>
+          
+          <!-- No Dates State -->
+          <div class="no-dates-state" id="noDatesState" style="display: none;">
+            <i class="bi bi-calendar-x"></i>
+            <h5>ไม่พบวันว่าง</h5>
+            <p>ขณะนี้ช่างทุกคนที่มีทักษะตรงกับเครื่องมือนี้ไม่ว่าง กรุณาลองค้นหาภายหลัง</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="selected-date-preview hidden" id="selectedDatePreview">
+          <i class="bi bi-check-circle-fill"></i>
+          <span id="selectedDateText">เลือกวันที่: -</span>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn-modern btn-outline-modern" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle"></i> ยกเลิก
+          </button>
+          <button type="button" class="btn-modern btn-success-modern" id="confirmDateBtn" disabled onclick="confirmSelectedDate()">
+            <i class="bi bi-check-lg"></i> ยืนยันวันที่
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Send Service Request Modal -->
+<div class="modal fade confirm-send-modal" id="confirmSendModal" tabindex="-1" aria-labelledby="confirmSendModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmSendModalLabel">
+          <i class="bi bi-send-check me-2"></i>
+          ข้อมูลสำหรับส่งคำร้อง
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="confirm-send-preview">
+          <h6><i class="bi bi-cpu"></i> ข้อมูลเครื่องมือ</h6>
+          <div class="preview-row">
+            <span class="preview-label">รหัสเครื่อง</span>
+            <span class="preview-value" id="confirmEqCode">-</span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-label">ชื่อเครื่อง</span>
+            <span class="preview-value" id="confirmEqNameEN">-</span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-label"></span>
+            <span class="preview-value" id="confirmEqName">-</span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-label">ผู้ใช้งาน</span>
+            <span class="preview-value" id="confirmEqDept">-</span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-label">ครบกำหนด PM</span>
+            <span class="preview-value" id="confirmEqDuePM">-</span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-label">ครบกำหนด CAL</span>
+            <span class="preview-value" id="confirmEqDueCAL">-</span>
+          </div>          
+          <div class="preview-row">
+            <span class="preview-label">วันที่นัดหมาย</span>
+            <span class="preview-value text-success" id="confirmSelectedDate">-</span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-label">ความต้องการ / ประเภทงาน</span>
+            <span class="preview-value">
+              <div id="confirmWorkTypesPills" style="display:flex; gap:0.5rem; align-items:center; justify-content:flex-end;">
+                <!-- pills injected here (e.g. บำรุงรักษา, สอบเทียบ) -->
+              </div>
+              <!-- removed unused main/sub text lines; pills only -->
+            </span>
+          </div>
+        </div>
+        <div class="confirm-send-note">
+          <i class="bi bi-info-circle"></i>
+          <div>
+            <strong>หมายเหตุ:</strong> ระบบจะนำคุณไปยังหน้าสร้างคำร้องขอรับบริการ โดยข้อมูลเครื่องมือและวันที่จะถูกกรอกให้อัตโนมัติ คุณสามารถกรอกข้อมูลเพิ่มเติมและส่งคำร้องได้ทันที
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-confirm-cancel" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle me-1"></i> ยกเลิก
+        </button>
+        <button type="button" class="btn-confirm-send" id="confirmSendBtn">
+          <i class="bi bi-arrow-right-circle"></i> ไปหน้าสร้างคำร้อง
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Day Schedule Modal -->
+<div class="modal fade" id="dayScheduleModal" tabindex="-1" aria-labelledby="dayScheduleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="dayScheduleModalLabel">
+          <i class="bi bi-calendar-day me-2"></i>
+              รายละเอียดการบำรุงรักษาประจำวันที่ <span id="selected-date-display"></span>
+              <small class="text-white ms-3" id="day-total-hours" style="font-weight:600;">(จำนวน ชม.: -)</small>
+            </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+        <div id="day-schedule-loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">กำลังโหลด...</span>
+          </div>
+          <p class="mt-3 text-muted">กำลังโหลดข้อมูล...</p>
+        </div>
+        
+        <div id="day-schedule-content" style="display: none;">
+          <!-- Equipment Section -->
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h6 class="mb-0">
+                <i class="bi bi-gear-fill me-2 text-primary"></i>
+                เครื่องมือที่ต้องบำรุงรักษา (<span id="equipment-count">0</span> รายการ)
+              </h6>
+            </div>
+            <div class="card-body">
+              <div id="equipment-list"></div>
+            </div>
+          </div>
+
+          <!-- Stations Section -->
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h6 class="mb-0">
+                <i class="bi bi-building me-2 text-success"></i>
+                สถานะสเตชั่น
+              </h6>
+            </div>
+            <div class="card-body">
+              <div id="station-availability"></div>
+            </div>
+          </div>
+
+          <!-- Technicians Section -->
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h6 class="mb-0">
+                <i class="bi bi-person-gear me-2 text-info"></i>
+                สถานะช่างเทคนิค
+              </h6>
+            </div>
+            <div class="card-body">
+              <div id="technician-availability"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle me-1"></i> ปิด
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mock Data (Replace with actual Django data) -->
+<script>
+// Configuration
+const API_ENDPOINTS = {
+  equipmentList: "{% url 'api_equipment_due_list' %}",
+  scheduleEquipment: "{% url 'api_schedule_equipment' %}",
+  bulkSchedule: "{% url 'api_bulk_schedule_equipment' %}",
+  createServiceRequest: "{% url 'api_create_service_request' %}",
+  bulkCreateServiceRequest: "{% url 'api_bulk_create_service_request' %}"
+};
+
+const CSRF_TOKEN = "{{ csrf_token }}";
+
+// Initialize
+let filteredData = [];
+let allData = [];
+let selectedItems = new Set();
+let currentPage = 1;
+let itemsPerPage = 10;
+
+document.addEventListener('DOMContentLoaded', function() {
+  initPagination();
+  // Set current month/year from Django context when provided, otherwise fallback to client date
+  // Read values from data attributes to avoid raw template tags inside JS that cause parse errors in editors
+  const rootEl = document.getElementById('maintenance-root');
+  const dataMonth = rootEl ? rootEl.getAttribute('data-current-month') : null;
+  const dataYear = rootEl ? rootEl.getAttribute('data-current-year') : null;
+  const currentMonth = dataMonth ? Number(dataMonth) : null;
+  const currentYear = dataYear ? Number(dataYear) : null;
+
+  const jsCurrentMonth = (currentMonth === null) ? (new Date().getMonth() + 1) : Number(currentMonth);
+  const jsCurrentYear = (currentYear === null) ? new Date().getFullYear() : Number(currentYear);
+
+  // Populate year select with current year and next 3 years (display as Buddhist year)
+  const yearSelect = document.getElementById('year-filter');
+  yearSelect.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const y = jsCurrentYear + i;
+    const buddhist = y + 543;
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = buddhist;
+    yearSelect.appendChild(opt);
+  }
+
+  // Don't set default month/year - show all equipment by default
+  document.getElementById('month-filter').value = '';
+  document.getElementById('year-filter').value = jsCurrentYear;
+  
+  // Load initial data
+  loadEquipmentData();
+  
+  // Event listeners
+  document.getElementById('filter-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    loadEquipmentData();
+  });
+  
+  // Real-time search
+  const searchInput = document.getElementById('search-filter');
+  if(searchInput) {
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        applyClientSideFilter();
+      }, 300);
+    });
+  }
+});
+
+// Pagination System
+function initPagination() {
+  const itemsPerPageSelect = document.getElementById('itemsPerPage');
+  if(itemsPerPageSelect) {
+    itemsPerPageSelect.addEventListener('change', function() {
+      const value = this.value;
+      itemsPerPage = value === 'all' ? 999999 : parseInt(value);
+      currentPage = 1;
+      renderPage();
+    });
+  }
+  
+  const jumpToPageSelect = document.getElementById('jumpToPage');
+  if(jumpToPageSelect) {
+    jumpToPageSelect.addEventListener('change', function() {
+      const pageNum = parseInt(this.value);
+      if(!isNaN(pageNum) && pageNum >= 1) {
+        currentPage = pageNum;
+        renderPage();
+      }
+    });
+  }
+}
+
+function renderPage() {
+  const start = (currentPage - 1) * itemsPerPage;
+  const end = Math.min(start + itemsPerPage, filteredData.length);
+  
+  // Update info text
+  document.getElementById('showingFrom').textContent = filteredData.length > 0 ? start + 1 : 0;
+  document.getElementById('showingTo').textContent = end;
+  document.getElementById('totalItems').textContent = filteredData.length;
+  document.getElementById('totalItemsInFilter').textContent = filteredData.length;
+  
+  // Get paginated data
+  const pageData = filteredData.slice(start, end);
+  
+  // Render equipment with paginated data
+  renderEquipmentWithData(pageData);
+
+  // After rendering the page, check for existing service requests for visible items
+  try {
+    const visibleIds = pageData.map(it => it.id).filter(Boolean);
+    if (visibleIds.length > 0) {
+      // debounce / fire-and-forget
+      checkExistingServiceRequests(visibleIds);
+    }
+  } catch (e) {
+    console.debug('Error scheduling existing SR check:', e);
+  }
+  
+  // Update statistics
+  updateStatistics();
+  
+  // Render pagination buttons
+  renderPaginationButtons();
+  
+  // Update jump to page dropdown
+  updateJumpToPageDropdown();
+}
+
+// Query API for existing (non-closed) service requests for a list of equipment IDs
+async function checkExistingServiceRequests(equipmentIds) {
+  try {
+    // get CSRF token from cookie for POST requests
+    function getCookie(name) {
+      const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+      return v ? v.pop() : '';
+    }
+    const csrftoken = getCookie('csrftoken');
+    const resp = await fetch('/api/maintenance/equipment/has-service-requests/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+      body: JSON.stringify({ equipment_ids: equipmentIds })
+    });
+    const j = await resp.json();
+    if (!j || !j.success) return;
+    const results = j.results || {};
+
+    equipmentIds.forEach(id => {
+      const key = String(id);
+      const rows = document.querySelectorAll(`tr[data-equipment-id="${id}"]`);
+      const has = results[key] && results[key].length > 0;
+
+      // Update desktop create button
+      const createBtn = document.getElementById(`create-btn-${id}`);
+      if (createBtn && has) {
+        createBtn.className = 'action-btn action-btn-secondary';
+        createBtn.innerHTML = '<i class="bi bi-eye"></i>';
+        createBtn.title = 'ดูคำร้องที่ส่งแล้ว';
+        createBtn.disabled = false;
+        createBtn.onclick = function() { viewServiceRequest(id); };
+      }
+
+      // Update mobile create button
+      const createBtnMobile = document.getElementById(`create-btn-mobile-${id}`);
+      if (createBtnMobile && has) {
+        createBtnMobile.className = 'action-btn action-btn-secondary';
+        createBtnMobile.innerHTML = '<i class="bi bi-eye" style="margin-right:8px;"></i> ดูคำร้องที่ส่งแล้ว';
+        createBtnMobile.disabled = false;
+        createBtnMobile.onclick = function() { viewServiceRequest(id); };
+      }
+
+      // Update status cell to show latest SR status text (use same wording as my_service_requests)
+      rows.forEach(r => {
+        try {
+          if (!has) return;
+          const srList = results[key] || [];
+          const latest = srList.length ? srList[0] : null;
+          const srStatus = latest ? latest.status : null;
+          const statusTextMap = {
+            'new': 'รอตรวจคำขอ',
+            'reviewed': 'กำลังแก้ไขคำขอ',
+            'converted': 'รับคำขอแล้ว',
+            'rejected': 'ปฏิเสธ',
+            'closed': 'ปิด',
+            'deleted': 'ยกเลิก'
+          };
+          const label = statusTextMap[srStatus] || 'รอตรวจคำขอ';
+
+          // Prefer appending next to existing .status-badge element
+          const statusBadgeEl = r.querySelector('.status-badge');
+          if (statusBadgeEl) {
+            // avoid duplicate
+            if (!statusBadgeEl.parentNode.querySelector('.sr-exists-badge')) {
+              const srBadge = document.createElement('span');
+              srBadge.className = 'sr-exists-badge';
+              srBadge.style.cssText = 'display:inline-block;margin-left:6px;padding:4px 8px;border-radius:12px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a855f7 100%);color:#fff;font-weight:700;font-size:0.8rem;';
+              srBadge.textContent = label;
+              statusBadgeEl.parentNode.insertBefore(srBadge, statusBadgeEl.nextSibling);
+            } else {
+              // update text if exists
+              const existing = statusBadgeEl.parentNode.querySelector('.sr-exists-badge');
+              if (existing) existing.textContent = label;
+            }
+          } else {
+            // fallback: append into the 6th td (status column)
+            const td = r.querySelector('td:nth-child(6)');
+            if (td) {
+              if (!td.querySelector('.sr-exists-badge')) {
+                const srBadge = document.createElement('span');
+                srBadge.className = 'sr-exists-badge';
+                srBadge.style.cssText = 'display:inline-block;margin-left:6px;padding:4px 8px;border-radius:12px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a855f7 100%);color:#fff;font-weight:700;font-size:0.8rem;';
+                srBadge.textContent = label;
+                td.appendChild(srBadge);
+              } else {
+                const existing = td.querySelector('.sr-exists-badge');
+                if (existing) existing.textContent = label;
+              }
+            }
+          }
+        } catch (e) {
+          // ignore per-row errors
+        }
+      });
+    });
+  } catch (e) {
+    console.debug('Error checking existing SRs:', e);
+  }
+}
+
+function renderPaginationButtons() {
+  const paginationNav = document.getElementById('paginationNav');
+  if(!paginationNav) return;
+  
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  paginationNav.innerHTML = '';
+  
+  // Previous button
+  const prevLi = document.createElement('li');
+  prevLi.className = 'page-item' + (currentPage === 1 ? ' disabled' : '');
+  prevLi.innerHTML = '<a class="page-link" href="#" style="border-radius: 0.5rem 0 0 0.5rem;"><i class="bi bi-chevron-left"></i></a>';
+  if(currentPage > 1) {
+    prevLi.querySelector('a').addEventListener('click', function(e) {
+      e.preventDefault();
+      currentPage--;
+      renderPage();
+    });
+  }
+  paginationNav.appendChild(prevLi);
+  
+  // Page numbers (show max 5 pages)
+  const startPage = Math.max(1, currentPage - 2);
+  const endPage = Math.min(totalPages, startPage + 4);
+  
+  for(let i = startPage; i <= endPage; i++) {
+    const pageLi = document.createElement('li');
+    pageLi.className = 'page-item' + (i === currentPage ? ' active' : '');
+    const pageLink = document.createElement('a');
+    pageLink.className = 'page-link';
+    pageLink.href = '#';
+    pageLink.textContent = i;
+    if(i === currentPage) {
+      pageLink.style.background = 'var(--primary)';
+      pageLink.style.borderColor = 'var(--primary)';
+    }
+    
+    (function(pageNum) {
+      pageLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        currentPage = pageNum;
+        renderPage();
+      });
+    })(i);
+    
+    pageLi.appendChild(pageLink);
+    paginationNav.appendChild(pageLi);
+  }
+  
+  // Next button
+  const nextLi = document.createElement('li');
+  nextLi.className = 'page-item' + (currentPage === totalPages || totalPages === 0 ? ' disabled' : '');
+  nextLi.innerHTML = '<a class="page-link" href="#" style="border-radius: 0 0.5rem 0.5rem 0;"><i class="bi bi-chevron-right"></i></a>';
+  if(currentPage < totalPages) {
+    nextLi.querySelector('a').addEventListener('click', function(e) {
+      e.preventDefault();
+      currentPage++;
+      renderPage();
+    });
+  }
+  paginationNav.appendChild(nextLi);
+}
+
+function updateJumpToPageDropdown() {
+  const jumpToPageSelect = document.getElementById('jumpToPage');
+  if(!jumpToPageSelect) return;
+  
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  jumpToPageSelect.innerHTML = '';
+  
+  for(let i = 1; i <= totalPages; i++) {
+    const option = document.createElement('option');
+    option.value = i;
+    option.textContent = i;
+    if(i === currentPage) {
+      option.selected = true;
+    }
+    jumpToPageSelect.appendChild(option);
+  }
+}
+
+function applyFilters() {
+  currentPage = 1;
+  loadEquipmentData();
+}
+
+function clearFilters() {
+  document.getElementById('month-filter').value = '';
+  document.getElementById('year-filter').value = new Date().getFullYear();
+  document.getElementById('department-filter').value = '';
+  document.getElementById('search-filter').value = '';
+  // Reset filter chips
+  document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.remove('active'));
+  document.querySelector('.filter-chip[data-status=""]').classList.add('active');
+  currentPage = 1;
+  loadEquipmentData();
+}
+
+function filterByStatus(status) {
+  // Update filter chips UI
+  document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.remove('active'));
+  document.querySelector(`.filter-chip[data-status="${status}"]`).classList.add('active');
+  
+  // Apply filter
+  if (status === '') {
+    filteredData = allData.slice();
+  } else {
+    filteredData = allData.filter(item => item.status === status);
+  }
+  
+  currentPage = 1;
+  renderPage();
+}
+
+function applyClientSideFilter() {
+  const searchTerm = document.getElementById('search-filter').value.toLowerCase().trim();
+  
+  if(searchTerm === '') {
+    filteredData = allData.slice();
+  } else {
+    filteredData = allData.filter(item => {
+      const searchableText = [
+        item.code || '',
+        item.name || '',
+        item.departmentName || ''
+      ].join(' ').toLowerCase();
+      
+      return searchableText.includes(searchTerm);
+    });
+  }
+  
+  currentPage = 1;
+  renderPage();
+}
+
+function loadEquipmentData() {
+  // Show loading skeleton state
+  const tbody = document.getElementById('equipment-tbody');
+  const cards = document.getElementById('equipment-cards');
+  
+  // Generate skeleton rows for desktop
+  const skeletonRows = Array(5).fill(0).map(() => `
+    <tr class="loading-row">
+      <td><div class="skeleton-line" style="width:20px; height:20px; border-radius:4px;"></div></td>
+      <td><div class="skeleton-line" style="width:30px;"></div></td>
+      <td>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <div class="skeleton-line pill" style="width:80px;"></div>
+          <div class="skeleton-line medium"></div>
+        </div>
+      </td>
+      <td><div class="skeleton-line short"></div></td>
+      <td>
+        <div style="display:flex; flex-direction:column; gap:6px; align-items:center;">
+          <div class="skeleton-line pill"></div>
+          <div class="skeleton-line pill"></div>
+        </div>
+      </td>
+      <td style="text-align:center;"><div class="skeleton-line pill" style="margin:0 auto;"></div></td>
+      <td style="text-align:center;"><div class="skeleton-line" style="width:90px; height:36px; border-radius:10px; margin:0 auto;"></div></td>
+      <td style="text-align:center;"><div class="skeleton-line" style="width:40px; height:40px; border-radius:12px; margin:0 auto;"></div></td>
+    </tr>
+  `).join('');
+  
+  tbody.innerHTML = skeletonRows;
+  cards.innerHTML = '<div class="text-center py-4" style="color:#64748b;"><i class="bi bi-arrow-repeat spin" style="font-size:1.5rem; animation: spin 1s linear infinite;"></i><br><small>กำลังโหลดข้อมูล...</small></div>';
+  
+  // Add spin animation if not exists
+  if (!document.getElementById('spin-style')) {
+    const style = document.createElement('style');
+    style.id = 'spin-style';
+    style.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+    document.head.appendChild(style);
+  }
+  
+  // Get filter values (safe guards in case elements are not present)
+  const monthEl = document.getElementById('month-filter');
+  const yearEl = document.getElementById('year-filter');
+  const deptEl = document.getElementById('department-filter');
+  const statusEl = document.getElementById('status-filter');
+  const searchEl = document.getElementById('search-filter');
+
+  const params = new URLSearchParams({
+    month: monthEl ? monthEl.value : '',
+    year: yearEl ? yearEl.value : '',
+    department: deptEl ? deptEl.value : '',
+    status: statusEl ? statusEl.value : '',
+    search: searchEl ? searchEl.value : '',
+    pm_cal_due: 1
+  });
+  
+  // Fetch data from API
+  fetch(`${API_ENDPOINTS.equipmentList}?${params}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        allData = data.data;
+        filteredData = data.data.slice();
+        currentPage = 1;
+        renderPage();
+      } else {
+        showToast('error', data.error || 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">เกิดข้อผิดพลาด: ' + (data.error || 'Unknown error') + '</td></tr>';
+        cards.innerHTML = '<div class="text-center text-danger py-4">เกิดข้อผิดพลาด: ' + (data.error || 'Unknown error') + '</div>';
+      }
+    })
+    .catch(error => {
+      console.error('Error loading equipment data:', error);
+      showToast('error', 'ไม่สามารถโหลดข้อมูลได้');
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์</td></tr>';
+      cards.innerHTML = '<div class="text-center text-danger py-4">ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์</div>';
+    });
+}
+
+function updateStatistics() {
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+  
+  const overdue = filteredData.filter(item => item.status === 'overdue').length;
+  const dueSoon = filteredData.filter(item => item.status === 'due-soon').length;
+  const scheduled = filteredData.filter(item => item.status === 'scheduled' && item.scheduledDate).length;
+  
+  const thisMonth = filteredData.filter(item => {
+    if (!item.maintenanceDue) return false;
+    const dueDate = new Date(item.maintenanceDue);
+    return dueDate.getMonth() + 1 === currentMonth && dueDate.getFullYear() === currentYear;
+  }).length;
+  
+  document.getElementById('overdue-count').textContent = overdue;
+  document.getElementById('due-soon-count').textContent = dueSoon;
+  document.getElementById('scheduled-count').textContent = scheduled;
+  document.getElementById('this-month-count').textContent = thisMonth;
+}
+
+function renderEquipmentWithData(data) {
+  const tbody = document.getElementById('equipment-tbody');
+  const cards = document.getElementById('equipment-cards');
+  const emptyState = document.getElementById('empty-state');
+  
+  if (data.length === 0) {
+    tbody.innerHTML = '';
+    cards.innerHTML = '';
+    emptyState.style.display = 'block';
+    return;
+  }
+  
+  emptyState.style.display = 'none';
+  
+  // Render table rows (desktop)
+  tbody.innerHTML = data.map((item, index) => {
+    const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
+    const rowClass = item.status === 'overdue' ? 'row-overdue' : item.status === 'due-soon' ? 'row-due-soon' : item.scheduledDate ? 'row-scheduled' : '';
+    
+    return `
+    <tr data-equipment-id="${item.id}" class="${rowClass}">
+      <td class="bulk-edit-checkbox-col">
+        <input type="checkbox" class="checkbox-modern row-select-bulk" value="${item.id}" 
+          onchange="updateBulkSelectionUI()">
+      </td>
+      <td style="text-align: center; font-weight: 600; color: #94a3b8; font-size: 0.8rem;">${rowNumber}</td>
+      <td>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color:#fff; font-weight:700; font-size:0.7rem; padding:3px 8px; border-radius:6px; letter-spacing:0.3px;">${item.code}</span>
+          </div>
+          <span style="color:#334155; font-size:0.875rem; font-weight:500;">${item.nameEn || item.name}</span>
+        </div>
+      </td>
+      <td>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <i class="bi bi-building" style="color:#94a3b8; font-size:0.9rem;"></i>
+          <span style="font-size:0.85rem; color:#64748b;">${item.departmentName || '—'}</span>
+        </div>
+      </td>
+      <td>
+        <div class="due-cell" style="display:flex; align-items:center; gap:6px;">
+          <div class="due-row">
+            <span class="due-tag pm-tag">PM</span>
+            <span class="due-date ${!item.equipment_pm_due ? 'no-date' : ''}">${item.equipment_pm_due ? formatDate(item.equipment_pm_due) : '—'}</span>
+          </div>
+          <div class="due-row">
+            <span class="due-tag cal-tag">CAL</span>
+            <span class="due-date ${!item.calDue ? 'no-date' : ''}">${item.calDue ? formatDate(item.calDue) : '—'}</span>
+          </div>
+        </div>
+      </td>
+      <td style="text-align:center;">${getStatusBadge(item.status)}</td>
+      <td style="text-align:center;">
+          ${item.scheduledDate ? 
+          `<span class="scheduled-date"><i class="bi bi-check-circle-fill"></i>${formatDate(item.scheduledDate)}</span>` : 
+          `<button class="date-picker-btn" id="date-btn-${item.id}" data-date="" data-equipment-id="${item.id}"
+            onclick="openDatePickerModal(${item.id}, '${item.code}', '${(item.nameEn || item.name).replace(/'/g, "\\'")}')">
+            <i class="bi bi-calendar-plus"></i>
+            <span id="selected-date-${item.id}">เลือกวัน</span>
+          </button>`
+        }
+      </td>
+      <td style="text-align:center;">
+        ${!item.scheduledDate ? 
+          `<button class="action-btn action-btn-primary" id="create-btn-${item.id}" onclick="createServiceRequest(${item.id})" disabled title="ส่งคำขอรับบริการ">
+            <i class="bi bi-send-fill"></i>
+          </button>` : 
+          `<button class="action-btn action-btn-secondary" onclick="editSchedule(${item.id})" title="แก้ไขนัดหมาย">
+            <i class="bi bi-pencil-fill"></i>
+          </button>`
+        }
+      </td>
+    </tr>
+  `;
+  }).join('');
+  
+  // Render cards (mobile)
+  cards.innerHTML = data.map(item => {
+    const cardBorderColor = item.status === 'overdue' ? '#ef4444' : item.status === 'due-soon' ? '#f59e0b' : item.scheduledDate ? '#22c55e' : '#e2e8f0';
+    return `
+    <div class="equipment-card ${item.status}" style="border-left-color: ${cardBorderColor}; border-radius: 16px; overflow: hidden;">
+      <div class="equipment-card-header" style="background: linear-gradient(135deg, #f8fafc 0%, #fff 100%); padding: 1rem 1.25rem; border-bottom: 1px solid #f1f5f9;">
+        <div style="flex:1;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+            <span style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color:#fff; font-weight:700; font-size:0.7rem; padding:4px 10px; border-radius:8px; letter-spacing:0.3px;">${item.code}</span>
+          </div>
+          <div class="equipment-name" style="font-size:1rem; color:#1e293b; font-weight:600;">${item.nameEn || item.name}</div>
+        </div>
+        <div>${getStatusBadge(item.status)}</div>
+      </div>
+      <div class="equipment-card-body" style="padding: 1.25rem;">
+        <div class="info-row" style="display:flex; align-items:center; gap:8px; margin-bottom:1rem; padding:0.75rem; background:#f8fafc; border-radius:10px;">
+          <i class="bi bi-building" style="color:#64748b; font-size:1rem;"></i>
+          <span style="font-size:0.9rem; color:#475569; font-weight:500;">${item.departmentName || '—'}</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:1rem;">
+          <div class="due-row" style="display:inline-flex; align-items:center; background:#f8fafc; border-radius:20px; padding:3px; border:1px solid #e2e8f0; width:fit-content;">
+            <span class="due-tag pm-tag" style="background:linear-gradient(135deg,#3b82f6 0%,#1d4ed8 100%); color:#fff; font-weight:700; padding:5px 10px; border-radius:16px; font-size:0.65rem; text-transform:uppercase;">PM</span>
+            <span style="color:${item.equipment_pm_due ? '#334155' : '#94a3b8'}; font-weight:600; font-size:0.85rem; padding:5px 12px 5px 8px;">${item.equipment_pm_due ? formatDate(item.equipment_pm_due) : '—'}</span>
+          </div>
+          <div class="due-row" style="display:inline-flex; align-items:center; background:#f8fafc; border-radius:20px; padding:3px; border:1px solid #e2e8f0; width:fit-content;">
+            <span class="due-tag cal-tag" style="background:linear-gradient(135deg,#8b5cf6 0%,#6d28d9 100%); color:#fff; font-weight:700; padding:5px 10px; border-radius:16px; font-size:0.65rem; text-transform:uppercase;">CAL</span>
+            <span style="color:${item.calDue ? '#334155' : '#94a3b8'}; font-weight:600; font-size:0.85rem; padding:5px 12px 5px 8px;">${item.calDue ? formatDate(item.calDue) : '—'}</span>
+          </div>
+        </div>
+        ${item.scheduledDate ? `
+          <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); padding:0.875rem 1rem; border-radius:12px; display:flex; align-items:center; gap:8px; margin-bottom:1rem;">
+            <i class="bi bi-check-circle-fill" style="color:#16a34a; font-size:1.1rem;"></i>
+            <div>
+              <div style="font-size:0.75rem; color:#166534; text-transform:uppercase; letter-spacing:0.3px; font-weight:600;">นัดหมายแล้ว</div>
+              <div style="font-size:0.95rem; color:#15803d; font-weight:700;">${formatDate(item.scheduledDate)}</div>
+            </div>
+          </div>
+        ` : `
+          <div style="margin-bottom:1rem;">
+            <label style="font-size:0.8rem; color:#64748b; font-weight:600; display:block; margin-bottom:8px;">เลือกวันนัดหมาย</label>
+            <button class="date-picker-btn" id="date-btn-mobile-${item.id}" style="width:100%; justify-content:center; padding:0.875rem 1rem;"
+              data-equipment-id="${item.id}"
+              data-equipment-code="${item.code}"
+              data-equipment-name="${item.nameEn || item.name}"
+              onclick="openDatePickerModal(${item.id}, '${item.code}', '${(item.nameEn || item.name).replace(/'/g, "\\'")}')">
+              <i class="bi bi-calendar-plus"></i>
+              <span id="selected-date-mobile-${item.id}">เลือกวันที่ที่ช่างว่าง</span>
+            </button>
+            <input type="hidden" id="date-mobile-${item.id}" value="">
+          </div>
+        `}
+        <div>
+          ${!item.scheduledDate ? 
+            `<button class="action-btn action-btn-primary" style="width:100%; height:48px; border-radius:12px; font-size:0.9rem; font-weight:600;" id="create-btn-mobile-${item.id}" onclick="createServiceRequest(${item.id})" disabled>
+              <i class="bi bi-send-fill" style="margin-right:8px;"></i> ส่งคำร้องขอบำรุงรักษา
+            </button>` : 
+            `<button class="action-btn action-btn-secondary" style="width:100%; height:48px; border-radius:12px; font-size:0.9rem; font-weight:600;" onclick="viewServiceRequest(${item.id})">
+              <i class="bi bi-eye" style="margin-right:8px;"></i> ดูคำร้องที่ส่งแล้ว
+            </button>`
+          }
+        </div>
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 
+                      'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  return `${date.getDate()} ${thaiMonths[date.getMonth()]} ${date.getFullYear() + 543}`;
+}
+
+function getStatusBadge(status) {
+  const badges = {
+    'overdue': '<span class="status-badge overdue"><i class="bi bi-exclamation-triangle-fill"></i>เกินกำหนด</span>',
+    'due-soon': '<span class="status-badge due-soon"><i class="bi bi-clock-fill"></i>ใกล้ครบ</span>',
+    'scheduled': '<span class="status-badge scheduled"><i class="bi bi-calendar-check-fill"></i>นัดแล้ว</span>',
+    'completed': '<span class="status-badge completed"><i class="bi bi-check-circle-fill"></i>เสร็จ</span>'
+  };
+  return badges[status] || '<span class="status-badge" style="background:#f1f5f9;color:#64748b;">—</span>';
+}
+
+// === Date Picker Modal Functions ===
+let currentEquipmentId = null;
+let currentSelectedDate = null;
+let availableDatesModal = null;
+
+// Initialize modal on DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+  const modalEl = document.getElementById('availableDatesModal');
+  if (modalEl) {
+    availableDatesModal = new bootstrap.Modal(modalEl);
+  }
+});
+
+function openDatePickerModal(equipmentId, equipmentCode, equipmentName) {
+  currentEquipmentId = equipmentId;
+  currentSelectedDate = null;
+  
+  // Update modal header with equipment info
+  document.getElementById('modalEqCode').textContent = equipmentCode;
+  document.getElementById('modalEqName').textContent = equipmentName;
+  document.getElementById('modalEqSkill').innerHTML = `
+    <i class="bi bi-hourglass-split"></i>
+    <span>กำลังค้นหาช่างที่มีทักษะตรงกัน...</span>
+  `;
+  
+  // Reset states
+  document.getElementById('datesLoading').style.display = 'flex';
+  document.getElementById('availableDatesGrid').style.display = 'none';
+  document.getElementById('noDatesState').style.display = 'none';
+  document.getElementById('selectedDatePreview').classList.add('hidden');
+  document.getElementById('confirmDateBtn').disabled = true;
+  
+  // Show modal
+  availableDatesModal.show();
+  
+  // Fetch available dates
+  fetchAvailableDates(equipmentId);
+}
+
+async function fetchAvailableDates(equipmentId) {
+  const loadingEl = document.getElementById('datesLoading');
+  const gridEl = document.getElementById('availableDatesGrid');
+  const noDatesEl = document.getElementById('noDatesState');
+  const skillEl = document.getElementById('modalEqSkill');
+  
+  try {
+    const response = await fetch(`/api/appointment/available-dates/?equipment_id=${equipmentId}&days=21`);
+    const data = await response.json();
+    
+    if (data.success) {
+      // Update skill info
+      const techCount = data.technicians_count || 0;
+      skillEl.innerHTML = `
+        <i class="bi bi-person-check text-success"></i>
+        <span>พบช่าง <strong>${techCount}</strong> คนที่มีทักษะตรงกับเครื่องมือนี้</span>
+      `;
+      
+      // Hide loading
+      loadingEl.style.display = 'none';
+
+      // Check if we have dates
+      if (data.dates && data.dates.length > 0) {
+        // Render calendar view
+        renderCalendar(data.dates);
+        gridEl.style.display = 'block';
+      } else {
+        // No available dates
+        noDatesEl.style.display = 'flex';
+      }
+    } else {
+      throw new Error(data.message || 'Unknown error');
+    }
+  } catch (error) {
+    console.error('Error fetching available dates:', error);
+    loadingEl.style.display = 'none';
+    noDatesEl.style.display = 'flex';
+    noDatesEl.querySelector('h5').textContent = 'เกิดข้อผิดพลาด';
+    noDatesEl.querySelector('p').textContent = error.message || 'ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง';
+  }
+}
+
+function renderCalendar(dates) {
+  const gridEl = document.getElementById('availableDatesGrid');
+  gridEl.innerHTML = '';
+
+  // Normalize date strings to Date objects and map availability
+  const map = {};
+  const dateObjs = dates.map(d => {
+    // Keep original date string as key (assume format YYYY-MM-DD)
+    map[d.date] = (d.remaining === undefined || d.remaining === null) ? 0 : Number(d.remaining) || 0;
+    // Create a Date object for sorting/range calculations
+    return new Date(d.date + 'T00:00:00');
+  }).sort((a,b)=>a-b);
+
+  // Determine range (show month of first available by default)
+  const first = dateObjs[0];
+  const last = dateObjs[dateObjs.length-1];
+  let currentYear = first.getFullYear();
+  let currentMonth = first.getMonth();
+
+  const thaiMonthsFull = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const thaiWeek = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+
+  function buildCalendar(year, month) {
+    const monthStart = new Date(year, month, 1);
+    const monthEnd = new Date(year, month+1, 0);
+
+    const container = document.createElement('div');
+    container.className = 'calendar-wrapper';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'calendar-header';
+    header.innerHTML = `
+      <div class="calendar-nav">
+        <button type="button" class="btn-prev" aria-label="Prev month">&lt;</button>
+      </div>
+      <div class="calendar-month">${thaiMonthsFull[month]} ${year + 543}</div>
+      <div class="calendar-nav">
+        <button type="button" class="btn-next" aria-label="Next month">&gt;</button>
+      </div>
+    `;
+
+    container.appendChild(header);
+
+    // Weekdays
+    const weekdays = document.createElement('div');
+    weekdays.className = 'calendar-grid';
+    thaiWeek.forEach(w => {
+      const el = document.createElement('div');
+      el.className = 'calendar-weekday';
+      el.textContent = w;
+      weekdays.appendChild(el);
+    });
+    container.appendChild(weekdays);
+
+    // Days grid
+    const daysGrid = document.createElement('div');
+    daysGrid.className = 'calendar-grid';
+
+    // pad empty cells for first day
+    const pad = monthStart.getDay();
+    for (let i=0;i<pad;i++) {
+      const empty = document.createElement('div');
+      empty.className = 'calendar-day disabled';
+      daysGrid.appendChild(empty);
+    }
+
+    // actual days
+    for (let d=1; d<=monthEnd.getDate(); d++) {
+      const day = new Date(year, month, d);
+      const iso = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+      const rem = map[iso] || 0;
+
+      const dayEl = document.createElement('button');
+      dayEl.type = 'button';
+      dayEl.className = 'calendar-day' + (rem===0 ? ' disabled' : '');
+      dayEl.dataset.date = iso;
+      dayEl.dataset.remaining = rem;
+
+      const num = document.createElement('div'); num.className='day-num'; num.textContent = d;
+      const avail = document.createElement('div'); avail.className='avail';
+      const dot = document.createElement('span'); dot.className = 'availability-dot ' + (rem<=2? 'low' : rem<=5? 'medium' : 'high');
+      const txt = document.createElement('span'); txt.textContent = rem>0? `ว่าง ${rem} คน` : '';
+      avail.appendChild(dot); avail.appendChild(txt);
+
+      dayEl.appendChild(num);
+      dayEl.appendChild(avail);
+
+      // Compare against local today (avoid UTC ISO issues)
+      const now = new Date();
+      const todayLocal = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      if (iso === todayLocal) dayEl.classList.add('today');
+
+      dayEl.addEventListener('click', function(){
+        if (rem===0) return;
+        // deselect others
+        document.querySelectorAll('.calendar-day.selected').forEach(c=>c.classList.remove('selected'));
+        dayEl.classList.add('selected');
+        // reuse existing selection handler
+        selectDateChip(dayEl, iso);
+      });
+
+      daysGrid.appendChild(dayEl);
+    }
+
+    container.appendChild(daysGrid);
+
+    // attach prev/next handlers
+    header.querySelector('.btn-prev').addEventListener('click', ()=>{
+      // move month back but not before first available
+      const prev = new Date(year, month-1, 1);
+      if (prev > first || (prev.getFullYear()===first.getFullYear() && prev.getMonth()>=first.getMonth())) {
+        currentMonth = month-1; currentYear = year;
+        renderMonth();
+      }
+    });
+    header.querySelector('.btn-next').addEventListener('click', ()=>{
+      const next = new Date(year, month+1, 1);
+      if (next < last || (next.getFullYear()===last.getFullYear() && next.getMonth()<=last.getMonth())) {
+        currentMonth = month+1; currentYear = year;
+        renderMonth();
+      }
+    });
+
+    return container;
+  }
+
+  function renderMonth(){
+    gridEl.innerHTML = '';
+    const cal = buildCalendar(currentYear, currentMonth);
+    gridEl.appendChild(cal);
+  }
+
+  renderMonth();
+}
+
+function renderDateChips(dates) {
+  const gridEl = document.getElementById('availableDatesGrid');
+  
+  const thaiDays = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+  const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 
+                      'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  
+  gridEl.innerHTML = dates.map(dateInfo => {
+    const dateObj = new Date(dateInfo.date);
+    const dayName = thaiDays[dateObj.getDay()];
+    const dayNum = dateObj.getDate();
+    const monthName = thaiMonths[dateObj.getMonth()];
+    const remaining = dateInfo.remaining || 0;
+    
+    // Determine availability level for styling
+    let availabilityClass = 'high';
+    if (remaining <= 2) availabilityClass = 'low';
+    else if (remaining <= 5) availabilityClass = 'medium';
+    
+    return `
+      <div class="date-chip" 
+           data-date="${dateInfo.date}" 
+           data-availability="${availabilityClass}"
+           onclick="selectDateChip(this, '${dateInfo.date}')">
+        <div class="date-day">${dayName}</div>
+        <div class="date-number">${dayNum}</div>
+        <div class="date-month">${monthName}</div>
+        <div class="date-availability">
+          <span class="availability-dot ${availabilityClass}"></span>
+          <span>ว่าง ${remaining} คน</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectDateChip(chipElement, dateValue) {
+  // Remove selection from all chips and calendar days
+  document.querySelectorAll('.date-chip.selected, .calendar-day.selected').forEach(c => c.classList.remove('selected'));
+
+  // Determine the date string (prefer explicit dateValue, fallback to element's data-date)
+  let dateStr = dateValue;
+  if ((!dateStr || dateStr === '') && chipElement) {
+    dateStr = (chipElement.dataset && chipElement.dataset.date) ? chipElement.dataset.date : chipElement.getAttribute && chipElement.getAttribute('data-date');
+  }
+
+  // Select the element (either the passed element or lookup by data-date)
+  let targetEl = null;
+  if (chipElement) {
+    targetEl = chipElement;
+  } else if (dateStr) {
+    targetEl = document.querySelector(`[data-date="${dateStr}"]`);
+  }
+  if (targetEl) targetEl.classList.add('selected');
+
+  currentSelectedDate = dateStr;
+
+  // If no valid date, nothing more to do
+  if (!dateStr) return;
+
+  // Update preview
+  const dateObj = new Date(dateStr);
+  const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 
+                      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+  const thaiDays = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];
+  const formattedDate = `${thaiDays[dateObj.getDay()]}ที่ ${dateObj.getDate()} ${thaiMonths[dateObj.getMonth()]} ${dateObj.getFullYear() + 543}`;
+  
+  document.getElementById('selectedDateText').textContent = formattedDate;
+  document.getElementById('selectedDatePreview').classList.remove('hidden');
+  document.getElementById('confirmDateBtn').disabled = false;
+}
+
+function confirmSelectedDate() {
+  if (!currentSelectedDate || !currentEquipmentId) return;
+  
+  // Update data-date (preferred) or fallback hidden inputs, and get trigger elements
+  const triggerBtnDesktop = document.getElementById(`date-btn-${currentEquipmentId}`);
+  const triggerBtnMobile = document.getElementById(`date-btn-mobile-${currentEquipmentId}`);
+  const hiddenInputDesktop = document.getElementById(`date-${currentEquipmentId}`);
+  const hiddenInputMobile = document.getElementById(`date-mobile-${currentEquipmentId}`);
+
+  if (triggerBtnDesktop) {
+    triggerBtnDesktop.dataset.date = currentSelectedDate;
+  } else if (hiddenInputDesktop) {
+    hiddenInputDesktop.value = currentSelectedDate;
+  }
+
+  if (triggerBtnMobile) {
+    triggerBtnMobile.dataset.date = currentSelectedDate;
+  } else if (hiddenInputMobile) {
+    hiddenInputMobile.value = currentSelectedDate;
+  }
+
+  const selectedDateDesktop = document.getElementById(`selected-date-${currentEquipmentId}`);
+  const selectedDateMobile = document.getElementById(`selected-date-mobile-${currentEquipmentId}`);
+  
+  const dateObj = new Date(currentSelectedDate);
+  const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 
+                      'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  const shortDate = `${dateObj.getDate()} ${thaiMonths[dateObj.getMonth()]} ${dateObj.getFullYear() + 543}`;
+  
+  if (selectedDateDesktop) selectedDateDesktop.textContent = shortDate;
+  if (selectedDateMobile) selectedDateMobile.textContent = shortDate;
+  
+  if (triggerBtnDesktop) triggerBtnDesktop.classList.add('has-value');
+  if (triggerBtnMobile) triggerBtnMobile.classList.add('has-value');
+  
+  // Enable the create service request button
+  const createBtnDesktop = document.getElementById(`create-btn-${currentEquipmentId}`);
+  const createBtnMobile = document.getElementById(`create-btn-mobile-${currentEquipmentId}`);
+  
+  if (createBtnDesktop) createBtnDesktop.disabled = false;
+  if (createBtnMobile) createBtnMobile.disabled = false;
+  
+  // Close modal
+  availableDatesModal.hide();
+  
+  // Show success toast
+  showToast('เลือกวันที่สำเร็จ', `กำหนดวันที่นัดหมาย: ${shortDate}`, 'success');
+}
+
+function showToast(title, message, type = 'info') {
+  // Create toast container if not exists
+  let toastContainer = document.querySelector('.toast-container');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+    document.body.appendChild(toastContainer);
+  }
+  
+  const toastId = 'toast-' + Date.now();
+  const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-primary';
+  
+  const toastHTML = `
+    <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert">
+      <div class="d-flex">
+        <div class="toast-body">
+          <strong>${title}</strong><br>
+          ${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  `;
+  
+  toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+  
+  const toastEl = document.getElementById(toastId);
+  const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+  toast.show();
+  
+  toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+}
+
+function getPriorityIndicator(priority) {
+  const labels = {
+    'high': '<span class="priority-indicator priority-high"><span class="priority-dot"></span>สูง</span>',
+    'medium': '<span class="priority-indicator priority-medium"><span class="priority-dot"></span>ปานกลาง</span>',
+    'low': '<span class="priority-indicator priority-low"><span class="priority-dot"></span>ต่ำ</span>'
+  };
+  return labels[priority] || '-';
+}
+
+// === Bulk Edit Mode Functions ===
+window.toggleBulkEditMode = function() {
+  const body = document.body;
+  const toggleBtn = document.getElementById('toggleBulkEditBtn');
+  
+  if (body.classList.contains('bulk-edit-mode')) {
+    // Exit bulk edit mode
+    body.classList.remove('bulk-edit-mode');
+    if(toggleBtn) {
+      toggleBtn.innerHTML = '<i class="bi bi-pencil-square"></i> แก้ไขแบบกลุ่ม';
+    }
+    
+    // Clear all bulk selections
+    document.querySelectorAll('.row-select-bulk').forEach(cb => cb.checked = false);
+    const selectAllBulk = document.getElementById('select-all-bulk');
+    if(selectAllBulk) selectAllBulk.checked = false;
+    updateBulkSelectionUI();
+  } else {
+    // Enter bulk edit mode
+    body.classList.add('bulk-edit-mode');
+    if(toggleBtn) {
+      toggleBtn.innerHTML = '<i class="bi bi-x-circle"></i> ออกจากโหมดแก้ไข';
+    }
+  }
+};
+
+window.toggleSelectAllBulk = function() {
+  const checkbox = document.getElementById('select-all-bulk');
+  const allCheckboxes = document.querySelectorAll('.row-select-bulk');
+  
+  allCheckboxes.forEach(cb => {
+    cb.checked = checkbox.checked;
+  });
+  
+  updateBulkSelectionUI();
+};
+
+window.updateBulkSelectionUI = function() {
+  const selectedCheckboxes = document.querySelectorAll('.row-select-bulk:checked');
+  const count = selectedCheckboxes.length;
+  const countNumber = document.getElementById('selectedCountNumber');
+  const bulkEditButton = document.getElementById('bulkEditButton');
+  
+  if(countNumber) {
+    countNumber.textContent = count;
+  }
+  
+  if(bulkEditButton) {
+    bulkEditButton.disabled = count === 0;
+  }
+  
+  // Update select all checkbox state
+  const selectAllCheckbox = document.getElementById('select-all-bulk');
+  const totalCheckboxes = document.querySelectorAll('.row-select-bulk').length;
+  
+  if(selectAllCheckbox && totalCheckboxes > 0) {
+    selectAllCheckbox.checked = count === totalCheckboxes && count > 0;
+    selectAllCheckbox.indeterminate = count > 0 && count < totalCheckboxes;
+  }
+};
+
+window.openBulkScheduleModal = function() {
+  const selectedCheckboxes = document.querySelectorAll('.row-select-bulk:checked');
+  if(selectedCheckboxes.length === 0) {
+    showToast('error', 'กรุณาเลือกรายการอย่างน้อย 1 รายการ');
+    return;
+  }
+  
+  const date = prompt('กรุณาระบุวันที่ที่ต้องการนำเครื่องเข้าบำรุงรักษา (ปปปป-ดด-วว):\n\nตัวอย่าง: 2025-12-15');
+  if(!date) return;
+  
+  // Validate date format
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    showToast('error', 'รูปแบบวันที่ไม่ถูกต้อง กรุณาใช้รูปแบบ ปปปป-ดด-วว');
+    return;
+  }
+  
+  // Collect selected equipment IDs
+  const equipmentIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+  
+  // Show loading
+  showToast('info', 'กำลังสร้างคำร้องขอบำรุงรักษา...');
+  
+  // Send to API
+  fetch(API_ENDPOINTS.bulkCreateServiceRequest, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': CSRF_TOKEN
+    },
+    body: JSON.stringify({
+      equipment_ids: equipmentIds,
+      requested_date: date,
+      notes: 'สร้างจากโหมดแก้ไขแบบกลุ่ม'
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success || data.ok) {
+      // Exit bulk edit mode
+      toggleBulkEditMode();
+      // Reload data
+      loadEquipmentData();
+    } else {
+      showToast('error', data.error || 'เกิดข้อผิดพลาด');
+    }
+  })
+  .catch(error => {
+    console.error('Error bulk creating service request:', error);
+    showToast('error', 'ไม่สามารถสร้างคำร้องขอได้');
+  });
+};
+
+function updateScheduledDate(id, date) {
+  const item = filteredData.find(e => e.id === id);
+  if (item) {
+    item.scheduledDate = date;
+  }
+}
+
+// สร้างคำร้องขอบำรุงรักษาสำหรับเครื่องเดียว
+// Global variable to store pending prefill data
+let pendingPrefillData = null;
+let confirmSendModal = null;
+
+// Initialize confirmation modal on page load
+document.addEventListener('DOMContentLoaded', function() {
+  const modalEl = document.getElementById('confirmSendModal');
+  if (modalEl) {
+    confirmSendModal = new bootstrap.Modal(modalEl);
+    
+    // Handle confirm button click
+    document.getElementById('confirmSendBtn').addEventListener('click', function() {
+      if (pendingPrefillData) {
+        try {
+          // Read selected pills from modal (if any) and update prefill_workorder_types
+          const pillsContainer = document.getElementById('confirmWorkTypesPills');
+          if (pillsContainer) {
+            const selected = Array.from(pillsContainer.querySelectorAll('.confirm-pill.selected')).map(b => (b.dataset.type || b.textContent).trim());
+            if (selected && selected.length > 0) {
+              pendingPrefillData.prefill_workorder_types = selected;
+              pendingPrefillData.title = selected.join(', ');
+            }
+          }
+
+          // Add source tracking
+          pendingPrefillData.source = 'equipment_maintenance_schedule';
+          pendingPrefillData.source_url = window.location.href;
+          
+          sessionStorage.setItem('prefill_service_request', JSON.stringify(pendingPrefillData));
+          confirmSendModal.hide();
+          // Redirect to service request create page
+          window.location.href = '/service-request/create';
+        } catch (err) {
+          console.error('Error storing prefill data:', err);
+          showToast('error', 'ไม่สามารถไปยังหน้าสร้างคำร้องได้ในขณะนี้');
+        }
+      }
+    });
+  }
+});
+
+async function createServiceRequest(id) {
+  // Prefer reading `data-date` from trigger buttons, then fall back to hidden inputs
+  const triggerBtnDesktop = document.getElementById(`date-btn-${id}`);
+  const triggerBtnMobile = document.getElementById(`date-btn-mobile-${id}`);
+  const hiddenInputDesktop = document.getElementById(`date-${id}`);
+  const hiddenInputMobile = document.getElementById(`date-mobile-${id}`);
+
+  let date = null;
+  if (triggerBtnDesktop && triggerBtnDesktop.dataset && triggerBtnDesktop.dataset.date) {
+    date = triggerBtnDesktop.dataset.date;
+  } else if (triggerBtnMobile && triggerBtnMobile.dataset && triggerBtnMobile.dataset.date) {
+    date = triggerBtnMobile.dataset.date;
+  } else if (hiddenInputDesktop && hiddenInputDesktop.value) {
+    date = hiddenInputDesktop.value;
+  } else if (hiddenInputMobile && hiddenInputMobile.value) {
+    date = hiddenInputMobile.value;
+  }
+
+  if (!date) {
+    showToast('error', 'กรุณาเลือกวันที่ที่ต้องการนำเครื่องเข้าบำรุงรักษา');
+    return;
+  }
+
+  // Pre-check availability for selected date using the smart API
+  try {
+    const availRes = await fetch(`/api/appointment/available-dates/?equipment_id=${id}&start_date=${date}&days=1`);
+    const availJson = await availRes.json();
+    // Defensive parsing: coerce remaining to number and normalize success flag
+    const hasDates = availJson && Array.isArray(availJson.dates) && availJson.dates.length > 0;
+    const rawRemaining = hasDates ? availJson.dates[0].remaining : undefined;
+    const remainingNum = rawRemaining === undefined || rawRemaining === null ? 0 : Number(rawRemaining);
+    const successFlag = availJson && (availJson.success === true || availJson.success === 'true');
+    console.debug('Availability API response (debug):', availJson, 'parsedRemaining=', remainingNum, 'successFlag=', successFlag);
+
+    // If server indicates success but remaining is zero, warn (and vice-versa)
+    if (successFlag && remainingNum <= 0) {
+      console.warn('Availability API: success=true but remaining<=0', availJson);
+    }
+    if (!successFlag && remainingNum > 0) {
+      console.warn('Availability API: remaining>0 but success is false', availJson);
+    }
+
+    const ok = successFlag && remainingNum > 0;
+    if (!ok) {
+      showToast('error', 'วันที่เลือกไม่มีช่างว่าง โปรดเลือกวันที่อื่น');
+      return;
+    }
+  } catch (err) {
+    console.error('Error checking availability before create:', err);
+    showToast('error', 'ไม่สามารถตรวจสอบความพร้อมของช่างได้ในขณะนี้');
+    return;
+  }
+
+  // Collect item data if available
+  const item = (typeof filteredData !== 'undefined') ? filteredData.find(e => e.id === id) : null;
+  
+  // Format date for display
+  const dateObj = new Date(date);
+  const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  const formattedDate = `${dateObj.getDate()} ${thaiMonths[dateObj.getMonth()]} ${dateObj.getFullYear() + 543}`;
+  
+  // Update confirmation modal with preview data (guard DOM writes)
+  const confirmEqCodeEl = document.getElementById('confirmEqCode');
+  const confirmEqNameENEl = document.getElementById('confirmEqNameEN');
+  const confirmEqNameEl = document.getElementById('confirmEqName');
+  const confirmEqDeptEl = document.getElementById('confirmEqDept');
+  if (confirmEqCodeEl) confirmEqCodeEl.textContent = item?.code || id;
+  if (confirmEqNameENEl) confirmEqNameENEl.textContent = item?.nameEn || '-';
+  if (confirmEqNameEl) confirmEqNameEl.textContent = item?.name || '-';
+  if (confirmEqDeptEl) confirmEqDeptEl.textContent = item?.departmentName || '-';
+  // Populate PM/CAL due values if those preview elements exist and add status badges
+  const pmDueEl = document.getElementById('confirmEqDuePM');
+  const calDueEl = document.getElementById('confirmEqDueCAL');
+  // helper: return 'overdue' | 'due-soon' | null
+  function computeDueStatus(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    if (isNaN(d)) return null;
+    const today = new Date();
+    // normalize to start of day
+    today.setHours(0,0,0,0);
+    const diffMs = d - today;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return 'overdue';
+    if (diffDays <= 7) return 'due-soon';
+    return null;
+  }
+  if (pmDueEl) {
+    const pmDateStr = item?.equipment_pm_due ? item.equipment_pm_due : (item?.maintenanceDue ? item.maintenanceDue : null);
+    const pmText = pmDateStr ? formatDate(pmDateStr) : '-';
+    const pmStatus = pmDateStr ? computeDueStatus(pmDateStr) : null;
+    pmDueEl.innerHTML = `${pmText}${pmStatus ? `<span class="due-badge ${pmStatus}">${pmStatus === 'overdue' ? 'เกินกำหนด' : 'ใกล้ครบกำหนด'}</span>` : ''}`;
+  }
+  if (calDueEl) {
+    const calDateStr = item?.calDue ? item.calDue : null;
+    const calText = calDateStr ? formatDate(calDateStr) : '-';
+    const calStatus = calDateStr ? computeDueStatus(calDateStr) : null;
+    calDueEl.innerHTML = `${calText}${calStatus ? `<span class="due-badge ${calStatus}">${calStatus === 'overdue' ? 'เกินกำหนด' : 'ใกล้ครบกำหนด'}</span>` : ''}`;
+  }
+  const confirmSelectedDateEl = document.getElementById('confirmSelectedDate');
+  if (confirmSelectedDateEl) confirmSelectedDateEl.textContent = formattedDate;
+  // Populate workorder type preview: pills only (main/sub text removed)
+  
+  // Determine workorder types (PM/CAL) based on item fields and prepare preview pills
+  // Choose primary work type based on which due date is nearest (PM vs CAL)
+  let primaryType = null;
+  try {
+    const now = new Date();
+    let pmDate = null;
+    let calDate = null;
+    if (item) {
+      if (item.equipment_pm_due) pmDate = new Date(item.equipment_pm_due);
+      if (item.maintenanceDue) pmDate = pmDate || new Date(item.maintenanceDue);
+      if (item.calDue) calDate = new Date(item.calDue);
+    }
+    if (pmDate && !isNaN(pmDate)) {
+      if (!calDate || isNaN(calDate)) {
+        primaryType = 'บำรุงรักษา';
+      } else {
+        const dpm = Math.abs(pmDate - now);
+        const dcal = Math.abs(calDate - now);
+        primaryType = dpm <= dcal ? 'บำรุงรักษา' : 'สอบเทียบ';
+      }
+    } else if (calDate && !isNaN(calDate)) {
+      primaryType = 'สอบเทียบ';
+    }
+  } catch (e) {
+    primaryType = primaryType || null;
+  }
+  const workTypes = primaryType ? [primaryType] : [];
+
+  // Prepare display items for pills and include due-status badges when applicable
+  const pmDateStr = item?.equipment_pm_due ? item.equipment_pm_due : (item?.maintenanceDue ? item.maintenanceDue : null);
+  const calDateStr = item?.calDue ? item.calDue : null;
+  const pmStatus = pmDateStr ? computeDueStatus(pmDateStr) : null;
+  const calStatus = calDateStr ? computeDueStatus(calDateStr) : null;
+
+  const displayItems = [];
+  // Include CAL when a cal date exists or calibration is required
+  if (calDateStr || (item && item.requires_cal)) {
+    displayItems.push({ label: 'สอบเทียบ', key: 'cal', status: calStatus });
+  }
+  // Include PM only when it's due (overdue or due-soon). If PM date is far in future, omit to avoid unnecessary prompts.
+  if (pmDateStr && pmStatus !== null) {
+    displayItems.push({ label: 'บำรุงรักษา', key: 'pm', status: pmStatus });
+  }
+  // Fallback: if nothing to show, use primaryType
+  if (displayItems.length === 0 && workTypes.length > 0) displayItems.push({ label: workTypes[0], key: 'primary', status: null });
+
+  // Update preview pills (show badge on each pill when status present)
+  const pillsContainer = document.getElementById('confirmWorkTypesPills');
+  if (pillsContainer) {
+    pillsContainer.innerHTML = displayItems.map(it => {
+      const badge = it.status ? `<span class="due-badge ${it.status}">${it.status === 'overdue' ? 'เกินกำหนด' : 'ใกล้ครบกำหนด'}</span>` : '';
+      const safe = (it.label || '').replace(/"/g, '&quot;');
+      return `<button type="button" class="confirm-pill selected" data-type="${safe}" style="background:#fff;border:1px solid #e2e8f0;padding:6px 10px;border-radius:20px;font-weight:600;color:#374151;display:inline-flex;align-items:center;gap:6px;cursor:pointer;">${safe}</button>`;
+      // ${badge}
+    }).join('');
+
+    // Single click handler for toggling selection
+    pillsContainer.onclick = function(e) {
+      const btn = e.target.closest('.confirm-pill');
+      if (!btn) return;
+      btn.classList.toggle('selected');
+      if (btn.classList.contains('selected')) {
+        btn.style.borderColor = '#10b981';
+        btn.style.background = 'linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%)';
+        btn.style.color = '#065f46';
+      } else {
+        btn.style.borderColor = '#e2e8f0';
+        btn.style.background = '#fff';
+        btn.style.color = '#374151';
+      }
+    };
+  }
+  // If we have a primary work type, pills already show it; no main text element present.
+
+  // Store prefill data for later use
+  pendingPrefillData = {
+    // Service type
+    service_type: 'appointment',
+    // Equipment identification
+    equipment_id: id,
+    equipment_code: item && item.code ? item.code : '',
+    equipment_name: item && item.name ? item.name : '',
+    equipment_name_en: item && item.nameEn ? item.nameEn : '',
+    equipment_type: item && item.equipmentType ? item.equipmentType : '',
+    // Equipment details (brand, model, serial, gov number)
+    equipment_brand: item && item.brand ? item.brand : '',
+    equipment_model: item && item.model ? item.model : '',
+    equipment_sn: item && item.serialNumber ? item.serialNumber : '',
+    equipment_gov: item && item.govNumber ? item.govNumber : '',
+    // Department info
+    equipment_department: item && item.departmentName ? item.departmentName : '',
+    equipment_user_customer: item && item.departmentName ? item.departmentName : '',
+    equipment_owner_customer: item && item.ownerCustomer ? item.ownerCustomer : '',
+    // Maintenance info
+    maintenance_due: item && item.maintenanceDue ? item.maintenanceDue : '',
+    equipment_cal_due: item && item.calDue ? item.calDue : '',
+    requires_cal: item && item.requires_cal ? item.requires_cal : false,
+    dueTypes: item && item.dueTypes ? item.dueTypes : [],
+    frequency: item && item.frequency ? item.frequency : '',
+    status: item && item.status ? item.status : '',
+    priority: item && item.priority ? item.priority : '',
+    // Request details
+    // Title will default to selected work types if available, otherwise a descriptive title
+    title: (workTypes.length > 0 ? workTypes.join(', ') : (item ? `บำรุงรักษาเครื่องมือ ${item.code || ''} ${item.name || ''}`.trim() : '')),
+    description: item ? `นัดหมายบำรุงรักษาตามกำหนด\nรหัสเครื่อง: ${item.code || '-'}\nชื่อเครื่อง: ${item.name || '-'}\nแผนก: ${item.departmentName || '-'}\nกำหนด: ${item.maintenanceDue || '-'}${item.calDue ? '\nกำหนดสอบเทียบ: ' + item.calDue : ''}` : '',
+    desired_service_date: date,
+    // Provide explicit workorder types for service_request_create prefill
+    prefill_workorder_types: workTypes,
+    // Contact (blank - user will fill)
+    customer_name: '',
+    customer_position: '',
+    customer_telephone: '',
+    customer_email: '',
+    customer_department: item && item.departmentName ? item.departmentName : ''
+  };
+  
+  // Show confirmation modal
+  if (confirmSendModal) {
+    confirmSendModal.show();
+  } else {
+    // Fallback: direct redirect if modal not available
+    try {
+      pendingPrefillData.source = 'equipment_maintenance_schedule';
+      pendingPrefillData.source_url = window.location.href;
+      sessionStorage.setItem('prefill_service_request', JSON.stringify(pendingPrefillData));
+      window.location.href = '/service-request/create';
+    } catch (err) {
+      console.error('Error storing prefill data:', err);
+      showToast('error', 'ไม่สามารถไปยังหน้าสร้างคำร้องได้ในขณะนี้');
+    }
+  }
+}
+
+// ดูคำร้องขอที่สร้างแล้ว
+function viewServiceRequest(id) {
+  const item = filteredData.find(e => e.id === id);
+  if (item) {
+    showToast('info', 'กำลังเปิดคำร้องขอที่เกี่ยวข้อง...');
+    // Try to fetch latest service request for this equipment and redirect to its detail page
+    try {
+      function getCookie(name) { const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)'); return v ? v.pop() : ''; }
+      const csrftoken = getCookie('csrftoken');
+      fetch('/api/maintenance/equipment/has-service-requests/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+        body: JSON.stringify({ equipment_ids: [id] })
+      })
+      .then(r => r.json())
+      .then(j => {
+        const list = j && j.results && j.results[String(id)] ? j.results[String(id)] : [];
+        if (list && list.length > 0) {
+          const latest = list[0];
+          const srId = latest.id || (latest.request && latest.request.id) || latest.request_id || latest.pk;
+          if (srId) {
+            window.location.href = `/service-requests/${srId}`;
+            return;
+          }
+        }
+        showToast('error', 'ไม่พบคำร้องสำหรับอุปกรณ์นี้');
+      })
+      .catch(err => {
+        console.error('Error fetching SR for equipment', err);
+        showToast('error', 'ไม่สามารถเปิดคำร้องได้ขณะนี้');
+      });
+    } catch (err) {
+      console.error('viewServiceRequest error:', err);
+      showToast('error', 'ไม่สามารถเปิดคำร้องได้ขณะนี้');
+    }
+  }
+}
+
+// เก็บ function เดิมไว้สำหรับใช้งานแบบเดิม (ถ้าต้องการ)
+function scheduleItem(id) {
+  createServiceRequest(id);
+}
+
+function editSchedule(id) {
+  const item = filteredData.find(e => e.id === id);
+  if (item) {
+    item.scheduledDate = null;
+    renderEquipment();
+  }
+}
+
+function bulkSchedule() {
+  if (selectedItems.size === 0) {
+    showToast('error', 'กรุณาเลือกรายการอย่างน้อย 1 รายการ');
+    return;
+  }
+  
+  const date = prompt('กรุณาระบุวันที่ที่ต้องการนำเครื่องเข้าบำรุงรักษา (ปปปป-ดด-วว):\n\nตัวอย่าง: 2025-12-15');
+  if (!date) return;
+  
+  // Validate date format
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    showToast('error', 'รูปแบบวันที่ไม่ถูกต้อง กรุณาใช้รูปแบบ ปปปป-ดด-วว');
+    return;
+  }
+  
+  // Show loading
+  showToast('info', 'กำลังสร้างคำร้องขอบำรุงรักษา...');
+  
+  // Send to API
+  fetch(API_ENDPOINTS.bulkCreateServiceRequest, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': CSRF_TOKEN
+    },
+    body: JSON.stringify({
+      equipment_ids: Array.from(selectedItems),
+      requested_date: date,
+      notes: ''
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showToast('success', data.message);
+      if (data.errors && data.errors.length > 0) {
+        console.warn('Bulk service request errors:', data.errors);
+      }
+      clearSelection();
+      loadEquipmentData();
+    } else {
+      showToast('error', data.error || 'เกิดข้อผิดพลาด');
+    }
+  })
+  .catch(error => {
+    console.error('Error bulk creating service request:', error);
+    showToast('error', 'ไม่สามารถสร้างคำร้องขอได้');
+  });
+}
+
+function exportToExcel() {
+  showToast('info', 'กำลังสร้างไฟล์ Excel...');
+  
+  // Create CSV content
+  const headers = ['รหัสเครื่องมือ', 'ชื่อเครื่องมือ', 'แผนก', 'กำหนดบำรุงรักษา', 'สถานะ', 'วันที่นัดหมาย', 'ความถี่'];
+  const rows = filteredData.map(item => [
+    item.code,
+    item.name,
+    item.departmentName,
+    formatDate(item.maintenanceDue),
+    getStatusText(item.status),
+    item.scheduledDate ? formatDate(item.scheduledDate) : '-',
+    item.frequency
+  ]);
+  
+  let csv = '\uFEFF'; // UTF-8 BOM for Excel
+  csv += headers.join(',') + '\n';
+  rows.forEach(row => {
+    csv += row.map(cell => `"${cell}"`).join(',') + '\n';
+  });
+  
+  // Download
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `รายการเครื่องมือบำรุงรักษา_${new Date().toISOString().split('T')[0]}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  showToast('success', 'ส่งออกข้อมูลเรียบร้อย');
+}
+
+function getStatusText(status) {
+  const map = {
+    'overdue': 'เกินกำหนด',
+    'due-soon': 'ครบกำหนดเร็วๆ นี้',
+    'scheduled': 'กำหนดการแล้ว',
+    'completed': 'เสร็จสิ้น'
+  };
+  return map[status] || status;
+}
+
+function getPriorityText(priority) {
+  const map = {
+    'high': 'สูง',
+    'medium': 'ปานกลาง',
+    'low': 'ต่ำ'
+  };
+  return map[priority] || priority;
+}
+
+function showToast(type, message) {
+  // Simple toast notification (can be replaced with a library)
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+    color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    z-index: 9999;
+    font-weight: 600;
+    animation: slideIn 0.3s ease;
+  `;
+  toast.textContent = message;
+  
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'slideOut 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// Add animation styles
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+`;
+document.head.appendChild(style);
+
+// === Day Schedule Viewer ===
+window.viewDaySchedule = async function(dateStr) {
+  const modal = new bootstrap.Modal(document.getElementById('dayScheduleModal'));
+  const loadingEl = document.getElementById('day-schedule-loading');
+  const contentEl = document.getElementById('day-schedule-content');
+  const dateDisplayEl = document.getElementById('selected-date-display');
+  
+  // Show modal and loading state
+  loadingEl.style.display = 'block';
+  contentEl.style.display = 'none';
+  dateDisplayEl.textContent = formatDate(dateStr);
+  modal.show();
+  
+  try {
+    // Fetch equipment scheduled for this date (new response shape: { items, totalHours })
+    const equipmentResponse = await fetch(`/api/equipment/maintenance-schedule/?due_date=${dateStr}`);
+    const equipmentData = await equipmentResponse.json();
+    
+    // Fetch station availability
+    const stationResponse = await fetch(`/api/stations/availability/?date=${dateStr}`);
+    const stationData = await stationResponse.json();
+    
+    // Fetch technician availability
+    const technicianResponse = await fetch(`/api/technicians/availability/?date=${dateStr}`);
+    const technicianData = await technicianResponse.json();
+    
+    // Render equipment list (support new shape)
+    let items = [];
+    let totalHours = 0;
+    if (Array.isArray(equipmentData)) {
+      items = equipmentData;
+      totalHours = 0; // unknown
+    } else if (equipmentData && equipmentData.items) {
+      items = equipmentData.items;
+      totalHours = equipmentData.totalHours || 0;
+    }
+    renderEquipmentForDay(items, totalHours);
+    
+    // Render station availability
+    renderStationAvailability(stationData);
+    
+    // Render technician availability
+    renderTechnicianAvailability(technicianData);
+    
+    // Hide loading, show content
+    loadingEl.style.display = 'none';
+    contentEl.style.display = 'block';
+    
+  } catch (error) {
+    console.error('Error loading day schedule:', error);
+    loadingEl.innerHTML = `
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        เกิดข้อผิดพลาดในการโหลดข้อมูล กรุณาลองใหม่อีกครั้ง
+      </div>
+    `;
+  }
+}
+
+function renderEquipmentForDay(data) {
+  const container = document.getElementById('equipment-list');
+  const countEl = document.getElementById('equipment-count');
+  const totalHoursEl = document.getElementById('day-total-hours');
+
+  countEl.textContent = data.length;
+
+  if (data.length === 0) {
+    container.innerHTML = '<p class="text-muted mb-0">ไม่มีเครื่องมือที่ต้องบำรุงรักษาในวันนี้</p>';
+    totalHoursEl.textContent = '(จำนวน ชม.: 0)';
+    return;
+  }
+
+  // Build table with an editable Estimated Hours column
+  container.innerHTML = `
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th>รหัสเครื่องมือ</th>
+            <th>ชื่อเครื่องมือ</th>
+            <th>แผนก</th>
+            <th>สถานะ</th>
+            <th style="width: 160px;">จำนวน ชม.</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.map((item, index) => `
+            <tr data-equipment-id="${item.id}">
+              <td>${index + 1}</td>
+              <td><strong>${item.code}</strong></td>
+              <td>${item.name}</td>
+              <td>${item.departmentName || '-'}</td>
+              <td><small class="text-muted">-</small></td>
+              <td>${getStatusBadge(item.status)}</td>
+              <td>
+                <input type="number" step="0.25" min="0" class="form-control form-control-sm estimated-hours-input" value="${item.estimatedHours || ''}" onchange="onEstimatedHoursChange(${item.id}, this.value)">
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // Update the total hours badge if provided
+  if (arguments.length > 1) {
+    const providedTotal = arguments[1] || 0;
+    totalHoursEl.textContent = `(จำนวน ชม.: ${providedTotal})`;
+  } else {
+    // compute sum client-side as fallback
+    let sum = 0;
+    document.querySelectorAll('.estimated-hours-input').forEach(inp => {
+      const v = parseFloat(inp.value) || 0;
+      sum += v;
+    });
+    totalHoursEl.textContent = `(จำนวน ชม.: ${sum})`;
+  }
+}
+
+function renderStationAvailability(data) {
+  const container = document.getElementById('station-availability');
+  
+  if (!data || data.length === 0) {
+    container.innerHTML = '<p class="text-muted mb-0">ไม่มีข้อมูลสเตชั่น</p>';
+    return;
+  }
+  
+  container.innerHTML = `
+    <div class="row g-3">
+      ${data.map(station => `
+        <div class="col-md-4">
+          <div class="card h-100 ${station.available ? 'border-success' : 'border-danger'}">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="card-title mb-0">${station.name}</h6>
+                <span class="badge ${station.available ? 'bg-success' : 'bg-danger'}">
+                  ${station.available ? 'ว่าง' : 'ไม่ว่าง'}
+                </span>
+              </div>
+              <p class="small text-muted mb-1">ความจุ: ${station.capacity || 0} เครื่อง</p>
+              <p class="small text-muted mb-0">กำลังใช้: ${station.currentLoad || 0} เครื่อง</p>
+              ${station.note ? `<p class="small text-muted mt-2 mb-0"><em>${station.note}</em></p>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderTechnicianAvailability(data) {
+  const container = document.getElementById('technician-availability');
+  
+  if (!data || data.length === 0) {
+    container.innerHTML = '<p class="text-muted mb-0">ไม่มีข้อมูลช่างเทคนิค</p>';
+    return;
+  }
+  
+  container.innerHTML = `
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>ชื่อช่าง</th>
+            <th>ทักษะ/ความเชี่ยวชาญ</th>
+            <th>งานที่รับผิดชอบ</th>
+            <th style="width: 120px;">สถานะ</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.map(tech => `
+            <tr>
+              <td>
+                <i class="bi bi-person-circle me-2"></i>
+                <strong>${tech.name}</strong>
+              </td>
+              <td><small class="text-muted">${tech.skills || '-'}</small></td>
+              <td><small class="text-muted">${tech.currentTasks || 0} งาน</small></td>
+              <td>
+                <span class="badge ${tech.available ? 'bg-success' : 'bg-warning'}">
+                  ${tech.available ? 'ว่าง' : 'ไม่ว่าง'}
+                </span>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// When user edits estimated hours in modal, save via API (optimistic UI)
+window.onEstimatedHoursChange = function(equipmentId, newVal) {
+  const payload = { equipment_id: equipmentId, estimated_hours: parseFloat(newVal) };
+  fetch('/api/maintenance/equipment/update-estimated-hours/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': CSRF_TOKEN
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (!res.success) {
+      showToast('error', res.error || 'ไม่สามารถบันทึกจำนวน ชม. ได้');
+    } else {
+      showToast('success', 'บันทึกจำนวน ชม.เรียบร้อย');
+      // Optionally, you can refresh the modal or update totals
+    }
+  })
+  .catch(err => {
+    console.error('Error saving estimated hours', err);
+    showToast('error', 'ไม่สามารถบันทึกจำนวน ชม. ได้');
+  });
+}
+</script>
+
+{% endblock %}

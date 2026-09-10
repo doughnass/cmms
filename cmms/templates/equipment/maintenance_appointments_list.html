@@ -1,0 +1,610 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load thai_dates %}
+
+{% block title %}<title>รายการนัดหมายบำรุงรักษา</title>{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --green-gradient:   linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  --yellow-gradient:  linear-gradient(135deg, #f9ca24 0%, #f0932b 100%);
+  --red-gradient:     linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  --blue-gradient:    linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --card-shadow:  0 8px 24px rgba(0,0,0,.10);
+  --hover-shadow: 0 14px 36px rgba(0,0,0,.16);
+}
+
+/* ───── Page Header ───── */
+.page-header {
+  background: var(--primary-gradient);
+  color: #fff;
+  padding: 2.4rem 0 2rem;
+  margin-bottom: 2rem;
+  border-radius: 0 0 28px 28px;
+  box-shadow: 0 8px 28px rgba(102,126,234,.35);
+}
+.page-header h1 { font-size: 2rem; font-weight: 700; }
+.page-header .subtitle { opacity: .88; font-size: 1rem; }
+
+/* ───── Stat Cards ───── */
+.stat-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 1.4rem 1.6rem;
+  box-shadow: var(--card-shadow);
+  transition: transform .25s, box-shadow .25s;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+}
+.stat-card:hover { transform: translateY(-4px); box-shadow: var(--hover-shadow); text-decoration: none; }
+.stat-card.active-filter { outline: 3px solid #667eea; }
+.stat-icon {
+  width: 54px; height: 54px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; color: #fff;
+}
+.stat-value { font-size: 2rem; font-weight: 700; color: #2d3748; line-height: 1; }
+.stat-label { font-size: .85rem; color: #718096; margin-top: .25rem; }
+
+/* ───── Filter Bar ───── */
+.filter-bar {
+  background: #fff;
+  border-radius: 18px;
+  padding: 1.4rem 1.8rem;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 1.8rem;
+}
+.filter-bar .form-control,
+.filter-bar .form-select {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: .65rem 1rem;
+  font-size: .93rem;
+  transition: border-color .2s, box-shadow .2s;
+}
+.filter-bar .form-control:focus,
+.filter-bar .form-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102,126,234,.12);
+  outline: none;
+}
+.btn-search {
+  background: var(--primary-gradient);
+  border: none; color: #fff;
+  border-radius: 12px;
+  padding: .65rem 1.6rem;
+  font-weight: 600;
+  transition: opacity .2s, transform .2s;
+}
+.btn-search:hover { opacity: .9; transform: translateY(-1px); color: #fff; }
+.btn-clear {
+  background: #f7fafc; border: 1.5px solid #e2e8f0;
+  color: #718096; border-radius: 12px;
+  padding: .65rem 1.2rem;
+  font-weight: 500;
+  transition: background .2s;
+}
+.btn-clear:hover { background: #edf2f7; color: #4a5568; }
+
+/* ───── Result Header ───── */
+.result-bar {
+  background: #fff;
+  border-radius: 14px;
+  padding: .9rem 1.4rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  margin-bottom: 1rem;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: .5rem;
+}
+.result-count { font-weight: 600; color: #4a5568; }
+
+/* ───── Appointment Cards / Table ───── */
+.appt-table-wrapper {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+.appt-table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 0; }
+.appt-table thead th {
+  background: #f8fafc;
+  color: #718096;
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: .85rem 1.2rem;
+  border-bottom: 1.5px solid #e2e8f0;
+  white-space: nowrap;
+}
+.appt-table tbody tr {
+  border-bottom: 1px solid #f0f4f8;
+  transition: background .18s;
+}
+.appt-table tbody tr:last-child { border-bottom: none; }
+.appt-table tbody tr:hover { background: #f8fafc; }
+.appt-table td { padding: .9rem 1.2rem; vertical-align: middle; }
+
+/* Date badge */
+.date-badge {
+  display: inline-flex; flex-direction: column; align-items: center;
+  padding: .45rem .8rem;
+  border-radius: 12px;
+  font-weight: 700;
+  min-width: 70px;
+  line-height: 1.2;
+}
+.date-badge .day  { font-size: 1.4rem; }
+.date-badge .month-year { font-size: .72rem; opacity: .88; }
+.date-badge.future  { background: #ebf8ff; color: #2b6cb0; }
+.date-badge.today   { background: linear-gradient(135deg,#43e97b22,#38f9d722); color: #276749; border: 1.5px solid #43e97b; }
+.date-badge.past    { background: #fff5f5; color: #9b2335; }
+
+/* Equipment cell */
+.eq-id   { font-family: monospace; font-size: .82rem; color: #667eea; background: #edf2ff; padding: .2rem .55rem; border-radius: 6px; }
+.eq-name { font-weight: 600; color: #2d3748; font-size: .95rem; }
+.eq-meta { font-size: .8rem; color: #718096; }
+
+/* Type badge */
+.type-badge {
+  display: inline-block; padding: .25rem .75rem; border-radius: 20px;
+  font-size: .77rem; font-weight: 600; background: #e9d8fd; color: #553c9a;
+}
+
+/* Status pill (relative to today) */
+.status-pill {
+  display: inline-block; padding: .22rem .75rem; border-radius: 20px;
+  font-size: .78rem; font-weight: 600;
+}
+.status-pill.future   { background: #bee3f8; color: #2a4365; }
+.status-pill.today-   { background: #c6f6d5; color: #22543d; }
+.status-pill.past-    { background: #fed7d7; color: #742a2a; }
+
+/* Creator chip */
+.creator-chip {
+  display: inline-flex; align-items: center; gap: .35rem;
+  background: #f7fafc; border: 1px solid #e2e8f0;
+  border-radius: 20px; padding: .25rem .7rem;
+  font-size: .82rem; color: #4a5568;
+}
+.creator-avatar {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--primary-gradient);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #fff; font-size: .65rem; font-weight: 700;
+}
+
+/* Action buttons */
+.btn-edit-sm {
+  background: #ebf8ff; color: #2b6cb0; border: none;
+  border-radius: 8px; padding: .38rem .7rem; font-size: .82rem;
+  font-weight: 600; transition: background .18s;
+  text-decoration: none; display: inline-flex; align-items: center; gap: .3rem;
+}
+.btn-edit-sm:hover { background: #bee3f8; color: #2c5282; }
+.btn-delete-sm {
+  background: #fff5f5; color: #c53030; border: none;
+  border-radius: 8px; padding: .38rem .7rem; font-size: .82rem;
+  font-weight: 600; transition: background .18s;
+  display: inline-flex; align-items: center; gap: .3rem; cursor: pointer;
+}
+.btn-delete-sm:hover { background: #fed7d7; color: #9b2c2c; }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #a0aec0;
+}
+.empty-state i { font-size: 4rem; opacity: .35; }
+.empty-state p { margin-top: 1rem; font-size: 1rem; }
+
+/* Delete confirm modal */
+.modal-confirm .modal-header { background: var(--red-gradient); color: #fff; border-radius: 12px 12px 0 0; }
+.modal-confirm .modal-footer { border-top: 1px solid #f0f4f8; }
+.modal-confirm .modal-content { border-radius: 14px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+.btn-confirm-del {
+  background: linear-gradient(135deg,#fa709a,#ee0979); color: #fff;
+  border: none; border-radius: 10px; padding: .6rem 1.6rem; font-weight: 700;
+  transition: opacity .2s;
+}
+.btn-confirm-del:hover { opacity: .88; color: #fff; }
+.btn-cancel-modal { background: #f7fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: .6rem 1.4rem; color: #4a5568; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-header h1 { font-size: 1.5rem; }
+  .stat-card { margin-bottom: .8rem; }
+  .appt-table thead { display: none; }
+  .appt-table tbody tr { display: block; margin-bottom: 1rem; border-radius: 12px; box-shadow: var(--card-shadow); border: none !important; }
+  .appt-table td { display: flex; justify-content: space-between; align-items: center; padding: .6rem 1rem; border-bottom: 1px solid #f0f4f8; }
+  .appt-table td::before { content: attr(data-label); font-size: .78rem; color: #718096; font-weight: 600; flex-shrink: 0; margin-right: .5rem; }
+  .appt-table td:last-child { border-bottom: none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ─────────────────────── PAGE HEADER ─────────────────────── #}
+<div class="page-header">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <h1><i class="bi bi-calendar2-check me-2"></i>รายการนัดหมายบำรุงรักษา</h1>
+        <p class="subtitle mb-0">จัดการและติดตามนัดหมายซ่อมบำรุงเครื่องมือแพทย์</p>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'maintenance_technician_schedule' %}" class="btn btn-info btn-sm fw-semibold text-white">
+          <i class="bi bi-person-lines-fill me-1"></i>ตารางงานช่าง
+        </a>
+        <a href="{% url 'equipment_maintenance_schedule' %}" class="btn btn-warning btn-sm fw-semibold">
+          <i class="bi bi-calendar3 me-1"></i>ตาราง PM
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container pb-5">
+
+  {# ─────────────────────── STATS CARDS ─────────────────────── #}
+  <div class="row g-3 mb-4">
+
+    <div class="col-6 col-md-3">
+      <a href="?date_filter=all{% if q %}&q={{ q }}{% endif %}{% if eq_type_filter %}&eq_type={{ eq_type_filter }}{% endif %}"
+         class="stat-card {% if date_filter == 'all' %}active-filter{% endif %}">
+        <div class="d-flex align-items-center gap-3">
+          <div class="stat-icon" style="background: var(--primary-gradient)"><i class="bi bi-collection"></i></div>
+          <div>
+            <div class="stat-value">{{ stats.total }}</div>
+            <div class="stat-label">นัดหมายทั้งหมด</div>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <a href="?date_filter=today{% if q %}&q={{ q }}{% endif %}{% if eq_type_filter %}&eq_type={{ eq_type_filter }}{% endif %}"
+         class="stat-card {% if date_filter == 'today' %}active-filter{% endif %}">
+        <div class="d-flex align-items-center gap-3">
+          <div class="stat-icon" style="background: var(--green-gradient)"><i class="bi bi-calendar-check"></i></div>
+          <div>
+            <div class="stat-value">{{ stats.today }}</div>
+            <div class="stat-label">วันนี้</div>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <a href="?date_filter=upcoming{% if q %}&q={{ q }}{% endif %}{% if eq_type_filter %}&eq_type={{ eq_type_filter }}{% endif %}"
+         class="stat-card {% if date_filter == 'upcoming' %}active-filter{% endif %}">
+        <div class="d-flex align-items-center gap-3">
+          <div class="stat-icon" style="background: var(--blue-gradient)"><i class="bi bi-calendar-plus"></i></div>
+          <div>
+            <div class="stat-value">{{ stats.upcoming }}</div>
+            <div class="stat-label">กำลังจะมาถึง</div>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <a href="?date_filter=past{% if q %}&q={{ q }}{% endif %}{% if eq_type_filter %}&eq_type={{ eq_type_filter }}{% endif %}"
+         class="stat-card {% if date_filter == 'past' %}active-filter{% endif %}">
+        <div class="d-flex align-items-center gap-3">
+          <div class="stat-icon" style="background: var(--red-gradient)"><i class="bi bi-calendar-x"></i></div>
+          <div>
+            <div class="stat-value">{{ stats.past }}</div>
+            <div class="stat-label">ผ่านมาแล้ว</div>
+          </div>
+        </div>
+      </a>
+    </div>
+
+  </div>
+
+  {# ─────────────────────── FILTER BAR ─────────────────────── #}
+  <div class="filter-bar mb-3">
+    <form method="get" action="" id="filterForm">
+      <input type="hidden" name="date_filter" value="{{ date_filter }}">
+      <div class="row g-2 align-items-end">
+
+        <div class="col-12 col-md-5">
+          <label class="form-label fw-semibold small text-muted mb-1">
+            <i class="bi bi-search me-1"></i>ค้นหา
+          </label>
+          <input type="text" name="q" value="{{ q }}"
+                 class="form-control"
+                 placeholder="รหัสเครื่อง, ชื่อเครื่อง, หน่วยงาน...">
+        </div>
+
+        <div class="col-12 col-md-3">
+          <label class="form-label fw-semibold small text-muted mb-1">
+            <i class="bi bi-tag me-1"></i>ประเภทเครื่อง
+          </label>
+          <select name="eq_type" class="form-select" aria-label="กรองตามประเภทเครื่อง" title="กรองตามประเภทเครื่อง">
+            <option value="">— ทั้งหมด —</option>
+            {% for t in eq_types %}
+            <option value="{{ t }}" {% if eq_type_filter == t %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-12 col-md-4">
+          <label class="form-label fw-semibold small text-muted mb-1">
+            <i class="bi bi-funnel me-1"></i>กรองตามวันที่
+          </label>
+          <div class="d-flex gap-2">
+            <select name="date_filter" class="form-select" id="dateFilterSelect" aria-label="กรองตามวันที่" title="กรองตามวันที่">
+              <option value="upcoming" {% if date_filter == 'upcoming' %}selected{% endif %}>กำลังจะมาถึง</option>
+              <option value="today"    {% if date_filter == 'today' %}selected{% endif %}>วันนี้</option>
+              <option value="past"     {% if date_filter == 'past' %}selected{% endif %}>ผ่านมาแล้ว</option>
+              <option value="all"      {% if date_filter == 'all' %}selected{% endif %}>ทั้งหมด</option>
+            </select>
+            <button type="submit" class="btn-search" aria-label="ค้นหา" title="ค้นหา">
+              <i class="bi bi-search"></i>
+            </button>
+            {% if q or eq_type_filter or date_filter != 'upcoming' %}
+            <a href="?" class="btn-clear" aria-label="ล้างตัวกรอง" title="ล้างตัวกรอง">
+              <i class="bi bi-x-lg"></i>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  {# ─────────────────────── RESULT BAR ─────────────────────── #}
+  <div class="result-bar">
+    <span class="result-count">
+      <i class="bi bi-list-ul me-1 text-muted"></i>
+      พบ <strong>{{ appointments|length }}</strong> รายการ
+      {% if date_filter == 'today' %}<span class="badge bg-success ms-1">วันนี้</span>{% endif %}
+      {% if date_filter == 'upcoming' %}<span class="badge bg-primary ms-1">กำลังจะมาถึง</span>{% endif %}
+      {% if date_filter == 'past' %}<span class="badge bg-danger ms-1">ผ่านมาแล้ว</span>{% endif %}
+      {% if q %}<span class="badge bg-secondary ms-1">ค้นหา: {{ q }}</span>{% endif %}
+      {% if eq_type_filter %}<span class="badge bg-info ms-1 text-dark">{{ eq_type_filter }}</span>{% endif %}
+    </span>
+    <div class="d-flex gap-2">
+      <a href="{% url 'equipment_maintenance_schedule' %}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-plus-circle me-1"></i>เพิ่มนัดหมายใหม่
+      </a>
+    </div>
+  </div>
+
+  {# ─────────────────────── TABLE ─────────────────────── #}
+  <div class="appt-table-wrapper">
+    {% if appointments %}
+    <table class="appt-table">
+      <thead>
+        <tr>
+          <th style="width:110px">วันที่นัด</th>
+          <th>เครื่องมือ</th>
+          <th>ประเภท</th>
+          <th>หน่วยงาน</th>
+          <th>สถานะ</th>
+          <th>ผู้สร้าง</th>
+          <th style="width:130px">การกระทำ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in appointments %}
+        {% with sd=a.scheduled_date %}
+
+        {# Determine row class based on date #}
+        {% if sd == today %}
+          {% with row_class="today" badge_class="today-" badge_text="วันนี้" date_class="today" %}
+          <tr class="fw-semibold">
+        {% endwith %}
+        {% elif sd > today %}
+          {% with row_class="future" badge_class="future" badge_text="กำลังจะมาถึง" date_class="future" %}
+          <tr>
+        {% endwith %}
+        {% else %}
+          {% with row_class="past" badge_class="past-" badge_text="ผ่านมาแล้ว" date_class="past" %}
+          <tr class="text-muted">
+        {% endwith %}
+        {% endif %}
+
+          {# Date cell #}
+          <td data-label="วันที่นัด">
+            {% if sd == today %}
+            <div class="date-badge today">
+            {% elif sd > today %}
+            <div class="date-badge future">
+            {% else %}
+            <div class="date-badge past">
+            {% endif %}
+              <span class="day">{{ sd.day }}</span>
+              <span class="month-year">{{ sd|thai_date }}</span>
+            </div>
+          </td>
+
+          {# Equipment cell #}
+          <td data-label="เครื่องมือ">
+            <div>
+              <span class="eq-id">{{ a.equipment.equipment_id }}</span>
+            </div>
+            <div class="eq-name mt-1">{{ a.equipment.equipment_name_TH|default:a.equipment.equipment_name_EN }}</div>
+            {% if a.equipment.equipment_brand or a.equipment.equipment_model %}
+            <div class="eq-meta">
+              {% if a.equipment.equipment_brand %}{{ a.equipment.equipment_brand }}{% endif %}
+              {% if a.equipment.equipment_model %} / {{ a.equipment.equipment_model }}{% endif %}
+            </div>
+            {% endif %}
+            {% if a.notes %}
+            <div class="eq-meta mt-1"><i class="bi bi-chat-text me-1"></i>{{ a.notes|truncatechars:60 }}</div>
+            {% endif %}
+          </td>
+
+          {# Type cell #}
+          <td data-label="ประเภท">
+            {% if a.equipment.equipment_type %}
+            <span class="type-badge">{{ a.equipment.equipment_type }}</span>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+
+          {# Department cell #}
+          <td data-label="หน่วยงาน">
+            {% if a.equipment.equipment_user_customer %}
+            <div class="fw-semibold small">{{ a.equipment.equipment_user_customer }}</div>
+            {% endif %}
+            {% if a.equipment.equipment_owner_customer %}
+            <div class="eq-meta">{{ a.equipment.equipment_owner_customer }}</div>
+            {% endif %}
+            {% if not a.equipment.equipment_user_customer and not a.equipment.equipment_owner_customer %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+
+          {# Status pill #}
+          <td data-label="สถานะ">
+            {% if sd == today %}
+              <span class="status-pill today-">🟢 วันนี้</span>
+            {% elif sd > today %}
+              <span class="status-pill future">🔵 รออยู่</span>
+            {% else %}
+              <span class="status-pill past-">🔴 ผ่านแล้ว</span>
+            {% endif %}
+          </td>
+
+          {# Creator cell #}
+          <td data-label="ผู้สร้าง">
+            {% if a.created_by %}
+            {% with name=a.created_by.get_full_name|default:a.created_by.username %}
+            <div class="creator-chip">
+              <div class="creator-avatar">{{ name|first|upper }}</div>
+              <span>{{ name }}</span>
+            </div>
+            {% endwith %}
+            {% else %}
+            <span class="text-muted small">—</span>
+            {% endif %}
+          </td>
+
+          {# Actions cell #}
+          <td data-label="การกระทำ">
+            <div class="d-flex gap-2 flex-wrap">
+              {% if a.source == 'appt' %}
+              <a href="{% url 'maintenance_appointment_edit' a.id %}" class="btn-edit-sm">
+                <i class="bi bi-pencil"></i> แก้ไข
+              </a>
+              <button type="button" class="btn-delete-sm"
+                      data-id="{{ a.id }}"
+                      data-source="appt"
+                      data-eq="{{ a.equipment.equipment_id }}"
+                      data-date="{{ sd|thai_date }}"
+                      onclick="openDeleteModal(this)">
+                <i class="bi bi-trash"></i> ยกเลิก
+              </button>
+              {% else %}
+              <a href="{% url 'service_request_detail' a.id %}" class="btn-edit-sm">
+                <i class="bi bi-eye"></i> ดูคำขอ
+              </a>
+              <button type="button" class="btn-delete-sm"
+                      data-id="{{ a.id }}"
+                      data-source="sr"
+                      data-eq="{{ a.equipment.equipment_id }}"
+                      data-date="{{ sd|thai_date }}"
+                      onclick="openDeleteModal(this)">
+                <i class="bi bi-trash"></i> ลบคำขอ
+              </button>
+              {% endif %}
+            </div>
+          </td>
+
+        </tr>
+        {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% else %}
+    {# Empty state #}
+    <div class="empty-state">
+      <i class="bi bi-calendar2-x d-block"></i>
+      <p class="fw-semibold">ไม่พบรายการนัดหมาย</p>
+      <p class="small text-muted">
+        {% if q or eq_type_filter or date_filter != 'all' %}
+          ลองเปลี่ยนเงื่อนไขการค้นหา หรือ
+          <a href="?" class="text-primary">ล้างตัวกรอง</a>
+        {% else %}
+          ยังไม่มีนัดหมายในระบบ
+        {% endif %}
+      </p>
+      <a href="{% url 'equipment_maintenance_schedule' %}" class="btn btn-primary btn-sm mt-2">
+        <i class="bi bi-plus-circle me-1"></i>เพิ่มนัดหมายใหม่
+      </a>
+    </div>
+    {% endif %}
+
+  </div>{# /appt-table-wrapper #}
+
+</div>{# /container #}
+
+{# ─────────────────────── DELETE CONFIRM MODAL ─────────────────────── #}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content modal-confirm">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="deleteModalLabel">
+          <i class="bi bi-exclamation-triangle me-2"></i>ยืนยันยกเลิกนัดหมาย
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body py-3">
+        <p class="mb-2">คุณต้องการยกเลิกนัดหมายสำหรับ:</p>
+        <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-3">
+          <i class="bi bi-tools fs-2 text-danger"></i>
+          <div>
+            <div class="fw-bold" id="modal-eq-id"></div>
+            <div class="text-muted small">วันที่นัด: <span id="modal-date"></span></div>
+          </div>
+        </div>
+        <p class="text-danger small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i>การกระทำนี้ไม่สามารถยกเลิกได้</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel-modal" data-bs-dismiss="modal">ปิด</button>
+        <a id="deleteConfirmBtn" href="#" class="btn-confirm-del">
+          <i class="bi bi-trash me-1"></i>ยืนยันยกเลิก
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+function openDeleteModal(btn) {
+  const id   = btn.getAttribute('data-id');
+  const eq   = btn.getAttribute('data-eq');
+  const date = btn.getAttribute('data-date');
+  document.getElementById('modal-eq-id').textContent = eq;
+  document.getElementById('modal-date').textContent  = date;
+  document.getElementById('deleteConfirmBtn').href   = "{% url 'maintenance_appointment_delete' 0 %}".replace('0', id);
+  const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+  modal.show();
+}
+
+// Sync date_filter select with stat card links (so select always reflects active filter)
+(function(){
+  const sel = document.getElementById('dateFilterSelect');
+  const hiddenInput = document.querySelector('input[name="date_filter"]');
+  if (sel && hiddenInput) {
+    sel.addEventListener('change', function(){ hiddenInput.value = this.value; });
+  }
+})();
+</script>
+{% endblock %}

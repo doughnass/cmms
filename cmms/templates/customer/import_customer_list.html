@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+
+
+{% block title %}
+    <title>CMMS MedCMU : ขึ้นทะเบียนลูกค้า</title>
+{% endblock %}
+
+
+
+{% block content %}
+<h2 class="text-center">อัพโหลดไฟล์</h2>
+<div class="container"> 
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label for="excel_file">เลือกไฟล์ Excel</label>
+        <input type="file" id="excel_file" name="excel_file" accept=".xlsx,.xls" class="form-control mb-3" required>
+        <button type="submit" class="btn btn-success">นำเข้าข้อมูล</button>
+    <a href="{% url 'customer_list' %}" class="btn btn-danger ms-2">ยกเลิก</a>
+    </form>
+</div>
+
+
+<br>
+{% endblock %}

@@ -1,0 +1,1179 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}<title>CMMS MedCMU : จัดการข้อมูล Master</title>{% endblock %}
+
+
+{% block content %}
+
+
+
+<!-- Header -->
+<div class="card-modern no-print">
+  <div class="card-header-modern">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h3>
+          <i class="bi bi-diagram-3 me-2"></i>จัดการข้อมูล Master
+        </h3>
+        <p>จัดการโครงสร้างข้อมูลหลักแบบลำดับชั้น</p>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{% url 'master_list' %}" class="btn-modern btn-outline-modern">
+          <i class="bi bi-list"></i> รายการทั้งหมด
+        </a>
+        <a href="{% url 'master_import_excel' %}" class="btn-modern btn-primary-modern">
+          <i class="bi bi-file-earmark-arrow-up"></i> Import Excel
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid" style="max-width: 1800px; margin: 0 auto;">
+  <div class="row g-3">
+    <!-- Category Sidebar -->
+    <div class="col-lg-3">
+      <div class="category-sidebar">
+        <div class="card-header-modern mb-1">
+          <i class="bi bi-folder me-2"></i>หมวดหมู่
+        </div>
+        <div class="category-list">
+          <a href="{% url 'master_manage' %}" class="category-item {% if not active_category %}active{% endif %}">
+            <i class="bi bi-collection"></i>
+            <span>ทั้งหมด</span>
+          </a>
+          {% for c in categories %}
+            <a href="{% url 'master_manage_by_category' c %}" class="category-item {% if active_category == c %}active{% endif %}">
+              <i class="bi bi-tag"></i>
+              <span>{{ c }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-lg-9">
+      <!-- Toolbar -->
+      <div class="toolbar-modern">
+        <div class="row g-2 align-items-center">
+          <div class="col-lg-8">
+            <div class="d-flex gap-1 ">
+              <button id="expand-all" class="btn-modern btn-outline-modern">
+                <i class="bi bi-arrows-angle-expand"></i> ขยายทั้งหมด
+              </button>
+              <button id="collapse-all" class="btn-modern btn-outline-modern">
+                <i class="bi bi-arrows-angle-contract"></i> ย่อทั้งหมด
+              </button>
+              <button id="sort-az" class="btn-modern btn-success-modern">
+                <i class="bi bi-sort-alpha-down"></i> เรียง A→Z
+              </button>
+              <button id="undo-btn" class="btn-modern btn-warning-modern" title="Undo" disabled>
+                <i class="bi bi-arrow-counterclockwise"></i> Undo
+              </button>
+              <button id="redo-btn" class="btn-modern btn-info-modern" title="Redo" disabled>
+                <i class="bi bi-arrow-clockwise"></i> Redo
+              </button>
+              <div class="col-lg-5 mt-1">
+              <div class="search-box-modern">
+                <i class="bi bi-search"></i>
+                <input id="master-search" 
+                      type="search" 
+                      autocomplete="off" 
+                      placeholder="ค้นหาด้วย label หรือ code...">
+              </div>
+              </div>            
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="category-sidebar" style="height: 500px;">
+      <!-- Tree Content -->
+      {% if active_category and tree_roots %}
+        <div id="master-tree" class="master-tree card-modern">
+          {% comment %} Render tree nodes recursively {% endcomment %}
+          {% for root in tree_roots %}
+            {% include 'master/_master_node.html' with node=root %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="card-modern">
+          <div class="card-body-modern">
+            <div class="empty-state">
+              <i class="bi bi-folder-x"></i>
+              <h4>ยังไม่มีข้อมูล</h4>
+              <p>กรุณาเลือกหมวดหมู่ทางด้านซ้าย เพื่อเริ่มจัดการข้อมูล Master</p>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_modals %}
+  {% include 'master/_master_modals.html' %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function(){
+  // active category from server (used to prefill new child forms)
+  var activeCategory = '{{ active_category|default:""|escapejs }}';
+  var modalEl = document.getElementById('masterModal');
+  var modal = null;
+  // visible debug helper: append messages to the on-page banner and console
+  function debugBanner(msg){
+    try{
+      console.debug(msg);
+      var banner = document.getElementById('master-debug-banner');
+      var lines = document.getElementById('master-debug-lines');
+      if(!banner || !lines) return;
+      var el = document.createElement('div'); el.textContent = String(msg);
+      lines.appendChild(el);
+      // keep last 10 lines
+      while(lines.children.length > 10) lines.removeChild(lines.firstChild);
+      banner.style.display = 'block';
+    }catch(e){ console.debug('debugBanner failed', e); }
+  }
+  function ensureModal(){
+    if(!modalEl) modalEl = document.getElementById('masterModal');
+    if(modalEl && typeof bootstrap !== 'undefined'){
+      // always (re)create modal instance to ensure it's ready
+      try{ modal = bootstrap.Modal.getOrCreateInstance(modalEl); }catch(e){ modal = new bootstrap.Modal(modalEl); }
+    }
+  }
+  function openForm(data){
+    console.debug('[master] openForm called', data);
+    debugBanner('[master] openForm called ' + (data && data.parent_id ? ('parent=' + data.parent_id) : '')); 
+    ensureModal();
+    
+    // Check if all required form elements exist
+    var miId = document.getElementById('mi-id');
+    var miCategory = document.getElementById('mi-category');
+    var miCode = document.getElementById('mi-code');
+    var miLabel = document.getElementById('mi-label');
+    var miParent = document.getElementById('mi-parent');
+    
+    if(!miId || !miCategory || !miLabel){
+      console.error('[master] openForm: required form elements not found, cannot open form');
+      return false;
+    }
+    
+    miId.value = data.id || '';
+    // dynamic title
+    try{ var titleEl = modalEl.querySelector('.modal-title'); if(titleEl) titleEl.textContent = data && data.id ? 'แก้ไขรายการ' : 'สร้างรายการใหม่'; }catch(e){}
+    // if category provided use it; otherwise default to the active category for this page
+    miCategory.value = data.category || activeCategory || '';
+    if(miCode) miCode.value = data.code || '';
+    miLabel.value = data.label || '';
+    if(miParent) miParent.value = data.parent_id || '';
+  // set visible parent display for accessibility/fallback
+  var pdisplay = document.getElementById('mi-parent-display');
+  if(pdisplay){
+    // Prefer explicit parent_label when provided; if only an id is present, try to fetch a readable label
+    if(data.parent_label){
+      pdisplay.value = data.parent_label || (data.parent_id || '');
+    } else if(data.parent_id){
+      // show temporary loading text then try to fetch parent info via API
+      pdisplay.value = '(loading...)';
+      (function(pid, displayEl){
+        try{
+          fetch('{% url "master_api_get" 0 %}'.replace('/0/', '/' + pid + '/'))
+            .then(function(r){ if(!r.ok) throw new Error('fetch-status-' + r.status); return r.json(); })
+            .then(function(j){
+              if(j && j.ok){
+                var pl = (j.parent_label && j.parent_label.length) ? j.parent_label : ((j.label ? j.label : '') + (j.code ? (' (' + j.code + ')') : ''));
+                displayEl.value = pl || pid;
+                // also queue for select2 helper if present
+                window._master_pending_parent = { id: pid, text: pl || pid };
+                // if non-Select2 fallback select exists, update its single option text
+                try{ var sel = document.getElementById('mi-parent-select'); if(sel && sel.options && sel.options.length){ sel.options[sel.selectedIndex].text = pl || pid; } }catch(e){}
+              } else {
+                displayEl.value = pid;
+              }
+            }).catch(function(){ displayEl.value = pid; });
+        }catch(e){ displayEl.value = pid; }
+      })(data.parent_id, pdisplay);
+    } else {
+      pdisplay.value = '';
+    }
+  }
+    // if select2 helper is available, set visible select; otherwise queue it or set fallback
+    var parentId = data.parent_id || '';
+    var parentLabel = '';
+    if(data.parent_id && data.parent_label){ parentLabel = data.parent_label; }
+    else if(data.parent_id){ parentLabel = data.parent_id; }
+    if(window._master_select2_set){
+      // Select2 available: set via helper
+      window._master_select2_set(parentId, parentLabel);
+      // keep hidden input in sync
+      if(miParent) miParent.value = parentId || '';
+      // hide the plain select/display when Select2 manages the UI
+      try{ document.getElementById('mi-parent-select').style.display = 'none'; }catch(e){}
+    } else {
+      // queue for later when select2 initializes
+      window._master_pending_parent = {id: parentId, text: parentLabel};
+      // set fallback display and populate the plain select with a single option
+      var sel = document.getElementById('mi-parent-select');
+      if(sel){
+        sel.style.display = 'none';
+        sel.innerHTML = '';
+        if(parentId){
+          var opt = document.createElement('option'); opt.value = parentId; opt.text = parentLabel || parentId; opt.selected = true; sel.appendChild(opt);
+        }
+      }
+    }
+    var miOrder = document.getElementById('mi-order');
+    var miDescription = document.getElementById('mi-description');
+    var miActive = document.getElementById('mi-active');
+    if(miOrder) miOrder.value = data.order || '';
+    if(miDescription) miDescription.value = data.description || '';
+    if(miActive) miActive.checked = data.active === undefined ? true : !!data.active;
+    // clear previous inline error
+    try{ var miErr = document.getElementById('mi-error'); if(miErr){ miErr.style.display = 'none'; miErr.textContent = ''; } }catch(e){}
+    if(modal) modal.show();
+    // autofocus label input when modal shown
+    try{ if(modalEl) modalEl.addEventListener('shown.bs.modal', function onShown(){ try{ if(miLabel) miLabel.focus(); modalEl.removeEventListener('shown.bs.modal', onShown); }catch(e){} }); }catch(e){}
+    return true;
+  }
+
+  // UNDO support: maintain lastSnapshot for edit and lastOrderSnapshot for reorder
+  var lastSnapshot = null; var lastOrderSnapshot = null; var undoTimeoutMs = 8000; // 8s
+
+  // When opening an existing item for edit, keep a snapshot to allow undo
+  var originalOpenForm = openForm;
+  openForm = function(data){
+    try{ if(data && data.id){ lastSnapshot = JSON.parse(JSON.stringify(data)); } else { lastSnapshot = null; } }catch(e){ lastSnapshot = null; }
+    return originalOpenForm(data);
+  };
+
+  function showUndoToast(opts){
+    try{
+      var container = document.getElementById('master-undo-toast-container');
+      if(!container) return;
+      var toastId = 'undo-toast-' + Date.now();
+      var div = document.createElement('div'); div.id = toastId; div.className='toast'; div.role='alert'; div.ariaLive='assertive'; div.ariaAtomic='true';
+      div.innerHTML = '<div class="toast-header"><strong class="me-auto">Undo</strong><small>Now</small><button type="button" class="btn-close ms-2 mb-1" data-bs-dismiss="toast" aria-label="Close"></button></div><div class="toast-body">'+(opts.message||'การกระทำสำเร็จ')+' <button class="btn btn-sm btn-link" id="'+toastId+'-undo">ย้อนกลับ</button></div>';
+      container.appendChild(div);
+      var bsToast = null; try{ bsToast = bootstrap.Toast.getOrCreateInstance(div, { delay: undoTimeoutMs }); bsToast.show(); }catch(e){}
+      var undoBtn = document.getElementById(toastId+'-undo'); if(undoBtn){ undoBtn.addEventListener('click', function(){ if(typeof opts.onUndo === 'function') opts.onUndo(); try{ if(bsToast) bsToast.hide(); }catch(e){} }); }
+      // push to undo stack so global Undo button can also trigger it
+      if(typeof opts.onUndo === 'function'){
+        undoStack.push({ undo: opts.onUndo, redo: opts.onRedo || null, label: opts.message || '' });
+        // clear redo stack on new action
+        redoStack = [];
+        updateUndoRedoButtons();
+      }
+      // cleanup after hidden
+      div.addEventListener('hidden.bs.toast', function(){ try{ div.remove(); }catch(e){} });
+    }catch(e){ console.error('showUndoToast failed', e); }
+  }
+
+  // Undo/Redo stacks and helpers
+  var undoStack = []; var redoStack = [];
+  function updateUndoRedoButtons(){ try{ var ub = document.getElementById('undo-btn'); var rb = document.getElementById('redo-btn'); if(ub) ub.disabled = undoStack.length === 0; if(rb) rb.disabled = redoStack.length === 0; }catch(e){}
+  }
+
+  function performUndo(){ if(!undoStack.length) return; var item = undoStack.pop(); try{ if(typeof item.undo === 'function') item.undo(); if(item.redo) redoStack.push({ undo: item.undo, redo: item.redo }); else redoStack.push({ undo: item.undo, redo: null }); }catch(e){ console.error('performUndo failed', e); } updateUndoRedoButtons(); }
+  function performRedo(){ if(!redoStack.length) return; var item = redoStack.pop(); try{ if(typeof item.redo === 'function') item.redo(); if(item.undo) undoStack.push(item); }catch(e){ console.error('performRedo failed', e); } updateUndoRedoButtons(); }
+
+  // wire UI buttons
+  var ub = document.getElementById('undo-btn'); if(ub) ub.addEventListener('click', performUndo);
+  var rb = document.getElementById('redo-btn'); if(rb) rb.addEventListener('click', performRedo);
+  updateUndoRedoButtons();
+
+  // use event delegation on the tree container (or document) to reliably handle add/edit/delete clicks
+  var treeContainer = document.getElementById('master-tree') || document;
+  treeContainer.addEventListener('click', function(e){
+    try {
+    // normalize target (handle text nodes)
+    var t = e.target;
+    if(t && t.nodeType === 3 && t.parentNode) t = t.parentNode;
+    // toggle buttons (both legacy .master-node-toggle and picker .node-toggle)
+    var toggleBtn = t && t.closest ? t.closest('.master-node-toggle, .node-toggle') : null;
+    if(toggleBtn){
+      try{ e.preventDefault(); }catch(_){}
+      // find target container
+      var targetSelector = toggleBtn.getAttribute('data-target');
+      var targetEl = null;
+      if(targetSelector){
+        try{ targetEl = document.querySelector(targetSelector); }catch(_){ targetEl = null; }
+      }
+      if(!targetEl){ var node = toggleBtn.closest && toggleBtn.closest('.master-node'); if(node){ targetEl = node.querySelector('.master-children'); } }
+      if(targetEl){
+        var currentlyHidden = window.getComputedStyle(targetEl).display === 'none';
+        (currentlyHidden ? slideDown(targetEl) : slideUp(targetEl)).then(function(){
+          try{ toggleBtn.setAttribute('aria-expanded', currentlyHidden ? 'true' : 'false'); }catch(e){}
+        });
+        // update icon right away for perceived responsiveness
+        try{
+          if(toggleBtn.classList && toggleBtn.classList.contains('master-node-toggle')){
+            var ic = toggleBtn.querySelector('.toggle-icon'); if(ic) ic.className = currentlyHidden ? 'bi bi-caret-down-fill toggle-icon' : 'bi bi-caret-right toggle-icon';
+          } else {
+            toggleBtn.innerHTML = currentlyHidden ? '▾' : '▸';
+          }
+        }catch(e){}
+      }
+      return;
+    }
+    var addBtn = t && t.closest ? t.closest('.btn-add-child') : null;
+    if(addBtn){
+      var pk = addBtn.getAttribute('data-pk');
+      console.debug('[master] add-child clicked (delegation), pk=', pk);
+      e.preventDefault();
+      var nodeEl = addBtn.closest('.master-node');
+      var parentLabel = '';
+      if(nodeEl){
+        var strong = nodeEl.querySelector('strong');
+        var codeEl = nodeEl.querySelector('small');
+        var codeText = codeEl ? (' ' + codeEl.textContent.trim()) : '';
+        parentLabel = (strong ? strong.textContent.trim() : '') + codeText;
+      }
+      openForm({parent_id: pk, parent_label: parentLabel, category: activeCategory});
+      return;
+    }
+    var editBtn = t && t.closest ? t.closest('.btn-edit') : null;
+    if(editBtn){
+      try{ e.preventDefault(); }catch(_){ }
+      var pk = editBtn.getAttribute('data-pk');
+      fetch('{% url "master_api_get" 0 %}'.replace('/0/', '/' + pk + '/'))
+        .then(r => r.json())
+        .then(j => {
+          if(j.ok){ openForm(j); } else { alert('ไม่สามารถดึงข้อมูลได้'); }
+        }).catch(function(){ alert('ไม่สามารถดึงข้อมูลได้'); });
+      return;
+    }
+    var delBtn = t && t.closest ? t.closest('.btn-delete') : null;
+    if(delBtn){
+      // Delete button click is handled by onclick in template, no need to handle here
+      return;
+    }
+    } catch (err) {
+      console.error('[master] delegation handler error', err);
+    }
+  });
+
+  // Fallback: attach direct click listeners to existing .btn-add-child buttons
+  function attachDirectAddHandlers(){
+    try{
+      var buttons = Array.from(document.querySelectorAll('.btn-add-child'));
+      buttons.forEach(function(btn){
+        // avoid double-binding
+        if(btn._hasDirectAdd) return; btn._hasDirectAdd = true;
+        btn.addEventListener('click', function(e){
+          try{ e.preventDefault(); }catch(_){ }
+          var pk = btn.getAttribute('data-pk');
+          console.debug('[master] add-child clicked (direct), pk=', pk);
+          var nodeEl = btn.closest('.master-node');
+          var parentLabel = '';
+          if(nodeEl){ var strong = nodeEl.querySelector('strong'); var codeEl = nodeEl.querySelector('small'); var codeText = codeEl ? (' ' + codeEl.textContent.trim()) : ''; parentLabel = (strong ? strong.textContent.trim() : '') + codeText; }
+          openForm({parent_id: pk, parent_label: parentLabel, category: activeCategory});
+        });
+      });
+    }catch(e){ console.error('[master] attachDirectAddHandlers error', e); }
+  }
+  attachDirectAddHandlers();
+
+  // Direct handlers for edit and delete buttons (fallback if delegation isn't working)
+  function attachDirectEditDeleteHandlers(){
+    try{
+      // edit buttons
+      var edits = Array.from(document.querySelectorAll('.btn-edit'));
+      edits.forEach(function(b){ if(b._hasDirectEdit) return; b._hasDirectEdit = true; b.addEventListener('click', function(e){ try{ e.preventDefault(); }catch(_){ } var pk = b.getAttribute('data-pk'); console.debug('[master] edit clicked (direct), pk=', pk); debugBanner('[master] edit clicked pk=' + pk); fetch('{% url "master_api_get" 0 %}'.replace('/0/', '/' + pk + '/')).then(r=>r.json()).then(j=>{ if(j.ok){ openForm(j); } else { alert('ไม่สามารถดึงข้อมูลได้'); } }).catch(function(){ alert('ไม่สามารถดึงข้อมูลได้'); }); }); });
+
+      // delete buttons - using shared deleteMasterItem function from _master_shared_js.html
+      // No need to add event listeners here, buttons already have onclick="deleteMasterItem(...)" in template
+    }catch(e){ console.error('[master] attachDirectEditDeleteHandlers error', e); }
+  }
+  attachDirectEditDeleteHandlers();
+  // quick test function: simulate clicks on first add/edit/delete to verify handlers
+  function runJsSelfTest(){
+    debugBanner('[master] running JS self-test (non-destructive)...');
+    // Non-destructive checks: don't trigger delete or real edits; only verify presence and that handlers are bound.
+    var a = document.querySelector('.btn-add-child');
+    if(a){ try{ // just dispatch a custom event instead of click to avoid side effects
+        a.dispatchEvent(new CustomEvent('master-selftest', { bubbles: true }));
+        debugBanner('[master] found .btn-add-child (handler presence assumed)');
+      }catch(e){ debugBanner('[master] add-child selftest failed: ' + e); } }
+    else debugBanner('[master] no .btn-add-child found');
+
+    var ebtn = document.querySelector('.btn-edit');
+    if(ebtn){ try{ debugBanner('[master] found .btn-edit'); }catch(e){ debugBanner('[master] edit selftest failed: ' + e); } } else debugBanner('[master] no .btn-edit found');
+
+    var dbtn = document.querySelector('.btn-delete');
+    if(dbtn){ debugBanner('[master] found .btn-delete (will not trigger)'); } else debugBanner('[master] no .btn-delete found');
+  }
+  var jsTestBtn = document.getElementById('js-test-btn'); if(jsTestBtn) jsTestBtn.addEventListener('click', runJsSelfTest);
+
+  // Expand / Collapse All handlers
+  function setAllNodesExpanded(expanded){
+    try{
+      var tree = document.getElementById('master-tree'); if(!tree) return;
+      // show/hide all master-children containers
+      var children = Array.from(tree.querySelectorAll('.master-children'));
+      children.forEach(function(c){ c.style.display = expanded ? '' : 'none'; });
+      // update toggle buttons (if present)
+      var toggles = Array.from(tree.querySelectorAll('.node-toggle, .master-node-toggle'));
+      toggles.forEach(function(t){ try{ t.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+          if(t.classList && t.classList.contains('master-node-toggle')){
+            var sp = t.querySelector && t.querySelector('.toggle-icon'); 
+            if(sp) sp.className = expanded ? 'bi bi-caret-down-fill toggle-icon' : 'bi bi-caret-right-fill toggle-icon';
+          } else {
+            t.innerHTML = expanded ? '▾' : '▸';
+          }
+        }catch(e){} });
+    }catch(e){ console.error('setAllNodesExpanded failed', e); }
+  }
+
+  var expandBtn = document.getElementById('expand-all'); if(expandBtn) expandBtn.addEventListener('click', function(ev){ ev && ev.preventDefault && ev.preventDefault(); setAllNodesExpanded(true); });
+  var collapseBtn = document.getElementById('collapse-all'); if(collapseBtn) collapseBtn.addEventListener('click', function(ev){ ev && ev.preventDefault && ev.preventDefault(); setAllNodesExpanded(false); });
+  // Sort A→Z handler: sorts children in each container alphabetically by node label
+  function sortTreeAlphabetical(){
+    try{
+      var tree = document.getElementById('master-tree'); if(!tree) return;
+      // collect containers to process: root container (tree) and every .master-children
+      var containers = [tree].concat(Array.from(tree.querySelectorAll('.master-children')));
+      var toPost = [];
+      containers.forEach(function(container){
+        // get direct child .master-node elements only
+        var nodes = Array.from(container.querySelectorAll(':scope > .master-node'));
+        if(!nodes || nodes.length < 2) return;
+        // build array of {node, label}
+        var arr = nodes.map(function(n){ var s = n.querySelector('strong'); var lbl = s ? s.textContent.trim() : (n.textContent||'').trim(); return { node: n, label: lbl.toLowerCase() }; });
+        // stable sort by label
+        arr.sort(function(a,b){ return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }); });
+        // if order changed, re-append nodes in new order and schedule a post
+        var changed = false;
+        for(var i=0;i<arr.length;i++){ if(arr[i].node !== nodes[i]){ changed = true; break; } }
+        if(changed){
+          arr.forEach(function(x){ container.appendChild(x.node); });
+          // compute ordered_ids for this container
+          var ordered = Array.from(container.querySelectorAll(':scope > .master-node')).map(function(n){ return getPk(n); });
+          // determine parent_id (null for root)
+          var parent_id = null;
+          if(container !== tree){ // container is children of some node
+            var parent = container.parentElement && container.parentElement.closest && container.parentElement.closest('.master-node');
+            parent_id = parent ? getPk(parent) : null;
+          }
+          toPost.push({ parent_id: parent_id, ordered_ids: ordered });
+        }
+      });
+      if(!toPost.length) { debugBanner('[master] sort: tree already sorted'); return; }
+      // post each changed ordering sequentially to avoid race
+      var token = (document.querySelector('input[name=csrfmiddlewaretoken]')||{}).value || '';
+      (function postNext(idx){ if(idx >= toPost.length){ debugBanner('[master] sort: done'); setTimeout(function(){ location.reload(); }, 350); return; } var payload = toPost[idx]; payload.category = document.getElementById('mi-category') ? document.getElementById('mi-category').value : ''; fetch('{% url "master_api_reorder" %}', { method: 'POST', headers: {'Content-Type':'application/json','X-CSRFToken': token}, body: JSON.stringify(payload) }).then(function(r){ return r.json(); }).then(function(j){ if(!j || !j.ok) console.warn('sort post returned not ok', j); postNext(idx+1); }).catch(function(err){ console.error('sort post failed', err); postNext(idx+1); }); })(0);
+    }catch(e){ console.error('sortTreeAlphabetical failed', e); }
+  }
+  var sortBtn = document.getElementById('sort-az'); if(sortBtn) sortBtn.addEventListener('click', function(ev){ ev && ev.preventDefault && ev.preventDefault(); sortTreeAlphabetical(); });
+
+  // slide toggle helpers (small height animation)
+  function slideUp(el, duration){
+    return new Promise(function(resolve){
+      el.style.transitionProperty = 'height, margin, padding';
+      el.style.transitionDuration = (duration||200) + 'ms';
+      el.style.boxSizing = 'border-box';
+      var height = el.offsetHeight;
+      el.style.height = height + 'px';
+      requestAnimationFrame(function(){ el.style.height = '0'; el.style.paddingTop = '0'; el.style.paddingBottom = '0'; el.style.marginTop = '0'; el.style.marginBottom = '0'; });
+      setTimeout(function(){ el.style.display = 'none'; el.style.removeProperty('height'); el.style.removeProperty('padding-top'); el.style.removeProperty('padding-bottom'); el.style.removeProperty('margin-top'); el.style.removeProperty('margin-bottom'); el.style.removeProperty('transition-duration'); el.style.removeProperty('transition-property'); resolve(); }, duration||200);
+    });
+  }
+  function slideDown(el, duration){
+    return new Promise(function(resolve){
+      el.style.removeProperty('display');
+      var display = window.getComputedStyle(el).display;
+      if(display === 'none') display = 'block';
+      el.style.display = display;
+      var height = el.offsetHeight;
+      el.style.height = '0'; el.style.paddingTop = '0'; el.style.paddingBottom = '0'; el.style.marginTop = '0'; el.style.marginBottom = '0';
+      el.style.boxSizing = 'border-box';
+      el.style.transitionProperty = 'height, margin, padding';
+      el.style.transitionDuration = (duration||200) + 'ms';
+      requestAnimationFrame(function(){ el.style.height = height + 'px'; });
+      setTimeout(function(){ el.style.removeProperty('height'); el.style.removeProperty('transition-duration'); el.style.removeProperty('transition-property'); resolve(); }, duration||200);
+    });
+  }
+
+  // initialize Bootstrap tooltips for icon buttons if bootstrap available
+  try{ if(typeof bootstrap !== 'undefined' && bootstrap.Tooltip){ Array.from(document.querySelectorAll('[data-bs-toggle="tooltip"]')).forEach(function(el){ try{ bootstrap.Tooltip.getOrCreateInstance(el); }catch(e){} }); } }catch(e){}
+
+  // Watch for new nodes being added and attach handlers to new buttons
+  try{
+    var mo = new MutationObserver(function(muts){
+      muts.forEach(function(m){
+        if(m.addedNodes && m.addedNodes.length){
+          m.addedNodes.forEach(function(n){
+            if(n.querySelectorAll){
+              var newBtns = n.querySelectorAll('.btn-add-child');
+              if(newBtns && newBtns.length){ attachDirectAddHandlers(); }
+            }
+          });
+        }
+      });
+    });
+    mo.observe(treeContainer, {childList: true, subtree: true});
+  }catch(e){ console.error('[master] MutationObserver init failed', e); }
+
+  // initialize select2 for parent selection (AJAX)
+  (function ensureSelect2(){
+    if(typeof jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined'){
+      var s1 = document.createElement('link');
+      s1.rel = 'stylesheet'; s1.href = 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css';
+      document.head.appendChild(s1);
+      var s2 = document.createElement('script'); s2.src = 'https://code.jquery.com/jquery-3.6.0.min.js'; s2.onload = function(){
+        var s3 = document.createElement('script'); s3.src = 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js'; document.head.appendChild(s3);
+      }; document.head.appendChild(s2);
+    }
+  })();
+
+  function initParentSelect(){
+    // use jQuery/Select2 when available
+    var waitCount = 0;
+    function tryInit(){
+      if(typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined'){
+        var $sel = jQuery('#mi-parent-select');
+        var $hidden = jQuery('#mi-parent');
+        var $cat = jQuery('#mi-category');
+        $sel.select2({
+          placeholder: 'ค้นหา parent by label or code',
+          allowClear: true,
+          ajax: {
+            url: '{% url "master_api_parents" %}',
+            dataType: 'json',
+            delay: 250,
+            data: function(params){ return { q: params.term, category: $cat.val() }; },
+            processResults: function(data){ return { results: data.results }; }
+          },
+          width: 'resolve'
+        });
+
+        // when selection changes, set hidden parent_id
+        $sel.on('select2:select', function(e){ $hidden.val(e.params.data.id); });
+        $sel.on('select2:clear', function(e){ $hidden.val(''); });
+
+        // helper to set an initial value (id + text)
+        function setParentInitial(id, text){
+          if(!id) { $sel.val(null).trigger('change'); $hidden.val(''); return; }
+          var option = new Option(text, id, true, true);
+          $sel.append(option).trigger('change');
+          $hidden.val(id);
+        }
+
+        // expose to window for openForm to use
+        window._master_select2_set = setParentInitial;
+        // if an initial value was queued before Select2 loaded, apply it now
+        if(window._master_pending_parent){
+          try{ window._master_select2_set(window._master_pending_parent.id || '', window._master_pending_parent.text || ''); }catch(e){}
+          window._master_pending_parent = null;
+        }
+        return;
+      }
+      waitCount++;
+      if(waitCount < 20) setTimeout(tryInit, 200);
+    }
+    tryInit();
+  }
+  initParentSelect();
+
+  // Parent change / clear button handlers and fallback population
+  (function parentFallbackHandlers(){
+    var changeBtn = document.getElementById('mi-change-parent-btn');
+    var clearBtn = document.getElementById('mi-clear-parent-btn');
+    var display = document.getElementById('mi-parent-display');
+    var hid = document.getElementById('mi-parent');
+    var sel = document.getElementById('mi-parent-select');
+
+    function populateFallbackSelect(q){
+      // simple AJAX to load parents for current category
+      try{
+        var xhr = new XMLHttpRequest();
+        var url = '{% url "master_api_parents" %}';
+        if(q) url += '?q=' + encodeURIComponent(q);
+        xhr.open('GET', url, true);
+        xhr.onreadystatechange = function(){
+          if(xhr.readyState !== 4) return;
+          if(xhr.status === 200){
+            try{
+              var j = JSON.parse(xhr.responseText);
+              if(j && j.results){
+                sel.innerHTML = '';
+                var empty = document.createElement('option'); empty.value = ''; empty.text = '(เลือก parent)'; sel.appendChild(empty);
+                j.results.forEach(function(r){ var o = document.createElement('option'); o.value = r.id; o.text = r.text || r.label || r.id; sel.appendChild(o); });
+                sel.style.display = '';
+              }
+            }catch(e){ console.debug('parentFallback parse failed', e); }
+          }
+        };
+        xhr.send();
+      }catch(e){ console.debug('populateFallbackSelect failed', e); }
+    }
+
+    if(changeBtn){ changeBtn.addEventListener('click', function(){
+      // show the fallback select so user can pick a parent; if select2 is available we still show plain select which select2 will upgrade
+      sel.style.display = '';
+      populateFallbackSelect('');
+      sel.focus();
+    }); }
+
+    if(clearBtn){ clearBtn.addEventListener('click', function(){
+      if(!hid) return; hid.value = ''; if(display) display.value = ''; if(sel){ sel.value = ''; sel.style.display = 'none'; }
+      // if select2 exists, clear it via trigger when ready
+      try{ if(typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined'){ jQuery('#mi-parent-select').val(null).trigger('change'); jQuery('#mi-parent').val(''); } }catch(e){}
+    }); }
+
+    // when the fallback select changes, sync hidden input and display
+  if(sel){ sel.addEventListener('change', function(){ var v = sel.value || ''; hid.value = v; var t = '' ; if(sel.selectedIndex >= 0){ t = sel.options[sel.selectedIndex].text; } if(display) display.value = t; // update picker preview and enable button
+    try{ var preview = document.getElementById('parent-picker-preview'); if(preview) preview.textContent = t || v || '(ยังไม่ได้เลือก)'; var selectBtn = document.getElementById('parent-picker-select'); if(selectBtn) selectBtn.disabled = !v; }catch(e){}
+  }); }
+  })();
+
+  // Parent picker modal behavior
+  (function parentPicker(){
+    var pickerModalEl = document.getElementById('parentPickerModal');
+    var pickerModal = null;
+    function ensurePickerModal(){ if(!pickerModalEl) pickerModalEl = document.getElementById('parentPickerModal'); if(pickerModalEl && typeof bootstrap !== 'undefined'){ try{ pickerModal = bootstrap.Modal.getOrCreateInstance(pickerModalEl); }catch(e){ pickerModal = new bootstrap.Modal(pickerModalEl); } } }
+
+    var pickerTree = document.getElementById('parent-picker-tree');
+    var searchInput = document.getElementById('parent-picker-search');
+    var refreshBtn = document.getElementById('parent-picker-refresh');
+    var selectBtn = document.getElementById('parent-picker-select');
+    var selectedPk = null; // current selection inside picker
+
+    function cloneTreeToPicker(){
+      if(!pickerTree) return;
+      pickerTree.innerHTML = '';
+      var source = document.getElementById('master-tree');
+      if(!source) return false;
+      // Build a cleaned, accessible tree structure based on master-tree
+      function buildNode(nodeEl){
+        var wrapper = document.createElement('div'); wrapper.className = 'picker-node-wrapper'; wrapper.style.marginLeft = '8px';
+        var row = document.createElement('div'); row.className = 'picker-node-row d-flex align-items-center'; row.style.padding = '4px';
+        // toggle if has children
+        var childrenEl = nodeEl.querySelector(':scope > .master-children');
+        if(childrenEl){
+          var toggle = document.createElement('button'); toggle.type='button'; toggle.className='btn btn-sm btn-link node-toggle'; toggle.innerHTML='▾'; toggle.setAttribute('aria-expanded','true'); toggle.style.marginRight='6px';
+          row.appendChild(toggle);
+          toggle.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); var expanded = this.getAttribute('aria-expanded') === 'true'; this.setAttribute('aria-expanded', (!expanded)); this.innerHTML = expanded ? '▸' : '▾'; var childContainer = wrapper.querySelector('.picker-children'); if(childContainer) childContainer.style.display = expanded ? 'none' : ''; });
+        } else {
+          var spacer = document.createElement('span'); spacer.style.display='inline-block'; spacer.style.width='20px'; row.appendChild(spacer);
+        }
+        var labelSpan = document.createElement('span'); labelSpan.className='picker-node-label flex-grow-1';
+        var strong = nodeEl.querySelector('strong'); var small = nodeEl.querySelector('small');
+        labelSpan.textContent = (strong ? strong.textContent.trim() : '') + (small ? (' ' + small.textContent.trim()) : '');
+        labelSpan.tabIndex = 0; labelSpan.setAttribute('role','treeitem'); labelSpan.style.outline='none';
+        row.appendChild(labelSpan);
+        wrapper.appendChild(row);
+        // click/keyboard selection
+        function makeSelectable(el){ el.addEventListener('click', function(ev){ ev.stopPropagation(); pickerSelectNode(wrapper); }); el.addEventListener('keydown', function(ev){ if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); pickerSelectNode(wrapper); } else if(ev.key === 'ArrowDown' || ev.key === 'ArrowUp' || ev.key === 'ArrowLeft' || ev.key === 'ArrowRight'){ pickerNavigate(ev); } }); }
+        makeSelectable(labelSpan);
+        wrapper.setAttribute('data-pk', nodeEl.getAttribute('data-pk') || '');
+        // children
+        if(childrenEl){ var childContainer = document.createElement('div'); childContainer.className='picker-children'; childContainer.style.marginLeft='14px'; childContainer.style.paddingLeft='6px'; childContainer.style.borderLeft='1px dashed #eee'; Array.from(childrenEl.children).forEach(function(ch){ var inner = buildNode(ch); childContainer.appendChild(inner); }); wrapper.appendChild(childContainer); }
+        return wrapper;
+      }
+      // top-level nodes
+      Array.from(source.querySelectorAll(':scope > .master-node')).forEach(function(n){ var item = buildNode(n); pickerTree.appendChild(item); });
+      // small styles
+      pickerTree.querySelectorAll && pickerTree.querySelectorAll('.picker-node-label').forEach(function(l){ l.style.cursor='pointer'; l.style.padding='2px 6px'; l.style.borderRadius='4px'; });
+      return true;
+    }
+
+    function loadPickerViaAjax(){
+      // fallback: fetch nodes for current category
+      if(!pickerTree) return;
+      pickerTree.innerHTML = '<div class="text-muted">loading...</div>';
+      var xhr = new XMLHttpRequest();
+      var url = '{% url "master_api_parents" %}';
+      xhr.open('GET', url + '?category=' + encodeURIComponent(activeCategory||''), true);
+      xhr.onreadystatechange = function(){ if(xhr.readyState !== 4) return; if(xhr.status === 200){ try{ var j = JSON.parse(xhr.responseText); pickerTree.innerHTML = ''; if(j && j.results){ var ul = document.createElement('div'); j.results.forEach(function(r){ var el = document.createElement('div'); el.className = 'picker-node'; el.dataset.pk = r.id; el.textContent = (r.text||r.label||r.id); el.style.padding='6px'; el.style.borderBottom='1px solid #f1f1f1'; el.style.cursor='pointer'; el.addEventListener('click', function(){ pickerSelectNode(el); }); ul.appendChild(el); }); pickerTree.appendChild(ul); } }catch(e){ pickerTree.innerHTML = '<div class="text-danger">Load failed</div>'; } } else { pickerTree.innerHTML = '<div class="text-danger">Load failed ('+xhr.status+')</div>'; } };
+      xhr.send();
+    }
+
+    function pickerSelectNode(el){
+      // clear previous selection styles
+      pickerTree.querySelectorAll && pickerTree.querySelectorAll('.picker-selected').forEach(function(x){ x.classList.remove('picker-selected'); x.style.background=''; });
+      var node = el;
+      // find wrapper element with data-pk
+      if(!node) return;
+      var wrapper = node.classList && node.classList.contains('picker-node-wrapper') ? node : node.closest && node.closest('.picker-node-wrapper');
+      if(!wrapper) return;
+  selectedPk = wrapper.getAttribute('data-pk') || '';
+  wrapper.classList.add('picker-selected'); wrapper.style.background='#e9f5ff';
+  // compute label and update preview + enable select button
+  var lab = wrapper.querySelector('.picker-node-label'); wrapper._picker_label = lab ? lab.textContent.trim() : (wrapper.textContent||'').trim();
+  var preview = document.getElementById('parent-picker-preview');
+  if(preview) preview.textContent = wrapper._picker_label || selectedPk || '(ไม่ได้ระบุ)';
+  var selectBtn = document.getElementById('parent-picker-select'); if(selectBtn) selectBtn.disabled = !selectedPk;
+      // ensure it's visible (expand parents)
+      var p = wrapper.parentElement; while(p && p !== pickerTree){ if(p.classList && p.classList.contains('picker-children')) p.style.display = ''; p = p.parentElement; }
+      // focus the label
+      try{ var labEl = wrapper.querySelector('.picker-node-label'); if(labEl) labEl.focus(); }catch(e){}
+    }
+
+    // keyboard navigation inside picker
+    function pickerNavigate(ev){
+      var focused = document.activeElement; if(!focused) return; var all = Array.from(pickerTree.querySelectorAll('.picker-node-label')).filter(function(x){ return x.offsetParent !== null; }); if(!all.length) return; var idx = all.indexOf(focused); if(idx === -1) return;
+      if(ev.key === 'ArrowDown'){ var nxt = all[idx+1]; if(nxt) nxt.focus(); }
+      else if(ev.key === 'ArrowUp'){ var prev = all[idx-1]; if(prev) prev.focus(); }
+      else if(ev.key === 'ArrowRight'){ // expand if collapsed
+        var wrapper = focused.closest('.picker-node-wrapper'); var toggle = wrapper && wrapper.querySelector('.node-toggle'); if(toggle && toggle.getAttribute('aria-expanded') === 'true'){ /* already expanded */ } else if(toggle){ toggle.click(); }
+      }
+      else if(ev.key === 'ArrowLeft'){ var wrapper = focused.closest('.picker-node-wrapper'); var toggle = wrapper && wrapper.querySelector('.node-toggle'); if(toggle && toggle.getAttribute('aria-expanded') === 'false'){ toggle.click(); } else { // move to parent
+        var parentWrapper = wrapper && wrapper.parentElement && wrapper.parentElement.closest && wrapper.parentElement.closest('.picker-node-wrapper'); if(parentWrapper){ var lab = parentWrapper.querySelector('.picker-node-label'); if(lab) lab.focus(); }
+      }}
+    }
+
+    // wire change button to open picker
+    var changeBtn = document.getElementById('mi-change-parent-btn');
+    if(changeBtn){ changeBtn.addEventListener('click', function(){ ensurePickerModal(); // try clone first
+      // reset preview and selection when opening
+      selectedPk = null; var preview = document.getElementById('parent-picker-preview'); if(preview) preview.textContent = '(ยังไม่ได้เลือก)'; var selectBtn = document.getElementById('parent-picker-select'); if(selectBtn) selectBtn.disabled = true;
+      var ok = cloneTreeToPicker();
+      if(!ok) loadPickerViaAjax();
+      try{ pickerModal.show(); }catch(e){}
+    }); }
+
+  if(refreshBtn){ refreshBtn.addEventListener('click', function(){ if(!cloneTreeToPicker()) loadPickerViaAjax(); }); }
+
+  // select root (no parent)
+  var selectRootBtn = document.getElementById('parent-picker-select-root'); if(selectRootBtn){ selectRootBtn.addEventListener('click', function(){ var hid = document.getElementById('mi-parent'); var display = document.getElementById('mi-parent-display'); if(hid) hid.value = ''; if(display) display.value = '(root)'; try{ pickerModal.hide(); }catch(e){} }); }
+
+    if(selectBtn){ selectBtn.addEventListener('click', function(){ if(!selectedPk){ alert('โปรดเลือกโหนดก่อน'); return; } // set values
+      var hid = document.getElementById('mi-parent'); var display = document.getElementById('mi-parent-display'); hid.value = selectedPk; var label = null; var sel = pickerTree.querySelector('.picker-selected'); if(sel) label = sel._picker_label || sel.textContent.trim(); if(display) display.value = label || selectedPk; // try to also set Select2 if present
+      if(window._master_select2_set){ try{ window._master_select2_set(selectedPk, label || selectedPk); }catch(e){} }
+      try{ pickerModal.hide(); }catch(e){}
+    }); }
+
+    // simple search filter
+    if(searchInput){ searchInput.addEventListener('input', function(){ var q = (this.value||'').toLowerCase(); if(!pickerTree) return; Array.from(pickerTree.querySelectorAll('[data-pk], .picker-node, .master-node')).forEach(function(n){ var txt = (n.textContent||'').toLowerCase(); n.style.display = (!q || txt.indexOf(q) !== -1) ? '' : 'none'; }); }); }
+  })();
+
+  // Global helpers for inline onclick fallbacks (used by node partials)
+  window.master_add_child = function(pk, btn){
+    try{
+      debugBanner('[master] master_add_child called pk=' + pk);
+      var nodeEl = btn ? btn.closest('.master-node') : document.querySelector('[data-pk="' + pk + '"]');
+      var parentLabel = '';
+      if(nodeEl){ var strong = nodeEl.querySelector('strong'); var codeEl = nodeEl.querySelector('small'); var codeText = codeEl ? (' ' + codeEl.textContent.trim()) : ''; parentLabel = (strong ? strong.textContent.trim() : '') + codeText; }
+      
+      // Check if modal exists and form fields exist before trying to open modal
+      var mEl = document.getElementById('masterModal');
+      var hasRequiredFields = document.getElementById('mi-id') && document.getElementById('mi-category') && document.getElementById('mi-label');
+      
+      if(mEl && hasRequiredFields){
+        // Try to open modal form first
+        var formOpened = openForm({parent_id: pk, parent_label: parentLabel, category: activeCategory});
+        if(formOpened !== false){
+          // if modal doesn't show within short time, navigate to full page create as fallback
+          setTimeout(function(){
+            try{
+              if(!mEl.classList.contains('show')){
+                // navigate to full-page create with query params
+                var url = '{% url "master_create" %}';
+                var q = [];
+                if(pk) q.push('parent_id=' + encodeURIComponent(pk));
+                if(activeCategory) q.push('category=' + encodeURIComponent(activeCategory));
+                if(q.length) url += '?' + q.join('&');
+                debugBanner('[master] modal not shown, redirecting to: ' + url);
+                window.location.href = url;
+              }
+            }catch(e){ console.error('master_add_child fallback failed', e); }
+          }, 350);
+        } else {
+          // openForm failed, redirect immediately
+          var url = '{% url "master_create" %}';
+          var q = [];
+          if(pk) q.push('parent_id=' + encodeURIComponent(pk));
+          if(activeCategory) q.push('category=' + encodeURIComponent(activeCategory));
+          if(q.length) url += '?' + q.join('&');
+          debugBanner('[master] openForm failed, redirecting to: ' + url);
+          window.location.href = url;
+        }
+      } else {
+        // Modal or form fields don't exist, redirect immediately
+        var url = '{% url "master_create" %}';
+        var q = [];
+        if(pk) q.push('parent_id=' + encodeURIComponent(pk));
+        if(activeCategory) q.push('category=' + encodeURIComponent(activeCategory));
+        if(q.length) url += '?' + q.join('&');
+        debugBanner('[master] modal not available, redirecting to: ' + url);
+        window.location.href = url;
+      }
+    }catch(e){ console.error('master_add_child failed', e); }
+  };
+
+  window.master_edit = function(pk, btn){
+    try{
+      debugBanner('[master] master_edit called pk=' + pk);
+      
+      // Check if modal exists and form fields exist before trying to open modal
+      var mEl = document.getElementById('masterModal');
+      var hasRequiredFields = document.getElementById('mi-id') && document.getElementById('mi-category') && document.getElementById('mi-label');
+      
+      if(mEl && hasRequiredFields){
+        fetch('{% url "master_api_get" 0 %}'.replace('/0/', '/' + pk + '/')).then(r=>{
+          if(!r.ok) throw new Error('fetch-status-' + r.status);
+          return r.json();
+        }).then(j=>{ 
+          if(j && j.ok){ 
+            var formOpened = openForm(j); 
+            if(formOpened === false){
+              // openForm failed, redirect
+              var url = '{% url "master_edit" 0 %}'.replace('/0/', '/' + pk + '/');
+              debugBanner('[master] openForm failed, redirecting to: ' + url);
+              window.location.href = url;
+            }
+          } else { 
+            throw new Error('bad-json'); 
+          } 
+        }).catch(function(err){
+          console.warn('AJAX fetch for edit failed or modal blocked, falling back to full page edit', err);
+          // fallback: navigate to /master/edit/<pk>/ page
+          var url = '{% url "master_edit" 0 %}'.replace('/0/', '/' + pk + '/');
+          debugBanner('[master] redirecting to edit page: ' + url);
+          window.location.href = url;
+        });
+        // Also set a short timeout to check modal display and redirect if not shown
+        setTimeout(function(){ try{ if(!mEl.classList.contains('show')){ var url = '{% url "master_edit" 0 %}'.replace('/0/', '/' + pk + '/'); debugBanner('[master] modal not shown after edit fetch, redirecting to: ' + url); window.location.href = url; } }catch(e){} }, 500);
+      } else {
+        // Modal or form fields don't exist, redirect immediately
+        var url = '{% url "master_edit" 0 %}'.replace('/0/', '/' + pk + '/');
+        debugBanner('[master] modal not available, redirecting to: ' + url);
+        window.location.href = url;
+      }
+    }catch(e){ console.error('master_edit failed', e); }
+  };
+
+  // master_delete function is now in _master_shared_js.html - no need to redefine here
+
+  document.getElementById('masterForm').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var form = ev.target;
+    // client-side validation: required fields
+    var catEl = document.getElementById('mi-category'); var labelEl = document.getElementById('mi-label'); var parentHidden = document.getElementById('mi-parent');
+    var valid = true;
+    if(catEl && (!catEl.value || !String(catEl.value).trim())){ catEl.classList.add('is-invalid'); valid = false; } else if(catEl) { catEl.classList.remove('is-invalid'); }
+    if(labelEl && (!labelEl.value || !String(labelEl.value).trim())){ labelEl.classList.add('is-invalid'); valid = false; } else if(labelEl) { labelEl.classList.remove('is-invalid'); }
+    if(!valid){ var miErr = document.getElementById('mi-error'); if(miErr){ miErr.style.display=''; miErr.textContent='กรุณากรอกข้อมูลที่จำเป็น'; } return; }
+
+    var id = document.getElementById('mi-id').value;
+    var url = id ? ('{% url "master_api_update" 0 %}'.replace('/0/', '/' + id + '/')) : '{% url "master_api_create" %}';
+    var data = new FormData(form);
+    // checkbox handling (ensure it's present)
+    if(!data.has('active')) data.set('active','true');
+
+    // disable all inputs and set aria-busy
+    var controls = form.querySelectorAll('input,textarea,button,select');
+    controls.forEach(function(c){ c.disabled = true; });
+    form.setAttribute('aria-busy','true');
+
+    var submitBtn = document.getElementById('mi-submit'); var spinner = document.getElementById('mi-submit-spinner'); var submitText = document.getElementById('mi-submit-text');
+    if(submitBtn) submitBtn.disabled = true; if(spinner) spinner.style.display = ''; if(submitText) submitText.textContent = 'กำลังบันทึก...';
+    var tokenInput = document.querySelector('input[name=csrfmiddlewaretoken]');
+    var token = tokenInput ? tokenInput.value : '';
+    // diagnostic: log parent value being submitted
+    try{ var spv = (document.getElementById('mi-parent')||{}).value || ''; var spd = (document.getElementById('mi-parent-display')||{}).value || ''; debugBanner('[master] submitting form parent_id=' + spv + ' parent_display=' + spd); console.debug('[master] submitting form parent_id=', spv, 'parent_display=', spd); }catch(e){}
+
+    fetch(url, {method: 'POST', body: data, headers: {'X-CSRFToken': token}})
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      // re-enable controls in all cases after processing
+      try{ controls.forEach(function(c){ c.disabled = false; }); form.removeAttribute('aria-busy'); }catch(e){}
+      if(submitBtn) submitBtn.disabled = false; if(spinner) spinner.style.display = 'none'; if(submitText) submitText.textContent = 'บันทึก';
+
+      if(j && j.ok){
+        // if server echoed parent info, update hidden input and display
+        try{
+          var prevParent = (document.getElementById('mi-parent')||{}).value || '';
+          if(j.parent_id !== undefined){ document.getElementById('mi-parent').value = j.parent_id || ''; }
+          if(j.parent_label !== undefined && j.parent_label !== null && j.parent_label !== ''){
+            var pd = document.getElementById('mi-parent-display'); if(pd) pd.value = j.parent_label || (j.parent_id || '');
+            if(window._master_select2_set){ try{ window._master_select2_set(j.parent_id || '', j.parent_label || (j.parent_id || '')); }catch(e){} }
+          } else if(j.parent_id){
+            // server returned only parent_id; fetch readable label asynchronously and update display
+            (function(pid){ try{ fetch('{% url "master_api_get" 0 %}'.replace('/0/', '/' + pid + '/')).then(function(r){ if(!r.ok) throw new Error('fetch-status-' + r.status); return r.json(); }).then(function(res){ if(res && res.ok){ var pl = res.parent_label || ((res.label ? res.label : '') + (res.code ? (' (' + res.code + ')') : '')); var pd = document.getElementById('mi-parent-display'); if(pd) pd.value = pl || pid; if(window._master_select2_set){ try{ window._master_select2_set(pid, pl || pid); }catch(e){} } } }).catch(function(){ /* ignore */ }); }catch(e){} })(j.parent_id);
+          }
+          var newParent = (document.getElementById('mi-parent')||{}).value || '';
+          debugBanner('[master] server returned parent_id=' + (j.parent_id || '') + ' (prev submitted: ' + prevParent + ', now: ' + newParent + ')');
+          console.debug('[master] server returned parent_id=', j.parent_id, 'prevSubmitted=', prevParent, 'now=', newParent);
+        }catch(e){ console.debug('post-save parent update failed', e); }
+
+        // hide modal on success and show undo toast to allow restoring lastSnapshot
+        try{ if(modal) modal.hide(); }catch(e){}
+
+        // show success via undo toast
+        showUndoToast({ message: 'บันทึกเรียบร้อย', onUndo: function(){
+            var token2 = (document.querySelector('input[name=csrfmiddlewaretoken]')||{}).value || '';
+            fetch('{% url "master_api_undo" %}', { method: 'POST', headers: {'X-CSRFToken': token2} }).then(function(res){ return res.json(); }).then(function(rr){ if(rr && rr.ok){ location.reload(); } else {
+                  if(!lastSnapshot || !lastSnapshot.id) return alert('ไม่พบข้อมูลย้อนกลับ');
+                  var restoreUrl = '{% url "master_api_update" 0 %}'.replace('/0/', '/' + lastSnapshot.id + '/');
+                  var fd = new FormData(); for(var k in lastSnapshot){ if(lastSnapshot.hasOwnProperty(k) && k !== 'ok'){ fd.set(k, lastSnapshot[k]); } }
+                  fetch(restoreUrl, { method: 'POST', body: fd, headers: {'X-CSRFToken': token2} }).then(function(res){ return res.json(); }).then(function(rr2){ if(rr2 && rr2.ok){ location.reload(); } else alert('ย้อนกลับไม่สำเร็จ'); }).catch(function(){ alert('ย้อนกลับไม่สำเร็จ'); });
+            }}).catch(function(){ alert('ย้อนกลับไม่สำเร็จ'); });
+        }, onRedo: function(){
+          try{
+            var id = document.getElementById('mi-id').value || (lastSnapshot && lastSnapshot.id);
+            var url2 = id ? ('{% url "master_api_update" 0 %}'.replace('/0/', '/' + id + '/')) : '{% url "master_api_create" %}';
+            var form = document.getElementById('masterForm'); var fd2 = new FormData(form);
+            var token3 = (document.querySelector('input[name=csrfmiddlewaretoken]')||{}).value || '';
+            fetch('{% url "master_api_redo" %}', { method: 'POST', headers: {'X-CSRFToken': token3} }).then(function(res){ return res.json(); }).then(function(rr){ if(rr && rr.ok) location.reload(); else { fetch(url2, { method: 'POST', body: fd2, headers: {'X-CSRFToken': token3} }).then(r=>r.json()).then(function(rr2){ if(rr2 && rr2.ok) location.reload(); else alert('Redo failed'); }).catch(function(){ alert('Redo failed'); }); } }).catch(function(){ alert('Redo failed'); });
+          }catch(e){ console.error('redo apply failed', e); }
+        }});
+        setTimeout(function(){ location.reload(); }, undoTimeoutMs + 250);
+
+      } else {
+        // show inline error message if provided
+        try{
+          var miErr = document.getElementById('mi-error'); if(miErr){ miErr.style.display = ''; miErr.textContent = j.error || j.message || 'เกิดข้อผิดพลาด'; }
+          // if server returned field-specific errors, mark fields
+          if(j.field_errors){ for(var f in j.field_errors){ try{ var el = document.getElementById('mi-' + f); if(el){ el.classList.add('is-invalid'); var feed = document.getElementById('mi-' + f + '-feedback'); if(feed) feed.textContent = j.field_errors[f]; } }catch(e){} }
+          }
+        }catch(e){}
+        alert && alert('Error: ' + (j.error||j.message||'unknown'));
+      }
+    }).catch(function(err){
+      try{ controls.forEach(function(c){ c.disabled = false; }); form.removeAttribute('aria-busy'); }catch(e){}
+      if(submitBtn) submitBtn.disabled = false; if(spinner) spinner.style.display = 'none'; if(submitText) submitText.textContent = 'บันทึก';
+      try{ var miErr = document.getElementById('mi-error'); if(miErr){ miErr.style.display = ''; miErr.textContent = 'ไม่สามารถบันทึกได้ (ตรวจสอบการเชื่อมต่อ)'; } }catch(e){}
+      alert && alert('Error saving');
+    });
+  });
+
+  // keyboard shortcut: Ctrl+Enter to submit the modal form
+  try{ document.getElementById('masterForm').addEventListener('keydown', function(e){ if((e.ctrlKey || e.metaKey) && e.key === 'Enter'){ e.preventDefault(); this.dispatchEvent(new Event('submit', { cancelable: true })); } }); }catch(e){}
+
+  // ---- Drag & Drop with precise sibling insertion and root drop ----
+  var dragSrc = null;
+  var lastMarker = null;
+  var multiSelection = new Set();
+  var lastClicked = null;
+
+  // Helper: select only the provided node (clear others)
+  function selectOnly(nodeEl){
+    if(!nodeEl) return;
+    var pk = getPk(nodeEl);
+    multiSelection.clear();
+    document.querySelectorAll('.master-node.selected').forEach(function(n){ n.classList.remove('selected'); });
+    multiSelection.add(pk);
+    nodeEl.classList.add('selected');
+    lastClicked = nodeEl;
+  }
+
+  function getPk(el){ return el && el.getAttribute && el.getAttribute('data-pk'); }
+
+  function findClosestNode(el){ return el && el.closest ? el.closest('.master-node') : null; }
+
+  function createChildrenContainerIfMissing(parentEl){
+    var pid = getPk(parentEl);
+    var container = parentEl.querySelector('#children-' + pid);
+    if(!container){
+      container = document.createElement('div');
+      container.id = 'children-' + pid;
+      container.className = 'master-children ms-4 mt-2';
+      parentEl.appendChild(container);
+    }
+    return container;
+  }
+
+  function clearMarkers(){
+    document.querySelectorAll('.drop-marker').forEach(function(m){ m.remove(); });
+    document.querySelectorAll('.master-node.drag-over').forEach(function(n){ n.classList.remove('drag-over'); });
+  }
+
+  function onDragStart(e){
+    var el = findClosestNode(e.target);
+    if(!el) return;
+    // if element not selected, start dragging only that element; otherwise drag all selected
+    if(!multiSelection.has(getPk(el))){
+      multiSelection.clear();
+      selectOnly(el);
+    }
+    dragSrc = el;
+    e.dataTransfer.effectAllowed = 'move';
+    // store list of pks being dragged
+    try{ e.dataTransfer.setData('application/json', JSON.stringify(Array.from(multiSelection))); }catch(_){ try{ e.dataTransfer.setData('text/plain', getPk(el)); }catch(_2){} }
+    // add dragging class to all selected nodes for visual feedback
+    document.querySelectorAll('.master-node').forEach(function(n){ if(multiSelection.has(getPk(n))) n.classList.add('dragging'); });
+  }
+
+  function onDragEnd(e){ document.querySelectorAll('.master-node.dragging').forEach(function(n){ n.classList.remove('dragging'); }); dragSrc = null; clearMarkers(); }
+
+  function onDragOver(e){
+    e.preventDefault();
+    var node = findClosestNode(e.target);
+    clearMarkers();
+    // determine category of dragged item (if available)
+    var draggedCat = dragSrc ? dragSrc.getAttribute('data-category') : null;
+  if(node && (!dragSrc || node !== dragSrc)){
+      var nodeCat = node.getAttribute('data-category');
+      // if categories mismatch, show not-allowed and do not allow marker
+      // cross-category drops allowed now; no restriction here
+      var rect = node.getBoundingClientRect();
+      var relY = e.clientY - rect.top;
+      var ratio = relY / rect.height;
+      node.classList.add('drag-over');
+      // create a small marker element
+      var marker = document.createElement('div'); marker.className = 'drop-marker';
+      marker.style.height = '4px'; marker.style.background = '#0d6efd'; marker.style.margin = '2px 0';
+      if(ratio < 0.33){
+        node.parentNode.insertBefore(marker, node);
+        marker.dataset.type = 'before';
+        marker.dataset.target = getPk(node);
+      } else if(ratio > 0.66){
+        if(node.nextSibling) node.parentNode.insertBefore(marker, node.nextSibling); else node.parentNode.appendChild(marker);
+        marker.dataset.type = 'after';
+        marker.dataset.target = getPk(node);
+      } else {
+        // middle area => drop as child (append to children)
+        var children = node.querySelector('#children-' + getPk(node));
+        if(!children){
+          children = document.createElement('div'); children.id = 'children-' + getPk(node); children.className = 'master-children ms-4 mt-2';
+          node.appendChild(children);
+        }
+        children.appendChild(marker);
+        marker.dataset.type = 'child';
+        marker.dataset.target = getPk(node);
+      }
+      lastMarker = marker;
+    } else {
+      // hovering over empty space inside the tree => show root marker at end
+      var tree = document.getElementById('master-tree');
+      // allow root drop for any category
+      if(tree){
+        var marker = document.createElement('div'); marker.className = 'drop-marker'; marker.style.height = '6px'; marker.style.background = '#0d6efd'; marker.style.margin = '4px 0';
+        tree.appendChild(marker);
+        marker.dataset.type = 'root';
+        lastMarker = marker;
+      }
+    }
+  }
+
+  function onDrop(e){
+    e.preventDefault();
+  // determine pks being dropped: try JSON payload, fallback to dragSrc only
+  var draggingPks = [];
+  try{ var raw = e.dataTransfer.getData('application/json'); if(raw) draggingPks = JSON.parse(raw); }catch(_){ }
+  if(!draggingPks || !draggingPks.length){ if(dragSrc) draggingPks = [ getPk(dragSrc) ]; }
+  var marker = lastMarker;
+    if(!marker) { onDragEnd(); return; }
+    var type = marker.dataset.type;
+    var targetPk = marker.dataset.target || null;
+
+    // Remove marker from DOM (we will manipulate DOM ourselves)
+    marker.remove();
+
+    // Determine parent element where dragged node will be placed
+    var newParentEl = null;
+    var insertBeforeEl = null;
+    // When multiple items are dragged, move each in order. We'll insert them into the target container
+    newParentEl = null;
+    if(type === 'child'){
+      newParentEl = findClosestNode(document.querySelector('[data-pk="' + targetPk + '"]'));
+      var container = createChildrenContainerIfMissing(newParentEl);
+      draggingPks.forEach(function(pk){ var n = document.querySelector('[data-pk="' + pk + '"]'); if(n) container.appendChild(n); });
+    } else if(type === 'before' || type === 'after'){
+      var targetEl = document.querySelector('[data-pk="' + targetPk + '"]');
+      newParentEl = targetEl.parentNode.closest && targetEl.parentNode.closest('.master-node');
+      draggingPks.forEach(function(pk, idx){ var n = document.querySelector('[data-pk="' + pk + '"]'); if(!n) return; if(type === 'before') targetEl.parentNode.insertBefore(n, targetEl); else { if(targetEl.nextSibling) targetEl.parentNode.insertBefore(n, targetEl.nextSibling); else targetEl.parentNode.appendChild(n); } });
+    } else if(type === 'root'){
+      var tree = document.getElementById('master-tree');
+      draggingPks.forEach(function(pk){ var n = document.querySelector('[data-pk="' + pk + '"]'); if(n) tree.appendChild(n); });
+      newParentEl = null;
+    }
+
+    // Compute new parent_id and ordered_ids for that parent
+    var parent_id = null;
+    var ordered_ids = [];
+    if(newParentEl){
+      parent_id = getPk(newParentEl);
+      var childrenContainer = newParentEl.querySelector('#children-' + parent_id);
+      if(childrenContainer){
+        ordered_ids = Array.from(childrenContainer.querySelectorAll('.master-node')).map(function(n){ return getPk(n); });
+      }
+    } else {
+      var tree = document.getElementById('master-tree');
+      ordered_ids = Array.from(tree.querySelectorAll(':scope > .master-node')).map(function(n){ return getPk(n); });
+    }
+
+    // prepare payload
+    var payload = { parent_id: parent_id, ordered_ids: ordered_ids, category: document.getElementById('mi-category') ? document.getElementById('mi-category').value : '' };
+
+    // CSRF token: try hidden input first, then cookie fallback
+    function getCookie(name){
+      var v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+      return v ? v.pop() : '';
+    }
+    var tokenInput = document.querySelector('input[name=csrfmiddlewaretoken]');
+    var token = tokenInput ? tokenInput.value : getCookie('csrftoken');
+
+  // Include moved_ids (the specific pks moved) so server can handle batch moves if needed
+  payload.moved_ids = draggingPks;
+  fetch('{% url "master_api_reorder" %}', {method: 'POST', headers: {'Content-Type':'application/json','X-CSRFToken': token}, body: JSON.stringify(payload)})
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if(!j.ok) alert('Reorder failed'); else {
+          // save lastOrderSnapshot and show undo
+          lastOrderSnapshot = { parent_id: parent_id, ordered_ids: ordered_ids };
+          showUndoToast({ message: 'เรียงลำดับแล้ว', onUndo: function(){
+            // try server-side undo first
+            var token2 = (document.querySelector('input[name=csrfmiddlewaretoken]')||{}).value || '';
+            fetch('{% url "master_api_undo" %}', { method: 'POST', headers: {'X-CSRFToken': token2} }).then(function(res){ return res.json(); }).then(function(rr){ if(rr && rr.ok){ location.reload(); } else {
+                if(!lastOrderSnapshot) return alert('ไม่พบข้อมูลย้อนกลับ');
+                fetch('{% url "master_api_reorder" %}', { method: 'POST', headers: {'Content-Type':'application/json','X-CSRFToken': token2}, body: JSON.stringify(lastOrderSnapshot) }).then(function(res2){ return res2.json(); }).then(function(rr2){ if(rr2 && rr2.ok) location.reload(); else alert('ย้อนกลับไม่สำเร็จ'); }).catch(function(){ alert('ย้อนกลับไม่สำเร็จ'); });
+            }}).catch(function(){ alert('ย้อนกลับไม่สำเร็จ'); });
+          }, onRedo: function(){
+            // try server-side redo first
+            var token3 = (document.querySelector('input[name=csrfmiddlewaretoken]')||{}).value || '';
+            fetch('{% url "master_api_redo" %}', { method: 'POST', headers: {'X-CSRFToken': token3} }).then(function(res){ return res.json(); }).then(function(rr){ if(rr && rr.ok) location.reload(); else { fetch('{% url "master_api_reorder" %}', { method: 'POST', headers: {'Content-Type':'application/json','X-CSRFToken': token3}, body: JSON.stringify({ parent_id: parent_id, ordered_ids: ordered_ids }) }).then(function(res2){ return res2.json(); }).then(function(rr2){ if(rr2 && rr2.ok) location.reload(); else alert('Redo failed'); }).catch(function(){ alert('Redo failed'); }); } }).catch(function(){ alert('Redo failed'); });
+          }});
+          setTimeout(function(){ location.reload(); }, undoTimeoutMs + 250);
+        } })
+      .catch(function(){ alert('Reorder failed'); location.reload(); });
+
+    onDragEnd();
+  }
+
+  // attach listeners using delegation
+  var tree = document.getElementById('master-tree');
+  if(tree){
+    tree.addEventListener('dragstart', onDragStart);
+    tree.addEventListener('dragend', onDragEnd);
+    tree.addEventListener('dragover', onDragOver);
+    tree.addEventListener('drop', onDrop);
+    // Selection handlers: click to select (Ctrl/Meta to toggle, Shift for range)
+    tree.addEventListener('click', function(ev){
+      var node = findClosestNode(ev.target);
+      if(!node) return;
+      // ignore clicks on action buttons to avoid interfering
+      if(ev.target.closest && ev.target.closest('.node-actions')) return;
+      var pk = getPk(node);
+      if(ev.shiftKey && lastClicked){
+        // select range between lastClicked and current node within the same container
+        var all = Array.from(tree.querySelectorAll('.master-node'));
+        var start = all.indexOf(lastClicked);
+        var end = all.indexOf(node);
+        if(start > -1 && end > -1){
+          var [a,b] = start <= end ? [start,end] : [end,start];
+          multiSelection.clear();
+          for(var i=a;i<=b;i++){ multiSelection.add(getPk(all[i])); all[i].classList.add('selected'); }
+        }
+      } else if(ev.ctrlKey || ev.metaKey){
+        // toggle selection
+        if(multiSelection.has(pk)){ multiSelection.delete(pk); node.classList.remove('selected'); } else { multiSelection.add(pk); node.classList.add('selected'); }
+        lastClicked = node;
+      } else {
+        // single select
+        multiSelection.clear();
+        document.querySelectorAll('.master-node.selected').forEach(function(n){ n.classList.remove('selected'); });
+        multiSelection.add(pk); node.classList.add('selected'); lastClicked = node;
+      }
+    });
+  }
+
+})();
+</script>
+{% include 'master/_master_shared_js.html' %}
+{% endblock %}

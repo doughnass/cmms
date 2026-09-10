@@ -1,0 +1,192 @@
+{% load static %}
+<script>
+(function(){
+  // Shared master JS (parent-picker, Select2 init, helper functions used by both pages)
+  window.masterSharedInit = window.masterSharedInit || function(activeCategory){
+    // ensure idempotent init
+    if(window._master_shared_inited) return; window._master_shared_inited = true;
+    var activeCategory = activeCategory || '';
+    // debug banner helper
+    window.masterDebug = window.masterDebug || function(msg){ try{ console.debug(msg); var banner = document.getElementById('master-debug-banner'); var lines = document.getElementById('master-debug-lines'); if(banner && lines){ var el = document.createElement('div'); el.textContent = msg; lines.appendChild(el); while(lines.children.length > 10) lines.removeChild(lines.firstChild); banner.style.display = 'block'; } }catch(e){} };
+
+    // Select2 init for parent select (AJAX)
+    // Ensure Select2 and jQuery are available; attempt CDN first, fall back to local static copies
+    (function ensureSelect2(){
+      // insert CDN links (so normal CDN consumers can cache them)
+      var cdnCss = document.createElement('link'); cdnCss.rel = 'stylesheet'; cdnCss.href = 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css'; document.head.appendChild(cdnCss);
+      var cdnJq = document.createElement('script'); cdnJq.src = 'https://code.jquery.com/jquery-3.6.0.min.js'; document.head.appendChild(cdnJq);
+      var cdnS2 = document.createElement('script'); cdnS2.src = 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js'; document.head.appendChild(cdnS2);
+      // fallback loader: if jQuery/Select2 aren't available shortly, load local static files
+      setTimeout(function(){
+        try{ if(typeof jQuery === 'undefined'){ var s = document.createElement('script'); s.src = "{% static 'cmms/js/jquery-3.6.0.min.js' %}"; document.head.appendChild(s); } }catch(e){}
+        try{ setTimeout(function(){ if(typeof jQuery !== 'undefined' && (!jQuery.fn || !jQuery.fn.select2)){ var s2 = document.createElement('script'); s2.src = "{% static 'cmms/js/select2.min.js' %}"; document.head.appendChild(s2); } }, 50); }catch(e){}
+      }, 120);
+    })();
+
+    function initParentSelect(){
+      var waitCount = 0;
+      function tryInit(){
+        if(typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined'){
+          var $sel = jQuery('#mi-parent-select');
+          var $hidden = jQuery('#mi-parent');
+          var $cat = jQuery('#mi-category');
+          $sel.select2({ placeholder: 'ค้นหา parent by label or code', allowClear: true, ajax: { url: '{% url "master_api_parents" %}', dataType: 'json', delay: 250, data: function(params){ return { q: params.term, category: $cat.val() || activeCategory }; }, processResults: function(data){ return { results: data.results }; } }, width: 'resolve' });
+          $sel.on('select2:select', function(e){ $hidden.val(e.params.data.id); });
+          $sel.on('select2:clear', function(){ $hidden.val(''); });
+          function setParentInitial(id, text){ if(!id){ $sel.val(null).trigger('change'); $hidden.val(''); return; } var option = new Option(text, id, true, true); $sel.append(option).trigger('change'); $hidden.val(id); }
+          window._master_select2_set = setParentInitial;
+          if(window._master_pending_parent){ try{ window._master_select2_set(window._master_pending_parent.id || '', window._master_pending_parent.text || ''); }catch(e){} window._master_pending_parent = null; }
+          return;
+        }
+        waitCount++; if(waitCount < 20) setTimeout(tryInit, 200);
+      }
+      tryInit();
+    }
+    initParentSelect();
+
+    // Parent picker modal wiring (works with markup in _master_modals.html)
+    try{
+      var pickerModalEl = document.getElementById('parentPickerModal'); var pickerModal = null;
+      function ensurePickerModal(){ if(!pickerModalEl) pickerModalEl = document.getElementById('parentPickerModal'); if(pickerModalEl && typeof bootstrap !== 'undefined'){ try{ pickerModal = bootstrap.Modal.getOrCreateInstance(pickerModalEl); }catch(e){ pickerModal = new bootstrap.Modal(pickerModalEl); } } }
+      var pickerTree = document.getElementById('parent-picker-tree'); var searchInput = document.getElementById('parent-picker-search'); var refreshBtn = document.getElementById('parent-picker-refresh'); var selectBtn = document.getElementById('parent-picker-select'); var selectedPk = null;
+      function cloneTreeToPicker(){ if(!pickerTree) return false; pickerTree.innerHTML = ''; var source = document.getElementById('master-tree'); if(!source) return false; function buildNode(nodeEl){ var wrapper = document.createElement('div'); wrapper.className = 'picker-node-wrapper'; wrapper.style.marginLeft = '8px'; var row = document.createElement('div'); row.className = 'picker-node-row d-flex align-items-center'; row.style.padding = '4px'; var childrenEl = nodeEl.querySelector(':scope > .master-children'); if(childrenEl){ var toggle = document.createElement('button'); toggle.type='button'; toggle.className='btn btn-sm btn-link node-toggle'; toggle.innerHTML='▾'; toggle.setAttribute('aria-expanded','true'); toggle.style.marginRight='6px'; row.appendChild(toggle); toggle.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); var expanded = this.getAttribute('aria-expanded') === 'true'; this.setAttribute('aria-expanded', (!expanded)); this.innerHTML = expanded ? '▸' : '▾'; var childContainer = wrapper.querySelector('.picker-children'); if(childContainer) childContainer.style.display = expanded ? 'none' : ''; }); } else { var spacer = document.createElement('span'); spacer.style.display='inline-block'; spacer.style.width='20px'; row.appendChild(spacer); }
+        var labelSpan = document.createElement('span'); labelSpan.className='picker-node-label flex-grow-1'; var strong = nodeEl.querySelector('strong'); var small = nodeEl.querySelector('small'); labelSpan.textContent = (strong ? strong.textContent.trim() : '') + (small ? (' ' + small.textContent.trim()) : ''); labelSpan.tabIndex = 0; labelSpan.setAttribute('role','treeitem'); labelSpan.style.outline='none'; row.appendChild(labelSpan); wrapper.appendChild(row);
+        function makeSelectable(el){ el.addEventListener('click', function(ev){ ev.stopPropagation(); pickerSelectNode(wrapper); }); el.addEventListener('keydown', function(ev){ if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); pickerSelectNode(wrapper); } else if(ev.key === 'ArrowDown' || ev.key === 'ArrowUp' || ev.key === 'ArrowLeft' || ev.key === 'ArrowRight'){ pickerNavigate(ev); } }); }
+        makeSelectable(labelSpan);
+        wrapper.setAttribute('data-pk', nodeEl.getAttribute('data-pk') || ''); if(childrenEl){ var childContainer = document.createElement('div'); childContainer.className='picker-children'; childContainer.style.marginLeft='14px'; childContainer.style.paddingLeft='6px'; childContainer.style.borderLeft='1px dashed #eee'; Array.from(childrenEl.children).forEach(function(ch){ var inner = buildNode(ch); childContainer.appendChild(inner); }); wrapper.appendChild(childContainer); }
+        return wrapper; }
+      Array.from(source.querySelectorAll(':scope > .master-node')).forEach(function(n){ var item = buildNode(n); pickerTree.appendChild(item); }); pickerTree.querySelectorAll && pickerTree.querySelectorAll('.picker-node-label').forEach(function(l){ l.style.cursor='pointer'; l.style.padding='2px 6px'; l.style.borderRadius='4px'; }); return true; }
+      function loadPickerViaAjax(){ if(!pickerTree) return; pickerTree.innerHTML = '<div class="text-muted">loading...</div>'; var xhr = new XMLHttpRequest(); var url = '{% url "master_api_parents" %}'; xhr.open('GET', url + '?category=' + encodeURIComponent(activeCategory||''), true); xhr.onreadystatechange = function(){ if(xhr.readyState !== 4) return; if(xhr.status === 200){ try{ var j = JSON.parse(xhr.responseText); pickerTree.innerHTML = ''; if(j && j.results){ var ul = document.createElement('div'); j.results.forEach(function(r){ var el = document.createElement('div'); el.className = 'picker-node'; el.dataset.pk = r.id; el.textContent = (r.text||r.label||r.id); el.style.padding='6px'; el.style.borderBottom='1px solid #f1f1f1'; el.style.cursor='pointer'; el.addEventListener('click', function(){ pickerSelectNode(el); }); ul.appendChild(el); }); pickerTree.appendChild(ul); } }catch(e){ pickerTree.innerHTML = '<div class="text-danger">Load failed</div>'; } } else { pickerTree.innerHTML = '<div class="text-danger">Load failed ('+xhr.status+')</div>'; } }; xhr.send(); }
+      function pickerSelectNode(el){ pickerTree.querySelectorAll && pickerTree.querySelectorAll('.picker-selected').forEach(function(x){ x.classList.remove('picker-selected'); x.style.background=''; }); var node = el; if(!node) return; var wrapper = node.classList && node.classList.contains('picker-node-wrapper') ? node : node.closest && node.closest('.picker-node-wrapper'); if(!wrapper) return; selectedPk = wrapper.getAttribute('data-pk') || ''; wrapper.classList.add('picker-selected'); wrapper.style.background='#e9f5ff'; var lab = wrapper.querySelector('.picker-node-label'); wrapper._picker_label = lab ? lab.textContent.trim() : (wrapper.textContent||'').trim(); var preview = document.getElementById('parent-picker-preview'); if(preview) preview.textContent = wrapper._picker_label || selectedPk || '(ไม่ได้ระบุ)'; var selectBtn = document.getElementById('parent-picker-select'); if(selectBtn) selectBtn.disabled = !selectedPk; var p = wrapper.parentElement; while(p && p !== pickerTree){ if(p.classList && p.classList.contains('picker-children')) p.style.display = ''; p = p.parentElement; } try{ var labEl = wrapper.querySelector('.picker-node-label'); if(labEl) labEl.focus(); }catch(e){}
+      }
+      function pickerNavigate(ev){ var focused = document.activeElement; if(!focused) return; var all = Array.from(pickerTree.querySelectorAll('.picker-node-label')).filter(function(x){ return x.offsetParent !== null; }); if(!all.length) return; var idx = all.indexOf(focused); if(idx === -1) return; if(ev.key === 'ArrowDown'){ var nxt = all[idx+1]; if(nxt) nxt.focus(); } else if(ev.key === 'ArrowUp'){ var prev = all[idx-1]; if(prev) prev.focus(); } else if(ev.key === 'ArrowRight'){ var wrapper = focused.closest('.picker-node-wrapper'); var toggle = wrapper && wrapper.querySelector('.node-toggle'); if(toggle && toggle.getAttribute('aria-expanded') === 'true'){ } else if(toggle){ toggle.click(); } } else if(ev.key === 'ArrowLeft'){ var wrapper = focused.closest('.picker-node-wrapper'); var toggle = wrapper && wrapper.querySelector('.node-toggle'); if(toggle && toggle.getAttribute('aria-expanded') === 'false'){ toggle.click(); } else { var parentWrapper = wrapper && wrapper.parentElement && wrapper.parentElement.closest && wrapper.parentElement.closest('.picker-node-wrapper'); if(parentWrapper){ var lab = parentWrapper.querySelector('.picker-node-label'); if(lab) lab.focus(); } } }
+      }
+      var changeBtn = document.getElementById('mi-change-parent-btn'); if(changeBtn){ changeBtn.addEventListener('click', function(){ ensurePickerModal(); selectedPk = null; var preview = document.getElementById('parent-picker-preview'); if(preview) preview.textContent = '(ยังไม่ได้เลือก)'; var selectBtn = document.getElementById('parent-picker-select'); if(selectBtn) selectBtn.disabled = true; var ok = cloneTreeToPicker(); if(!ok) loadPickerViaAjax(); try{ pickerModal.show(); }catch(e){} }); }
+      if(refreshBtn){ refreshBtn.addEventListener('click', function(){ if(!cloneTreeToPicker()) loadPickerViaAjax(); }); }
+      var selectRootBtn = document.getElementById('parent-picker-select-root'); if(selectRootBtn){ selectRootBtn.addEventListener('click', function(){ var hid = document.getElementById('mi-parent'); var display = document.getElementById('mi-parent-display'); if(hid) hid.value = ''; if(display) display.value = '(root)'; try{ pickerModal.hide(); }catch(e){} }); }
+      if(selectBtn){ selectBtn.addEventListener('click', function(){ if(!selectedPk){ alert('โปรดเลือกโหนดก่อน'); return; } var hid = document.getElementById('mi-parent'); var display = document.getElementById('mi-parent-display'); hid.value = selectedPk; var label = null; var sel = pickerTree.querySelector('.picker-selected'); if(sel) label = sel._picker_label || sel.textContent.trim(); if(display) display.value = label || selectedPk; if(window._master_select2_set){ try{ window._master_select2_set(selectedPk, label || selectedPk); }catch(e){} } try{ pickerModal.hide(); }catch(e){} }); }
+      if(searchInput){ searchInput.addEventListener('input', function(){ var q = (this.value||'').toLowerCase(); if(!pickerTree) return; Array.from(pickerTree.querySelectorAll('[data-pk], .picker-node, .master-node')).forEach(function(n){ var txt = (n.textContent||'').toLowerCase(); n.style.display = (!q || txt.indexOf(q) !== -1) ? '' : 'none'; }); }); }
+    }catch(e){ console.error('parent picker init failed', e); }
+
+    // sync fallback select -> preview & selectBtn
+    try{ var fallbackSel = document.getElementById('mi-parent-select'); if(fallbackSel){ fallbackSel.addEventListener('change', function(){ var v = fallbackSel.value || ''; var hid = document.getElementById('mi-parent'); var display = document.getElementById('mi-parent-display'); if(hid) hid.value = v; var t = ''; if(fallbackSel.selectedIndex >= 0) t = fallbackSel.options[fallbackSel.selectedIndex].text; if(display) display.value = t; var preview = document.getElementById('parent-picker-preview'); if(preview) preview.textContent = t || v || '(ยังไม่ได้เลือก)'; var selectBtn = document.getElementById('parent-picker-select'); if(selectBtn) selectBtn.disabled = !v; }); }
+    }catch(e){}
+
+    // Centralize toggle icon updates to avoid duplicated icon elements or text-content mixing
+    try{
+      function updateToggleIcon(btn, expanded){
+        if(!btn) return;
+        var ic = btn.querySelector && btn.querySelector('.toggle-icon');
+        if(ic){ if(ic.classList) ic.className = expanded ? 'bi bi-caret-down-fill toggle-icon' : 'bi bi-caret-right-fill toggle-icon'; else ic.textContent = expanded ? '▾' : '▸'; return; }
+        // if no .toggle-icon element, attempt to set innerHTML safely
+        try{ btn.innerHTML = expanded ? '<i class="bi bi-caret-down-fill toggle-icon" aria-hidden="true"></i>' : '<i class="bi bi-caret-right-fill toggle-icon" aria-hidden="true"></i>'; }catch(e){}
+      }
+
+      // Observe DOM for newly added toggle buttons and normalize them
+      var observer = new MutationObserver(function(muts){ muts.forEach(function(m){ if(!m.addedNodes) return; m.addedNodes.forEach(function(n){ try{ if(n.querySelectorAll){ var toggles = n.querySelectorAll('.master-node-toggle, .node-toggle'); toggles.forEach(function(t){ // ensure only one icon child and correct classes
+                    var ic = t.querySelector('.toggle-icon'); if(!ic){ // create icon
+                        var span = document.createElement('i'); span.className = 'bi bi-caret-right-fill toggle-icon'; span.setAttribute('aria-hidden','true'); t.insertBefore(span, t.firstChild);
+                    } else {
+                        // normalize class names
+                        if(ic.classList && ic.className.indexOf('bi-') === -1) ic.className = 'bi bi-caret-right-fill toggle-icon';
+                    }
+                }); }
+            }catch(e){} }); }); });
+      try{ observer.observe(document.body, { childList: true, subtree: true }); }catch(e){}
+
+      // expose helper for global expand/collapse
+      window.masterToggleAll = function(expanded){ try{ var tree = document.getElementById('master-tree'); if(!tree) return; Array.from(tree.querySelectorAll('.master-children')).forEach(function(ch){ ch.style.display = expanded ? '' : 'none'; }); Array.from(tree.querySelectorAll('.master-node-toggle')).forEach(function(b){ try{ b.setAttribute('aria-expanded', expanded ? 'true' : 'false'); updateToggleIcon(b, expanded); }catch(e){} }); }catch(e){ console.error('masterToggleAll failed', e); } };
+    }catch(e){ console.warn('toggle icon centralization skipped', e); }
+
+  };
+  // modal form AJAX submit (modal-first UX): submit master form to API endpoints
+  try{
+    if(!window._master_modal_submit_inited){
+      window._master_modal_submit_inited = true;
+      document.addEventListener('submit', function(ev){
+        var form = ev.target;
+        if(!form || form.id !== 'masterForm') return;
+        ev.preventDefault();
+        try{
+          var submitBtn = document.getElementById('mi-submit');
+          var spinner = document.getElementById('mi-submit-spinner');
+          var submitText = document.getElementById('mi-submit-text');
+          if(submitBtn) submitBtn.disabled = true;
+          if(spinner) spinner.style.display = '';
+          // prepare url: update if id present
+          var id = (document.getElementById('mi-id') && document.getElementById('mi-id').value) ? document.getElementById('mi-id').value : '';
+          var url = id ? ('/master/api/update/' + id + '/') : '/master/api/create/';
+          var fd = new FormData(form);
+          // fetch with CSRF header (Django expects X-CSRFToken)
+          function getCookie(name){ var v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)'); return v ? v.pop() : ''; }
+          var csrftoken = fd.get('csrfmiddlewaretoken') || getCookie('csrftoken');
+          var fetchOpts = { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd };
+          if(csrftoken) fetchOpts.headers['X-CSRFToken'] = csrftoken;
+          fetch(url, fetchOpts).then(function(r){ return r.json().then(function(j){ return { status: r.status, json: j }; }); }).then(function(res){
+            var j = res.json || {};
+            if(!j || !j.ok){
+              // show inline error
+              var miErr = document.getElementById('mi-error');
+              var msg = (j && j.error) ? j.error : ('Server error (' + (res.status||'') + ')');
+              if(miErr){ miErr.style.display = 'block'; miErr.textContent = msg; }
+              else alert(msg);
+              if(submitBtn) submitBtn.disabled = false; if(spinner) spinner.style.display = 'none';
+              return;
+            }
+            // success: close modal and refresh tree/list
+            try{ var modalEl = document.getElementById('masterModal'); if(modalEl && typeof bootstrap !== 'undefined'){ var inst = bootstrap.Modal.getInstance(modalEl); if(inst) inst.hide(); } }catch(e){}
+            // debug feedback and optional toast
+            try{ window.masterDebug && window.masterDebug('[master] saved id=' + (j.id || '') + ' label=' + (j.label||'') ); }catch(e){}
+            // Always reload current page to reflect changes
+            try{ location.reload(); }catch(e){ location.href = location.href; }
+          }).catch(function(err){ var miErr = document.getElementById('mi-error'); if(miErr){ miErr.style.display = 'block'; miErr.textContent = 'Request failed'; } else { console.error(err); alert('Request failed'); } if(submitBtn) submitBtn.disabled = false; if(spinner) spinner.style.display = 'none'; });
+        }catch(e){ console.error('masterForm submit handler error', e); }
+      }, true);
+    }
+  }catch(e){ console.warn('modal ajax submit init failed', e); }
+
+  // Global delete function for master items
+  window.deleteMasterItem = function(pk, label, category) {
+    if(!confirm('ยืนยันการลบรายการนี้?')) return;
+    
+    // Get CSRF token from cookie or existing form
+    function getCsrfToken() {
+      var token = document.querySelector('input[name=csrfmiddlewaretoken]');
+      if(token) return token.value;
+      var match = document.cookie.match(/csrftoken=([^;]+)/);
+      return match ? match[1] : '';
+    }
+    
+    // Create hidden form and submit
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/master/delete/' + pk + '/';
+    
+    // Add CSRF token
+    var csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrfmiddlewaretoken';
+    csrfInput.value = getCsrfToken();
+    form.appendChild(csrfInput);
+    
+    // Add to body and submit
+    document.body.appendChild(form);
+    form.submit();
+  };
+
+  // Backward compatibility alias
+  window.master_delete = function(pk, btn) {
+    var label = '', category = '';
+    if(btn && btn.closest) {
+      var node = btn.closest('.master-node-card');
+      if(node) {
+        label = node.querySelector('.node-label') ? node.querySelector('.node-label').textContent : '';
+        category = node.getAttribute('data-category') || '';
+      }
+    }
+    window.deleteMasterItem(pk, label, category);
+  };
+
+})();
+</script>
+

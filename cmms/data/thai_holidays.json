@@ -1,0 +1,411 @@
+{
+  "source": "Government of Thailand - Official Holidays",
+  "last_updated": "2024-01-01",
+  "years": {
+    "2024": [
+      {
+        "date": "2024-01-01",
+        "name": "วันขึ้นปีใหม่",
+        "name_en": "New Year's Day",
+        "description": "วันหยุดราชการประจำปี",
+        "type": "government"
+      },
+      {
+        "date": "2024-02-24",
+        "name": "วันมาฆบูชา",
+        "name_en": "Makha Bucha Day",
+        "description": "วันสำคัญทางพระพุทธศาสนา",
+        "type": "religious"
+      },
+      {
+        "date": "2024-04-06",
+        "name": "วันจักรี",
+        "name_en": "Chakri Memorial Day",
+        "description": "วันคล้ายวันสถาปนาราชวงศ์จักรี",
+        "type": "national"
+      },
+      {
+        "date": "2024-04-13",
+        "name": "วันสงกรานต์",
+        "name_en": "Songkran Festival",
+        "description": "วันขึ้นปีใหม่ไทย",
+        "type": "traditional"
+      },
+      {
+        "date": "2024-04-14",
+        "name": "วันสงกรานต์",
+        "name_en": "Songkran Festival",
+        "description": "วันขึ้นปีใหม่ไทย (วันที่ 2)",
+        "type": "traditional"
+      },
+      {
+        "date": "2024-04-15",
+        "name": "วันสงกรานต์",
+        "name_en": "Songkran Festival",
+        "description": "วันขึ้นปีใหม่ไทย (วันที่ 3)",
+        "type": "traditional"
+      },
+      {
+        "date": "2024-05-01",
+        "name": "วันแรงงานแห่งชาติ",
+        "name_en": "National Labour Day",
+        "description": "วันหยุดแรงงาน",
+        "type": "government"
+      },
+      {
+        "date": "2024-05-04",
+        "name": "วันฉัตรมงคล",
+        "name_en": "Coronation Day",
+        "description": "วันฉัตรมงคล",
+        "type": "royal"
+      },
+      {
+        "date": "2024-05-22",
+        "name": "วันวิสาขบูชา",
+        "name_en": "Visakha Bucha Day",
+        "description": "วันสำคัญทางพระพุทธศาสนา",
+        "type": "religious"
+      },
+      {
+        "date": "2024-06-03",
+        "name": "วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสุทิดา พจมานนาถ พระบรมราชินี",
+        "name_en": "Queen Suthida's Birthday",
+        "description": "วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสุทิดา",
+        "type": "royal"
+      },
+      {
+        "date": "2024-07-20",
+        "name": "วันอาสาฬหบูชา",
+        "name_en": "Asalha Bucha Day",
+        "description": "วันสำคัญทางพระพุทธศาสนา",
+        "type": "religious"
+      },
+      {
+        "date": "2024-07-21",
+        "name": "วันเข้าพรรษา",
+        "name_en": "Buddhist Lent Day",
+        "description": "วันเริ่มเข้าพรรษา",
+        "type": "religious"
+      },
+      {
+        "date": "2024-07-28",
+        "name": "วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว",
+        "name_en": "His Majesty the King's Birthday",
+        "description": "วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว",
+        "type": "royal"
+      },
+      {
+        "date": "2024-08-12",
+        "name": "วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสิริกิติ์ พระบรมราชินีนาถ พระบรมราชชนนีพันปีหลวง",
+        "name_en": "Queen Sirikit the Queen Mother's Birthday",
+        "description": "วันแม่แห่งชาติ",
+        "type": "royal"
+      },
+      {
+        "date": "2024-10-13",
+        "name": "วันคล้ายวันสวรรคตพระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร",
+        "name_en": "King Bhumibol Adulyadej Memorial Day",
+        "description": "วันคล้ายวันสวรรคตพระบาทสมเด็จพระปรมินทรมหาภูมิพลอดุลยเดช",
+        "type": "royal"
+      },
+      {
+        "date": "2024-10-23",
+        "name": "วันปิยมหาราช",
+        "name_en": "King Chulalongkorn Memorial Day",
+        "description": "วันคล้ายวันสวรรคตพระบาทสมเด็จพระจุลจอมเกล้าเจ้าอยู่หัว",
+        "type": "royal"
+      },
+      {
+        "date": "2024-12-05",
+        "name": "วันคล้ายวันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร",
+        "name_en": "National Father's Day",
+        "description": "วันพ่อแห่งชาติ",
+        "type": "royal"
+      },
+      {
+        "date": "2024-12-10",
+        "name": "วันรัฐธรรมนูญ",
+        "name_en": "Constitution Day",
+        "description": "วันรัฐธรรมนูญ",
+        "type": "national"
+      },
+      {
+        "date": "2024-12-31",
+        "name": "วันสิ้นปี",
+        "name_en": "New Year's Eve",
+        "description": "วันหยุดสิ้นปี",
+        "type": "government"
+      }
+    ],
+    "2025": [
+      {
+        "date": "2025-01-01",
+        "name": "วันขึ้นปีใหม่",
+        "name_en": "New Year's Day",
+        "description": "วันหยุดราชการประจำปี",
+        "type": "government"
+      },
+      {
+        "date": "2025-02-12",
+        "name": "วันมาฆบูชา",
+        "name_en": "Makha Bucha Day",
+        "description": "วันสำคัญทางพระพุทธศาสนา",
+        "type": "religious"
+      },
+      {
+        "date": "2025-04-06",
+        "name": "วันจักรี",
+        "name_en": "Chakri Memorial Day",
+        "description": "วันคล้ายวันสถาปนาราชวงศ์จักรี",
+        "type": "national"
+      },
+      {
+        "date": "2025-04-13",
+        "name": "วันสงกรานต์",
+        "name_en": "Songkran Festival",
+        "description": "วันขึ้นปีใหม่ไทย",
+        "type": "traditional"
+      },
+      {
+        "date": "2025-04-14",
+        "name": "วันสงกรานต์",
+        "name_en": "Songkran Festival",
+        "description": "วันขึ้นปีใหม่ไทย (วันที่ 2)",
+        "type": "traditional"
+      },
+      {
+        "date": "2025-04-15",
+        "name": "วันสงกรานต์",
+        "name_en": "Songkran Festival",
+        "description": "วันขึ้นปีใหม่ไทย (วันที่ 3)",
+        "type": "traditional"
+      },
+      {
+        "date": "2025-05-01",
+        "name": "วันแรงงานแห่งชาติ",
+        "name_en": "National Labour Day",
+        "description": "วันหยุดแรงงาน",
+        "type": "government"
+      },
+      {
+        "date": "2025-05-04",
+        "name": "วันฉัตรมงคล",
+        "name_en": "Coronation Day",
+        "description": "วันฉัตรมงคล",
+        "type": "royal"
+      },
+      {
+        "date": "2025-05-11",
+        "name": "วันวิสาขบูชา",
+        "name_en": "Visakha Bucha Day",
+        "description": "วันสำคัญทางพระพุทธศาสนา",
+        "type": "religious"
+      },
+      {
+        "date": "2025-06-03",
+        "name": "วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสุทิดา พจมานนาถ พระบรมราชินี",
+        "name_en": "Queen Suthida's Birthday",
+        "description": "วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสุทิดา",
+        "type": "royal"
+      },
+      {
+        "date": "2025-07-08",
+        "name": "วันอาสาฬหบูชา",
+        "name_en": "Asalha Bucha Day",
+        "description": "วันสำคัญทางพระพุทธศาสนา",
+        "type": "religious"
+      },
+      {
+        "date": "2025-07-09",
+        "name": "วันเข้าพรรษา",
+        "name_en": "Buddhist Lent Day",
+        "description": "วันเริ่มเข้าพรรษา",
+        "type": "religious"
+      },
+      {
+        "date": "2025-07-28",
+        "name": "วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว",
+        "name_en": "His Majesty the King's Birthday",
+        "description": "วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว",
+        "type": "royal"
+      },
+      {
+        "date": "2025-08-12",
+        "name": "วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสิริกิติ์ พระบรมราชินีนาถ พระบรมราชชนนีพันปีหลวง",
+        "name_en": "Queen Sirikit the Queen Mother's Birthday",
+        "description": "วันแม่แห่งชาติ",
+        "type": "royal"
+      },
+      {
+        "date": "2025-10-13",
+        "name": "วันคล้ายวันสวรรคตพระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร",
+        "name_en": "King Bhumibol Adulyadej Memorial Day",
+        "description": "วันคล้ายวันสวรรคตพระบาทสมเด็จพระปรมินทรมหาภูมิพลอดุลยเดช",
+        "type": "royal"
+      },
+      {
+        "date": "2025-10-23",
+        "name": "วันปิยมหาราช",
+        "name_en": "King Chulalongkorn Memorial Day",
+        "description": "วันคล้ายวันสวรรคตพระบาทสมเด็จพระจุลจอมเกล้าเจ้าอยู่หัว",
+        "type": "royal"
+      },
+      {
+        "date": "2025-12-05",
+        "name": "วันคล้ายวันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร",
+        "name_en": "National Father's Day",
+        "description": "วันพ่อแห่งชาติ",
+        "type": "royal"
+      },
+      {
+        "date": "2025-12-10",
+        "name": "วันรัฐธรรมนูญ",
+        "name_en": "Constitution Day",
+        "description": "วันรัฐธรรมนูญ",
+        "type": "national"
+      },
+      {
+        "date": "2025-12-31",
+        "name": "วันสิ้นปี",
+        "name_en": "New Year's Eve",
+        "description": "วันหยุดสิ้นปี",
+        "type": "government"
+      }
+    ],
+    "2026": [
+      {
+        "date": "2026-01-01",
+        "name": "วันขึ้นปีใหม่",
+        "name_en": "New Year's Day",
+        "description": "วันหยุดราชการประจำปี",
+        "type": "government"
+      },
+      {
+        "date": "2026-03-03",
+        "name": "วันมาฆบูชา",
+        "name_en": "Makha Bucha Day",
+        "description": "วันสำคัญทางพระพุทธศาสนา",
+        "type": "religious"
+      },
+      {
+        "date": "2026-04-06",
+        "name": "วันจักรี",
+        "name_en": "Chakri Memorial Day",
+        "description": "วันคล้ายวันสถาปนาราชวงศ์จักรี",
+        "type": "national"
+      },
+      {
+        "date": "2026-04-13",
+        "name": "วันสงกรานต์",
+        "name_en": "Songkran Festival",
+        "description": "วันขึ้นปีใหม่ไทย",
+        "type": "traditional"
+      },
+      {
+        "date": "2026-04-14",
+        "name": "วันสงกรานต์",
+        "name_en": "Songkran Festival",
+        "description": "วันขึ้นปีใหม่ไทย (วันที่ 2)",
+        "type": "traditional"
+      },
+      {
+        "date": "2026-04-15",
+        "name": "วันสงกรานต์",
+        "name_en": "Songkran Festival",
+        "description": "วันขึ้นปีใหม่ไทย (วันที่ 3)",
+        "type": "traditional"
+      },
+      {
+        "date": "2026-05-01",
+        "name": "วันแรงงานแห่งชาติ",
+        "name_en": "National Labour Day",
+        "description": "วันหยุดแรงงาน",
+        "type": "government"
+      },
+      {
+        "date": "2026-05-04",
+        "name": "วันฉัตรมงคล",
+        "name_en": "Coronation Day",
+        "description": "วันฉัตรมงคล",
+        "type": "royal"
+      },
+      {
+        "date": "2026-05-31",
+        "name": "วันวิสาขบูชา",
+        "name_en": "Visakha Bucha Day",
+        "description": "วันสำคัญทางพระพุทธศาสนา",
+        "type": "religious"
+      },
+      {
+        "date": "2026-06-03",
+        "name": "วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสุทิดา พจมานนาถ พระบรมราชินี",
+        "name_en": "Queen Suthida's Birthday",
+        "description": "วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสุทิดา",
+        "type": "royal"
+      },
+      {
+        "date": "2026-07-28",
+        "name": "วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว",
+        "name_en": "His Majesty the King's Birthday",
+        "description": "วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว",
+        "type": "royal"
+      },
+      {
+        "date": "2026-07-29",
+        "name": "วันอาสาฬหบูชา",
+        "name_en": "Asalha Bucha Day",
+        "description": "วันสำคัญทางพระพุทธศาสนา",
+        "type": "religious"
+      },
+      {
+        "date": "2026-07-30",
+        "name": "วันเข้าพรรษา",
+        "name_en": "Buddhist Lent Day",
+        "description": "วันเริ่มเข้าพรรษา",
+        "type": "religious"
+      },
+      {
+        "date": "2026-08-12",
+        "name": "วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสิริกิติ์ พระบรมราชินีนาถ พระบรมราชชนนีพันปีหลวง",
+        "name_en": "Queen Sirikit the Queen Mother's Birthday",
+        "description": "วันแม่แห่งชาติ",
+        "type": "royal"
+      },
+      {
+        "date": "2026-10-13",
+        "name": "วันคล้ายวันสวรรคตพระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร",
+        "name_en": "King Bhumibol Adulyadej Memorial Day",
+        "description": "วันคล้ายวันสวรรคตพระบาทสมเด็จพระปรมินทรมหาภูมิพลอดุลยเดช",
+        "type": "royal"
+      },
+      {
+        "date": "2026-10-23",
+        "name": "วันปิยมหาราช",
+        "name_en": "King Chulalongkorn Memorial Day",
+        "description": "วันคล้ายวันสวรรคตพระบาทสมเด็จพระจุลจอมเกล้าเจ้าอยู่หัว",
+        "type": "royal"
+      },
+      {
+        "date": "2026-12-05",
+        "name": "วันคล้ายวันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร",
+        "name_en": "National Father's Day",
+        "description": "วันพ่อแห่งชาติ",
+        "type": "royal"
+      },
+      {
+        "date": "2026-12-10",
+        "name": "วันรัฐธรรมนูญ",
+        "name_en": "Constitution Day",
+        "description": "วันรัฐธรรมนูญ",
+        "type": "national"
+      },
+      {
+        "date": "2026-12-31",
+        "name": "วันสิ้นปี",
+        "name_en": "New Year's Eve",
+        "description": "วันหยุดสิ้นปี",
+        "type": "government"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1430 @@
+{% extends 'base.html' %}
+{% block title %}<title>สร้างใบงาน | CMMS</title>{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Modern Work Order Create Page Styles */
+    .wo-create-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 2rem 2.5rem;
+        margin-bottom: 2rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    .wo-create-hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 300px;
+        height: 300px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+    .wo-create-hero h1 {
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .wo-create-hero .subtitle {
+        opacity: 0.9;
+        margin-top: 0.5rem;
+        font-size: 0.95rem;
+    }
+    
+    /* Progress Steps */
+    .wo-steps {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+    .wo-step {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        background: white;
+        border-radius: 50px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #6c757d;
+        transition: all 0.3s ease;
+    }
+    .wo-step.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .wo-step .step-num {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .wo-step.active .step-num {
+        background: rgba(255,255,255,0.25);
+    }
+    .wo-step.completed {
+        background: #d4edda;
+        color: #155724;
+    }
+    .wo-step.completed .step-num {
+        background: #28a745;
+        color: white;
+    }
+
+    /* Form Cards */
+    .wo-form-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+        border: 1px solid rgba(0,0,0,0.05);
+        overflow: hidden;
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+    .wo-form-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    }
+    .wo-form-card .card-header-custom {
+        background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .wo-form-card .card-header-custom i {
+        font-size: 1.25rem;
+        color: #667eea;
+    }
+    .wo-form-card .card-header-custom h5 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #2d3748;
+    }
+    .wo-form-card .card-body {
+        padding: 1.5rem;
+    }
+
+    /* Equipment Search Box */
+    .equipment-search-wrapper {
+        position: relative;
+    }
+    .equipment-search-box {
+        display: flex;
+        gap: 0.75rem;
+        align-items: stretch;
+    }
+    .equipment-search-box .form-control {
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        padding: 0.875rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+    }
+    .equipment-search-box .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+    }
+    .equipment-search-box .btn-search {
+        border-radius: 12px;
+        padding: 0.875rem 1.25rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        white-space: nowrap;
+        transition: all 0.2s ease;
+    }
+    .equipment-search-box .btn-search:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+    }
+    
+    .equipment-inline-results {
+        z-index: 1060;
+        left: 0;
+        right: 0;
+        top: calc(100% + 0.5rem);
+        border-radius: 12px;
+        overflow: hidden;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .equipment-inline-results .list-group-item {
+        border: none;
+        padding: 0.875rem 1rem;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+    .equipment-inline-results .list-group-item:hover {
+        background: #f0f4ff;
+    }
+
+    /* Equipment Details Card */
+    .equipment-details-card {
+        background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+        border-radius: 12px;
+        border: 1px solid #bae6fd;
+        margin-top: 1rem;
+        overflow: hidden;
+    }
+    .equipment-details-card .eq-header {
+        background: rgba(14, 165, 233, 0.1);
+        padding: 0.875rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: #0369a1;
+    }
+    .equipment-details-card .eq-body {
+        padding: 1rem;
+    }
+    .equipment-details-card .eq-item {
+        display: flex;
+        padding: 0.375rem 0;
+        font-size: 0.875rem;
+    }
+    .equipment-details-card .eq-label {
+        color: #64748b;
+        min-width: 100px;
+    }
+    .equipment-details-card .eq-value {
+        color: #1e293b;
+        font-weight: 500;
+    }
+
+    /* Description Textarea */
+    .description-textarea {
+        border-radius: 12px !important;
+        border: 2px solid #e2e8f0 !important;
+        padding: 1rem !important;
+        min-height: 150px;
+        font-size: 0.95rem;
+        resize: vertical;
+        transition: all 0.2s ease !important;
+    }
+    .description-textarea:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15) !important;
+    }
+
+    /* SR Creation Button */
+    .btn-create-sr {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
+        color: white;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    .btn-create-sr:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+        color: white;
+    }
+    .btn-create-sr.active {
+        background: #059669;
+    }
+
+    /* Sidebar Cards */
+    .wo-sidebar-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+        border: 1px solid rgba(0,0,0,0.05);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    .wo-sidebar-card .sidebar-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .wo-sidebar-card .sidebar-header i {
+        color: #667eea;
+    }
+    .wo-sidebar-card .sidebar-header h6 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .wo-sidebar-card .sidebar-body {
+        padding: 1.25rem;
+    }
+
+    /* Engineer Review Card */
+    .engineer-review-card {
+        background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
+        border: 2px solid #fbbf24;
+    }
+    .engineer-review-card .sidebar-header {
+        background: rgba(251, 191, 36, 0.2);
+        border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+    }
+    .engineer-review-card .sidebar-header i {
+        color: #d97706;
+    }
+    .engineer-review-card.confirmed {
+        background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%);
+        border-color: #34d399;
+    }
+    .engineer-review-card.confirmed .sidebar-header {
+        background: rgba(52, 211, 153, 0.2);
+        border-bottom: 1px solid rgba(52, 211, 153, 0.3);
+    }
+    .engineer-review-card.confirmed .sidebar-header i {
+        color: #059669;
+    }
+
+    /* Form Labels */
+    .form-label-modern {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+    .form-label-modern .optional {
+        font-weight: 400;
+        color: #94a3b8;
+        font-size: 0.75rem;
+    }
+
+    /* Action Buttons */
+    .btn-submit-wo {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        border: none;
+        border-radius: 12px;
+        padding: 1rem 2rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: white;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    .btn-submit-wo:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(34, 197, 94, 0.4);
+        color: white;
+    }
+    .btn-cancel-wo {
+        background: transparent;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.875rem 1.5rem;
+        font-weight: 500;
+        color: #64748b;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+    .btn-cancel-wo:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+        color: #475569;
+    }
+
+    /* Engineer Confirm Button */
+    .btn-engineer-confirm {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        color: white;
+        font-weight: 500;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    .btn-engineer-confirm:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+        color: white;
+    }
+    .btn-engineer-confirm.confirmed {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    /* SR Alert */
+    .sr-alert {
+        background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+        border: 1px solid #93c5fd;
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    .sr-alert i {
+        font-size: 1.5rem;
+        color: #2563eb;
+    }
+    .sr-alert .sr-alert-content {
+        flex: 1;
+    }
+    .sr-alert .sr-alert-title {
+        font-weight: 600;
+        color: #1e40af;
+    }
+    .sr-alert .sr-alert-link {
+        color: #2563eb;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .sr-alert .sr-alert-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Error Messages */
+    .field-error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem;
+        margin-top: 0.5rem;
+        font-size: 0.8rem;
+        color: #dc2626;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    /* Select2 Overrides */
+    .select2-container--bootstrap4 .select2-selection {
+        border-radius: 12px !important;
+        border: 2px solid #e2e8f0 !important;
+        min-height: 48px !important;
+        padding: 0.375rem 0.5rem !important;
+    }
+    .select2-container--bootstrap4.select2-container--focus .select2-selection {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15) !important;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 991.98px) {
+        .wo-create-hero {
+            padding: 1.5rem;
+            border-radius: 16px;
+        }
+        .wo-create-hero h1 {
+            font-size: 1.4rem;
+        }
+        .wo-steps {
+            gap: 0.5rem;
+        }
+        .wo-step {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+    }
+
+    .equipment-search-min-height {
+        min-height: 200px;
+    }
+
+    /* Technician Assignment Styles */
+    .tech-assignment-section {
+        margin-top: 1rem;
+    }
+    .tech-search-box {
+        position: relative;
+        margin-bottom: 1rem;
+    }
+    .tech-search-box input {
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+        padding: 0.625rem 1rem 0.625rem 2.5rem;
+        font-size: 0.875rem;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+    .tech-search-box input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        outline: none;
+    }
+    .tech-search-box i {
+        position: absolute;
+        left: 0.875rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 0.9rem;
+    }
+    .tech-list-container {
+        max-height: 320px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+    .tech-list-container::-webkit-scrollbar {
+        width: 4px;
+    }
+    .tech-list-container::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+    .tech-list-container::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+    .tech-card-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        border-radius: 12px;
+        border: 2px solid transparent;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-bottom: 0.5rem;
+    }
+    .tech-card-item:hover {
+        background: #f0f4ff;
+        border-color: #c7d2fe;
+    }
+    .tech-card-item.selected {
+        background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+        border-color: #667eea;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+    }
+    .tech-card-item.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .tech-avatar {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        font-weight: 700;
+        box-shadow: 0 3px 10px rgba(102, 126, 234, 0.25);
+    }
+    .tech-card-item.selected .tech-avatar {
+        box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+    }
+    .tech-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .tech-name {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #1e293b;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .tech-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .tech-skill-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    .tech-skill-badge i {
+        font-size: 0.65rem;
+    }
+    .tech-status {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    .tech-status.available {
+        color: #16a34a;
+    }
+    .tech-status.busy {
+        color: #ea580c;
+    }
+    .tech-status.unavailable {
+        color: #dc2626;
+    }
+    .tech-status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+    .tech-check-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #94a3b8;
+        font-size: 0.75rem;
+        transition: all 0.2s ease;
+    }
+    .tech-card-item.selected .tech-check-icon {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+    }
+    .tech-empty-state {
+        text-align: center;
+        padding: 2rem 1rem;
+        color: #94a3b8;
+    }
+    .tech-empty-state i {
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+        opacity: 0.5;
+    }
+    .tech-count-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: auto;
+    }
+
+    /* Selected preview */
+    .selected-preview-card {
+        background: white;
+        border-radius: 10px;
+        padding: 0.5rem;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .selected-preview-avatar {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+    .selected-preview-name {
+        font-weight: 600;
+        color: #0f172a;
+    }
+    .selected-preview-meta {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Hero Section -->
+    <div class="wo-create-hero">
+        <h1>
+            <i class="bi bi-plus-circle-fill"></i>
+            สร้างใบงานใหม่
+        </h1>
+        <p class="subtitle">กรอกข้อมูลด้านล่างเพื่อสร้างใบสั่งงาน (Work Order) ใหม่</p>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="wo-steps">
+        <div class="wo-step active" id="step-equipment">
+            <span class="step-num">1</span>
+            <span>เลือกอุปกรณ์</span>
+        </div>
+        <div class="wo-step" id="step-details">
+            <span class="step-num">2</span>
+            <span>รายละเอียด</span>
+        </div>
+        <div class="wo-step" id="step-review">
+            <span class="step-num">3</span>
+            <span>ตรวจสอบ</span>
+        </div>
+    </div>
+
+    {% if sr %}
+    <div class="sr-alert">
+        <i class="bi bi-info-circle-fill"></i>
+        <div class="sr-alert-content">
+            <div class="sr-alert-title">กำลังสร้างใบงานจากคำขอรับบริการ {{ sr.display_id }}</div>
+            <a href="{% url 'service_request_detail' sr.id %}" class="sr-alert-link" target="_blank">
+                <i class="bi bi-box-arrow-up-right"></i> ดูรายละเอียดคำขอ
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <form method="post" novalidate class="needs-validation">
+        {% csrf_token %}
+            {% if sr %}
+            <input type="hidden" name="origin_sr" value="{{ sr.id }}">
+        {% endif %}
+
+        {% if form.errors %}
+            <div class="alert alert-danger d-flex align-items-start mb-4" style="border-radius: 12px;">
+                <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
+                <div>
+                    <strong>กรุณาแก้ไขข้อผิดพลาดก่อนส่งฟอร์ม</strong>
+                    <ul class="mb-0 mt-1">
+                    {% for field, errors in form.errors.items %}
+                        {% for err in errors %}
+                            <li>{{ field }}: {{ err }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+
+       
+
+        <div class="row g-4">
+            <!-- Main Content Column -->
+            <div class="col-lg-8">
+                <!-- Equipment Selection Card -->
+                <div class="wo-form-card">
+                    <div class="card-header-custom">
+                        <i class="bi bi-cpu"></i>
+                        <h5>ข้อมูลอุปกรณ์</h5>
+                    </div>
+                    <div class="card-body">
+                        <input type="hidden" name="equipment" id="equipment_input" {% if sr and sr.equipment %} value="{{ sr.equipment.id }}"{% elif form.initial.equipment %} value="{{ form.initial.equipment }}"{% endif %}>
+
+                        {% for err in form.equipment.errors %}
+                            <div class="field-error">
+                                <i class="bi bi-exclamation-circle"></i>
+                                {{ err }}
+                            </div>
+                        {% endfor %}
+
+                        <!-- Equipment Details -->
+
+                        {% if sr and sr.equipment or prefill_equipment %}
+                        <div id="equipment-details" class="equipment-details-card">
+                            <div class="eq-header">
+                                <i class="bi bi-info-circle"></i>
+                                <span id="eq-details-title">
+                                    {% if sr and sr.equipment %}
+                                        {{ sr.equipment.equipment_id }} - {{ sr.equipment.equipment_name_EN|default:sr.equipment.equipment_name_TH }}
+                                    {% elif prefill_equipment %}
+                                        {% if prefill_equipment.0 %}
+                                            {{ prefill_equipment.0.equipment_id }} - {{ prefill_equipment.0.equipment_name_EN|default:prefill_equipment.0.equipment_name_TH }}
+                                        {% else %}
+                                            {{ prefill_equipment.equipment_id }} - {{ prefill_equipment.equipment_name_EN|default:prefill_equipment.equipment_name_TH }}
+                                        {% endif %}
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="eq-body" id="eq-details-body">
+                                {% if sr and sr.equipment %}
+                                    {% if sr.equipment.equipment_name_EN %}
+                                        <div class="eq-item">
+                                            <span class="eq-label">ชื่อ (อังกฤษ)</span>
+                                            <span class="eq-value">{{ sr.equipment.equipment_name_EN }}</span>
+                                        </div>
+                                    {% endif %}    
+                                    {% if sr.equipment.equipment_name_TH %}
+                                        <div class="eq-item">
+                                            <span class="eq-label">ชื่อ (ไทย)</span>
+                                            <span class="eq-value">{{ sr.equipment.equipment_name_TH }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if sr.equipment.equipment_brand %}
+                                        <div class="eq-item">
+                                            <span class="eq-label">ยี่ห้อ</span>
+                                            <span class="eq-value">{{ sr.equipment.equipment_brand }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if sr.equipment.equipment_model %}
+                                        <div class="eq-item">
+                                            <span class="eq-label">รุ่น</span>
+                                            <span class="eq-value">{{ sr.equipment.equipment_model }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if sr.equipment.equipment_sn %}
+                                        <div class="eq-item">
+                                            <span class="eq-label">S/N</span>
+                                            <span class="eq-value">{{ sr.equipment.equipment_sn }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if sr.equipment.equipment_user_customer %}
+                                        <div class="eq-item">
+                                            <span class="eq-label">ผู้ใช้งาน</span>
+                                            <span class="eq-value">{{ sr.equipment.equipment_user_customer }}</span>
+                                        </div>
+                                    {% endif %}
+                                {% elif prefill_equipment %}
+                                    {% if prefill_equipment.0 %}
+                                        {% with pe=prefill_equipment.0 %}
+                                            {% if pe.equipment_name_TH %}
+                                                <div class="eq-item">
+                                                    <span class="eq-label">ชื่อ (ไทย)</span>
+                                                    <span class="eq-value">{{ pe.equipment_name_TH }}</span>
+                                                </div>
+                                            {% endif %}
+                                            {% if pe.equipment_brand %}
+                                                <div class="eq-item">
+                                                    <span class="eq-label">ยี่ห้อ</span>
+                                                    <span class="eq-value">{{ pe.equipment_brand }}</span>
+                                                </div>
+                                            {% endif %}
+                                            {% if pe.equipment_model %}
+                                                <div class="eq-item">
+                                                    <span class="eq-label">รุ่น</span>
+                                                    <span class="eq-value">{{ pe.equipment_model }}</span>
+                                                </div>
+                                            {% endif %}
+                                            {% if pe.equipment_sn %}
+                                                <div class="eq-item">
+                                                    <span class="eq-label">S/N</span>
+                                                    <span class="eq-value">{{ pe.equipment_sn }}</span>
+                                                </div>
+                                            {% endif %}
+                                            {% if pe.equipment_user_customer %}
+                                                <div class="eq-item">
+                                                    <span class="eq-label">ผู้ใช้งาน</span>
+                                                    <span class="eq-value">{{ pe.equipment_user_customer }}</span>
+                                                </div>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% else %}
+                                        {% with pe=prefill_equipment %}
+                                            {% if pe.equipment_name_TH %}
+                                                <div class="eq-item">
+                                                    <span class="eq-label">ชื่อ (ไทย)</span>
+                                                    <span class="eq-value">{{ pe.equipment_name_TH }}</span>
+                                                </div>
+                                            {% endif %}
+                                            {% if pe.equipment_brand %}
+                                                <div class="eq-item">
+                                                    <span class="eq-label">ยี่ห้อ</span>
+                                                    <span class="eq-value">{{ pe.equipment_brand }}</span>
+                                                </div>
+                                            {% endif %}
+                                            {% if pe.equipment_model %}
+                                                <div class="eq-item">
+                                                    <span class="eq-label">รุ่น</span>
+                                                    <span class="eq-value">{{ pe.equipment_model }}</span>
+                                                </div>
+                                            {% endif %}
+                                            {% if pe.equipment_sn %}
+                                                <div class="eq-item">
+                                                    <span class="eq-label">S/N</span>
+                                                    <span class="eq-value">{{ pe.equipment_sn }}</span>
+                                                </div>
+                                            {% endif %}
+                                            {% if pe.equipment_user_customer %}
+                                                <div class="eq-item">
+                                                    <span class="eq-label">ผู้ใช้งาน</span>
+                                                    <span class="eq-value">{{ pe.equipment_user_customer }}</span>
+                                                </div>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Description Card -->
+                <div class="wo-form-card">
+                    <div class="card-header-custom">
+                        <i class="bi bi-card-text"></i>
+                        <h5>รายละเอียดปัญหา</h5>
+                    </div>
+                    <div class="card-body">
+                        <label class="form-label-modern">
+                            <i class="bi bi-pencil"></i>
+                            อธิบายปัญหาหรืองานที่ต้องการ
+                        </label>
+                        {{ form.description }}
+                        {% for err in form.description.errors %}
+                            <div class="field-error">
+                                <i class="bi bi-exclamation-circle"></i>
+                                {{ err }}
+                            </div>
+                        {% endfor %}
+
+                        {% if sr %}
+                            <div class="alert alert-light border mt-3 small mb-0">
+                                <i class="bi bi-link-45deg"></i>
+                                ใบงานนี้จะเชื่อมโยงกับคำขอ {{ sr.display_id }} โดยอัตโนมัติ
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Column -->
+            <div class="col-lg-4">
+                <!-- Assignment Card -->
+                <div class="wo-sidebar-card">
+                    <div class="sidebar-header">
+                        <i class="bi bi-person-check"></i>
+                        <h6>มอบหมายงาน</h6>
+                        {% if technicians %}
+                            <span class="tech-count-badge">{{ technicians|length }} คน</span>
+                        {% endif %}
+                    </div>
+                    <div class="sidebar-body">
+                        <!-- Hidden select for form submission -->
+                        <div class="d-none">{{ form.assigned_to }}</div>
+
+                        <!-- Selected technician display (preview + quick actions) -->
+                        <div id="selected-tech" class="mb-3">
+                            <label class="form-label-modern">ผู้รับผิดชอบ</label>
+                            <div id="selected-tech-preview" class="d-flex align-items-center gap-2">
+                                <div id="selected-preview-empty" class="text-muted">ยังไม่ได้เลือก</div>
+                                <div id="selected-preview-card-container" class="d-none"></div>
+                                <button type="button" id="clear-selected-tech" class="btn btn-outline-secondary d-none" aria-label="ล้างการเลือก">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {% if technicians %}
+                            <div class="tech-assignment-section">
+                                <!-- Search Box -->
+                                <div class="tech-search-box">
+                                    <i class="bi bi-search"></i>
+                                    <input type="text" id="tech-search-input" placeholder="ค้นหาช่าง..." autocomplete="off">
+                                </div>
+
+                                <!-- Technicians List -->
+                                <div id="technicians-list" class="tech-list-container">
+                                    {% for t in technicians %}
+                                        <div class="tech-card-item{% if not t.user %} disabled{% endif %}" 
+                                            tabindex="0"
+                                            role="button"
+                                            aria-pressed="false"
+                                            data-user-id="{% if t.user %}{{ t.user.id }}{% else %}0{% endif %}"
+                                            data-tech-name="{% if t.prefix_name == 'other' %}{{ t.prefix_name_custom }}{% else %}{{ t.prefix_name }}{% endif %} {{ t.name }}"
+                                            data-skills="{% for s in t.skills_m.all %}{{ s.label }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                                            {% if not t.user %}title="ยังไม่มีบัญชีผู้ใช้เชื่อมโยง"{% endif %}>
+                                            <div class="tech-avatar">
+                                                {{ t.name|slice:":1"|upper }}
+                                            </div>
+                                            <div class="tech-info">
+                                                <div class="tech-name">
+                                                    {% if t.prefix_name == 'other' %}{{ t.prefix_name_custom }}{% else %}{{ t.prefix_name }}{% endif %} {{ t.name }}
+                                                </div>
+                                                <div class="tech-meta">
+                                                    {% if t.phone %}
+                                                        <span class="tech-skill-badge">
+                                                            <i class="bi bi-telephone"></i>
+                                                            {{ t.phone }}
+                                                        </span>
+                                                    {% endif %}
+                                                    {% with skills=t.skills_m.all %}
+                                                        {% if skills %}
+                                                            <span class="tech-skill-badge">
+                                                                <i class="bi bi-tools"></i>
+                                                                {{ skills|length }} ทักษะ
+                                                            </span>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                    {% if t.user %}
+                                                        <span class="tech-status available">
+                                                            <span class="tech-status-dot"></span>
+                                                            พร้อมรับงาน
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="tech-status unavailable">
+                                                            <span class="tech-status-dot"></span>
+                                                            ไม่มีบัญชี
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="tech-check-icon">
+                                                <i class="bi bi-check2"></i>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- No Results Message -->
+                                <div id="tech-no-results" class="tech-empty-state d-none">
+                                    <i class="bi bi-search"></i>
+                                    <p class="mb-0 small">ไม่พบช่างที่ค้นหา</p>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="tech-empty-state">
+                                <i class="bi bi-person-x"></i>
+                                <p class="mb-0">ยังไม่มีข้อมูลช่าง</p>
+                                <a href="{% url 'technician_create' %}" class="btn btn-sm btn-outline-primary mt-2">
+                                    <i class="bi bi-plus-circle me-1"></i>
+                                    เพิ่มช่างใหม่
+                                </a>
+                            </div>
+                        {% endif %}
+
+                        {% for err in form.assigned_to.errors %}
+                            <div class="field-error">
+                                <i class="bi bi-exclamation-circle"></i>
+                                {{ err }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Engineer Review Card -->
+                <div class="wo-sidebar-card engineer-review-card" id="engineer-review-card">
+                    <div class="sidebar-header">
+                        <i class="bi bi-shield-check"></i>
+                        <h6>ตรวจสอบโดยวิศวกร / BME</h6>
+                    </div>
+                    <div class="sidebar-body">
+                        <div class="mb-3">
+                            <label class="form-label-modern">
+                                <i class="bi bi-tags"></i>
+                                ประเภทงาน
+                            </label>
+                            {{ form.workorder_types }}
+                            {% for err in form.workorder_types.errors %}
+                                <div class="field-error">
+                                    <i class="bi bi-exclamation-circle"></i>
+                                    {{ err }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label-modern">
+                                <i class="bi bi-bookmark"></i>
+                                เรื่อง / หัวข้อ
+                            </label>
+                            {{ form.title }}
+                            <p class="text-muted small mt-1 mb-0">
+                                วิศวกร/BME ตรวจสอบความถูกต้องก่อนยืนยัน
+                            </p>
+                            {% for err in form.title.errors %}
+                                <div class="field-error">
+                                    <i class="bi bi-exclamation-circle"></i>
+                                    {{ err }}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label-modern">
+                                <i class="bi bi-flag"></i>
+                                ความสำคัญ
+                            </label>
+                            {{ form.priority }}
+                            {% for err in form.priority.errors %}
+                                <div class="field-error">
+                                    <i class="bi bi-exclamation-circle"></i>
+                                    {{ err }}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <input type="hidden" name="engineer_confirmed" id="engineer_confirmed" value="0">
+                        
+                        <button type="button" id="engineer_confirm_btn" class="btn-engineer-confirm">
+                            <i class="bi bi-check-circle"></i>
+                            ยืนยันโดยวิศวกร/BME
+                        </button>
+                        <button type="button" id="engineer_unconfirm_btn" class="btn btn-outline-secondary w-100 d-none mt-2">
+                            <i class="bi bi-x-circle"></i>
+                            ยกเลิกการยืนยัน
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Action Buttons Card -->
+                <div class="wo-sidebar-card">
+                    <div class="sidebar-body">
+                        <button class="btn-submit-wo" type="submit">
+                            <i class="bi bi-check2-circle"></i>
+                            สร้างใบงาน
+                        </button>
+                        <a href="{% url 'workorder_list' %}" class="btn-cancel-wo d-block text-center text-decoration-none mt-3">
+                            <i class="bi bi-x-lg"></i>
+                            ยกเลิก
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Equipment search modal -->
+<div class="modal fade" id="equipment-search-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-md-down">
+        <div class="modal-content" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+                <h5 class="modal-title">
+                    <i class="bi bi-search me-2"></i>
+                    ค้นหาอุปกรณ์
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-4">
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-white border-end-0" style="border-radius: 12px 0 0 12px;">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="search" 
+                               id="equipment-search-input" 
+                               class="form-control border-start-0" 
+                               placeholder="ค้นหาด้วยรหัสหรือชื่อ (พิมพ์แล้วกด Enter)"
+                               style="border-radius: 0 12px 12px 0;">
+                    </div>
+                </div>
+                <div class="mb-3 d-flex flex-wrap gap-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="filter_requires_pm_modal" value="1">
+                        <label class="form-check-label" for="filter_requires_pm_modal">
+                            <i class="bi bi-calendar-check me-1"></i> Requires PM
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="filter_requires_cal_modal" value="1">
+                        <label class="form-check-label" for="filter_requires_cal_modal">
+                            <i class="bi bi-speedometer2 me-1"></i> Requires CAL
+                        </label>
+                    </div>
+                </div>
+                <div id="equipment-search-results" class="equipment-search-min-height">
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-search" style="font-size: 3rem; opacity: 0.3;"></i>
+                        <p class="mt-3">พิมพ์คำค้นหาเพื่อเริ่มต้น</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 10px;">
+                    <i class="bi bi-x-lg me-1"></i>
+                    ปิด
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update progress steps based on form state
+    const equipmentInput = document.getElementById('equipment_input');
+    const descriptionField = document.querySelector('[name="description"]');
+    
+    function updateSteps() {
+        const stepEquipment = document.getElementById('step-equipment');
+        const stepDetails = document.getElementById('step-details');
+        const stepReview = document.getElementById('step-review');
+        
+        // Equipment step
+        if (equipmentInput && equipmentInput.value) {
+            stepEquipment.classList.remove('active');
+            stepEquipment.classList.add('completed');
+            stepEquipment.querySelector('.step-num').innerHTML = '<i class="bi bi-check"></i>';
+            stepDetails.classList.add('active');
+        }
+        
+        // Details step
+        if (descriptionField && descriptionField.value.trim()) {
+            stepDetails.classList.remove('active');
+            stepDetails.classList.add('completed');
+            stepDetails.querySelector('.step-num').innerHTML = '<i class="bi bi-check"></i>';
+            stepReview.classList.add('active');
+        }
+    }
+    
+    if (equipmentInput) {
+        equipmentInput.addEventListener('change', updateSteps);
+    }
+    if (descriptionField) {
+        descriptionField.addEventListener('input', updateSteps);
+    }
+    
+    // Initial update
+    updateSteps();
+    
+    // Engineer confirm button functionality
+    const confirmBtn = document.getElementById('engineer_confirm_btn');
+    const unconfirmBtn = document.getElementById('engineer_unconfirm_btn');
+    const confirmedInput = document.getElementById('engineer_confirmed');
+    const reviewCard = document.getElementById('engineer-review-card');
+    
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+            confirmedInput.value = '1';
+            confirmBtn.classList.add('confirmed');
+            confirmBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> ยืนยันแล้ว';
+            unconfirmBtn.classList.remove('d-none');
+            reviewCard.classList.add('confirmed');
+        });
+    }
+    
+    if (unconfirmBtn) {
+        unconfirmBtn.addEventListener('click', function() {
+            confirmedInput.value = '0';
+            confirmBtn.classList.remove('confirmed');
+            confirmBtn.innerHTML = '<i class="bi bi-check-circle"></i> ยืนยันโดยวิศวกร/BME';
+            unconfirmBtn.classList.add('d-none');
+            reviewCard.classList.remove('confirmed');
+        });
+    }
+    
+    // SR creation UI removed — workorders must originate from a Service Request
+    
+    // Add class to description textarea
+    const descTextarea = document.querySelector('[name="description"]');
+    if (descTextarea) {
+        descTextarea.classList.add('description-textarea', 'form-control');
+    }
+
+    // Submit-time diagnostics (equipment is auto-set from SR)
+    (function(){
+        try {
+            var form = document.querySelector('form.needs-validation');
+            if (!form) return;
+            form.addEventListener('submit', function(e){
+                try {
+                    var eq = document.getElementById('equipment_input');
+                    console.debug('Workorder submit:', { equipment: eq ? eq.value : null });
+                } catch(err) { console.debug('submit diagnostic error', err); }
+            }, true);
+        } catch(e) { console.debug('init submit diagnostics error', e); }
+    })();
+
+    // Technician card selection: cache DOM, consolidate selection/clear, add debounce to search
+    try {
+        const techList = document.getElementById('technicians-list');
+        const techSearchInput = document.getElementById('tech-search-input');
+        const techNoResults = document.getElementById('tech-no-results');
+        const techCountBadge = document.querySelector('.tech-count-badge');
+        const assignedSelect = document.getElementById('id_assigned_to') || document.querySelector('[name="assigned_to"]');
+
+        // Cached array of cards for efficient filtering
+        const cardList = techList ? Array.from(techList.querySelectorAll('.tech-card-item')) : [];
+
+        // Build/refresh preview
+        function renderSelectedPreview(name, id) {
+            const previewContainer = document.getElementById('selected-preview-card-container');
+            const empty = document.getElementById('selected-preview-empty');
+            const clearBtn = document.getElementById('clear-selected-tech');
+            if (!previewContainer || !empty) return;
+            if (!name) {
+                previewContainer.innerHTML = '';
+                previewContainer.classList.add('d-none');
+                empty.classList.remove('d-none');
+                if (clearBtn) clearBtn.classList.add('d-none');
+                return;
+            }
+
+            const avatar = (name || '').trim().slice(0,1).toUpperCase();
+            let skillsText = '';
+            let statusText = '';
+            try {
+                const card = cardList.find(c => c.dataset.userId === String(id));
+                if (card) {
+                    skillsText = card.dataset.skills || '';
+                    const statusEl = card.querySelector('.tech-status');
+                    statusText = statusEl ? statusEl.textContent.trim() : '';
+                }
+            } catch (e) { /* ignore */ }
+
+            const meta = skillsText ? (skillsText.split(',').slice(0,2).join(', ')) : statusText;
+
+            previewContainer.innerHTML = `
+                <div class="selected-preview-card d-flex align-items-center gap-2">
+                    <div class="selected-preview-avatar">${avatar}</div>
+                    <div>
+                        <div class="selected-preview-name">${name}</div>
+                        <div class="selected-preview-meta">${meta || ''}</div>
+                    </div>
+                </div>
+            `;
+
+            empty.classList.add('d-none');
+            previewContainer.classList.remove('d-none');
+            if (clearBtn) clearBtn.classList.remove('d-none');
+        }
+
+        function updateAriaPressedAll() {
+            if (!cardList) return;
+            cardList.forEach(c => c.setAttribute('aria-pressed', c.classList.contains('selected') ? 'true' : 'false'));
+        }
+
+        function clearSelectedTech() {
+            if (!cardList) return;
+            cardList.forEach(c => c.classList.remove('selected'));
+            if (assignedSelect) {
+                assignedSelect.value = '';
+                assignedSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            renderSelectedPreview('', '');
+            updateAriaPressedAll();
+        }
+
+        function selectTech(card) {
+            if (!card || card.classList.contains('disabled')) return;
+            const id = card.dataset.userId;
+            const techName = card.dataset.techName || card.querySelector('.tech-name')?.textContent?.trim() || '';
+            if (!id || id === '0') return;
+
+            // If already selected, clear; otherwise select this one
+            const already = card.classList.contains('selected');
+            if (already) {
+                clearSelectedTech();
+                return;
+            }
+
+            // Visual
+            cardList.forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+
+            // Sync select element (create option if needed)
+            if (assignedSelect) {
+                let opt = assignedSelect.querySelector(`option[value="${id}"]`);
+                if (!opt) {
+                    opt = document.createElement('option');
+                    opt.value = id;
+                    opt.text = techName || id;
+                    assignedSelect.appendChild(opt);
+                }
+                assignedSelect.value = id;
+                assignedSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            // Preview and ARIA
+            renderSelectedPreview(techName, id);
+            updateAriaPressedAll();
+        }
+
+        // Initialize selection from server-side select value (if any)
+        (function initSelectedFromSelect() {
+            try {
+                if (!assignedSelect) return;
+                const val = (assignedSelect.value || '').toString();
+                if (!val) return;
+                const card = cardList.find(c => c.dataset.userId === val);
+                if (card && !card.classList.contains('disabled')) {
+                    card.classList.add('selected');
+                    const name = card.dataset.techName || card.querySelector('.tech-name')?.textContent?.trim() || '';
+                    renderSelectedPreview(name, val);
+                    updateAriaPressedAll();
+                } else if (val) {
+                    // No matching card; show preview from select text if available
+                    const opt = assignedSelect.querySelector(`option[value="${val}"]`);
+                    if (opt) renderSelectedPreview(opt.textContent || opt.text, val);
+                }
+            } catch (err) { console.debug('initSelectedFromSelect failed', err); }
+        })();
+
+        if (techList) {
+            // Click delegation
+            techList.addEventListener('click', function(e) {
+                const card = e.target.closest('.tech-card-item');
+                if (!card) return;
+                if (card.classList.contains('disabled')) return;
+                selectTech(card);
+                console.debug('Tech card clicked:', { id: card.dataset.userId, techName: card.dataset.techName, selected: card.classList.contains('selected') });
+            });
+
+            // Keyboard support (Enter / Space to toggle)
+            techList.addEventListener('keydown', function(e) {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                const card = e.target.closest('.tech-card-item');
+                if (!card) return;
+                e.preventDefault();
+                if (card.classList.contains('disabled')) return;
+                selectTech(card);
+            });
+        }
+
+        // Simple debounce
+        function debounce(fn, wait){ let t; return function(...a){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,a), wait); }; }
+
+        // Search/filter functionality
+        if (techSearchInput && cardList) {
+            const doFilter = function() {
+                const q = (techSearchInput.value || '').toLowerCase().trim();
+                let visible = 0;
+                cardList.forEach(c => {
+                    const name = (c.dataset.techName || '').toLowerCase();
+                    const skills = (c.dataset.skills || '').toLowerCase();
+                    const matches = !q || name.includes(q) || skills.includes(q);
+                    c.style.display = matches ? '' : 'none';
+                    if (matches) visible++;
+                });
+                if (techNoResults) techNoResults.classList.toggle('d-none', visible > 0);
+                if (techCountBadge) techCountBadge.textContent = `${visible} คน`;
+            };
+            techSearchInput.addEventListener('input', debounce(doFilter, 160));
+        }
+
+        // Clear selected technician button
+        const clearBtn = document.getElementById('clear-selected-tech');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function() {
+                clearSelectedTech();
+            });
+        }
+    } catch (e) { console.debug('init tech cards failed', e); }
+});
+</script>
+{% endblock %}

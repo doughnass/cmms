@@ -1,0 +1,1075 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}<title>ทะเบียนอะไหล่คงคลัง | CMMS</title>{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --sp-primary: #667eea;
+    --sp-primary-dark: #764ba2;
+    --sp-success: #10b981;
+    --sp-warning: #f59e0b;
+    --sp-danger: #ef4444;
+    --sp-info: #06b6d4;
+    --sp-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --sp-card-shadow: 0 2px 12px rgba(0,0,0,.06);
+    --sp-radius: 12px;
+}
+
+/* ── Page Header ── */
+.sp-page-header {
+    background: var(--sp-gradient);
+    border-radius: var(--sp-radius);
+    padding: 1.5rem 2rem;
+    color: #fff;
+    margin-bottom: 1.5rem;
+}
+.sp-page-header h2 { margin: 0; font-weight: 700; }
+.sp-page-header .subtitle { opacity: .85; font-size: .9rem; }
+
+/* ── Stat Cards ── */
+.sp-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.sp-stat-card {
+    background: #fff;
+    border-radius: var(--sp-radius);
+    padding: 1.25rem;
+    box-shadow: var(--sp-card-shadow);
+    display: flex; align-items: center; gap: 1rem;
+    transition: transform .2s, box-shadow .2s;
+}
+.sp-stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,.1); }
+.sp-stat-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; color: #fff; flex-shrink: 0;
+}
+.sp-stat-icon.total { background: var(--sp-gradient); }
+.sp-stat-icon.low { background: linear-gradient(135deg, #ef4444, #f97316); }
+.sp-stat-icon.value { background: linear-gradient(135deg, #10b981, #059669); }
+.sp-stat-icon.inactive { background: linear-gradient(135deg, #6b7280, #9ca3af); }
+.sp-stat-value { font-size: 1.5rem; font-weight: 700; color: #1f2937; }
+.sp-stat-label { font-size: .8rem; color: #6b7280; }
+
+/* ── Toolbar ── */
+.sp-toolbar {
+    background: #fff;
+    border-radius: var(--sp-radius);
+    padding: 1rem 1.25rem;
+    box-shadow: var(--sp-card-shadow);
+    margin-bottom: 1.5rem;
+    display: flex; flex-wrap: wrap; align-items: center; gap: .75rem;
+}
+.sp-search {
+    flex: 1; min-width: 200px;
+    position: relative;
+}
+.sp-search input {
+    border-radius: 8px;
+    padding-left: 2.5rem;
+    border: 1px solid #e5e7eb;
+}
+.sp-search i {
+    position: absolute; left: .75rem; top: 50%; transform: translateY(-50%);
+    color: #9ca3af;
+}
+.sp-filter-chips { display: flex; gap: .5rem; flex-wrap: wrap; }
+.sp-chip {
+    padding: .35rem .85rem;
+    border-radius: 20px;
+    font-size: .82rem;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #374151;
+    cursor: pointer;
+    transition: all .15s;
+    text-decoration: none;
+}
+.sp-chip:hover { border-color: var(--sp-primary); color: var(--sp-primary); }
+.sp-chip.active { background: var(--sp-gradient); color: #fff; border-color: transparent; }
+.btn-add-part {
+    background: var(--sp-gradient);
+    color: #fff; border: none;
+    padding: .5rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: transform .15s, box-shadow .15s;
+}
+.btn-add-part:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(102,126,234,.4);
+    color: #fff;
+}
+
+/* ── Table ── */
+.sp-table-wrap {
+    background: #fff;
+    border-radius: var(--sp-radius);
+    box-shadow: var(--sp-card-shadow);
+    overflow: hidden;
+}
+.sp-table {
+    width: 100%; margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.sp-table thead th {
+    background: var(--sp-gradient);
+    color: #fff;
+    font-weight: 600;
+    font-size: .82rem;
+    padding: .75rem 1rem;
+    border: none;
+    white-space: nowrap;
+    position: sticky; top: 0; z-index: 2;
+}
+.sp-table tbody td {
+    padding: .65rem 1rem;
+    font-size: .85rem;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+}
+.sp-table tbody tr {
+    transition: background .12s;
+}
+.sp-table tbody tr:hover { background: #f8f9ff; }
+
+/* Stock badges */
+.badge-stock {
+    padding: .3rem .65rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: .78rem;
+}
+.badge-stock.ok { background: #d1fae5; color: #065f46; }
+.badge-stock.low { background: #fee2e2; color: #991b1b; animation: pulse-low 2s infinite; }
+.badge-stock.zero { background: #fef3c7; color: #92400e; }
+
+@keyframes pulse-low {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .7; }
+}
+
+.badge-active { background: #dbeafe; color: #1e40af; padding: .25rem .6rem; border-radius: 20px; font-size: .75rem; }
+.badge-inactive { background: #f3f4f6; color: #6b7280; padding: .25rem .6rem; border-radius: 20px; font-size: .75rem; }
+
+/* Action buttons */
+.sp-actions { display: flex; gap: .35rem; }
+.sp-actions .btn {
+    padding: .3rem .5rem;
+    font-size: .8rem;
+    border-radius: 6px;
+}
+
+/* ── Empty state ── */
+.sp-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #9ca3af;
+}
+.sp-empty i { font-size: 3rem; margin-bottom: 1rem; display: block; }
+
+/* ── Modal ── */
+.sp-modal .modal-content { border-radius: var(--sp-radius); border: none; }
+.sp-modal .modal-header {
+    background: var(--sp-gradient);
+    color: #fff;
+    border-radius: var(--sp-radius) var(--sp-radius) 0 0;
+}
+.sp-modal .modal-header .btn-close { filter: brightness(0) invert(1); }
+.sp-modal .form-label { font-weight: 600; font-size: .85rem; color: #374151; margin-bottom: .3rem; }
+.sp-modal .form-control, .sp-modal .form-select {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+/* Adjust stock modal */
+.adjust-action-group { display: flex; gap: .5rem; margin-bottom: 1rem; }
+.adjust-action-btn {
+    flex: 1;
+    padding: .6rem;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+    background: #fff;
+    cursor: pointer;
+    text-align: center;
+    transition: all .15s;
+    font-weight: 600;
+}
+.adjust-action-btn:hover { border-color: var(--sp-primary); }
+.adjust-action-btn.selected-add { border-color: var(--sp-success); background: #ecfdf5; color: #065f46; }
+.adjust-action-btn.selected-withdraw { border-color: var(--sp-danger); background: #fef2f2; color: #991b1b; }
+
+/* ── Multi-Select Dropdown ── */
+.ms-dropdown { position: relative; }
+.ms-dropdown-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; padding: .5rem .75rem;
+    border: 1px solid #e5e7eb; border-radius: 8px;
+    background: #fff; cursor: pointer;
+    font-size: .85rem; color: #374151;
+    transition: border-color .15s, box-shadow .15s;
+    min-height: 38px;
+}
+.ms-dropdown-btn:hover, .ms-dropdown-btn.open { border-color: var(--sp-primary); box-shadow: 0 0 0 3px rgba(102,126,234,.12); }
+.ms-dropdown-btn .ms-count {
+    background: var(--sp-gradient); color: #fff;
+    padding: .1rem .5rem; border-radius: 12px;
+    font-size: .72rem; font-weight: 600; min-width: 20px; text-align: center;
+}
+.ms-dropdown-panel {
+    display: none; position: absolute; z-index: 1050;
+    top: calc(100% + 4px); left: 0; right: 0;
+    background: #fff; border: 1px solid #e5e7eb;
+    border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.15);
+    overflow: hidden;
+}
+.ms-dropdown-panel.show { display: flex; flex-direction: column; }
+.ms-dropdown-search {
+    padding: .5rem; border-bottom: 1px solid #f3f4f6;
+}
+.ms-dropdown-search input {
+    width: 100%; border: 1px solid #e5e7eb; border-radius: 6px;
+    padding: .4rem .65rem; font-size: .82rem; outline: none;
+}
+.ms-dropdown-search input:focus { border-color: var(--sp-primary); }
+.ms-dropdown-items {
+    overflow-y: auto; flex: 1; padding: .25rem 0; max-height: 220px;
+}
+.ms-dropdown-item {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .4rem .75rem; cursor: pointer;
+    font-size: .83rem; transition: background .1s;
+    user-select: none;
+}
+.ms-dropdown-item:hover { background: #f0f2ff; }
+.ms-dropdown-item.select-all {
+    border-bottom: 1px solid #f3f4f6;
+    font-weight: 600; color: var(--sp-primary);
+    padding: .5rem .75rem;
+}
+.ms-dropdown-item input[type="checkbox"] { accent-color: var(--sp-primary); width: 15px; height: 15px; flex-shrink: 0; }
+.ms-dropdown-item.hidden { display: none; }
+.ms-tags { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .4rem; }
+.ms-tag {
+    display: inline-flex; align-items: center; gap: .2rem;
+    padding: .15rem .5rem; background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff; border-radius: 12px; font-size: .72rem; font-weight: 500;
+    animation: msTagIn .2s ease;
+}
+@keyframes msTagIn { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.ms-tag .ms-tag-x {
+    cursor: pointer; font-size: .85rem; line-height: 1;
+    opacity: .8; margin-left: .1rem; font-weight: 700;
+}
+.ms-tag .ms-tag-x:hover { opacity: 1; }
+.ms-all-badge {
+    display: inline-flex; align-items: center; gap: .25rem;
+    padding: .15rem .6rem; background: var(--sp-success);
+    color: #fff; border-radius: 12px; font-size: .72rem; font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sp-page-header { padding: 1rem; }
+    .sp-toolbar { flex-direction: column; }
+    .sp-table-wrap { overflow-x: auto; }
+    .sp-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Equipment cell truncation ── */
+.sp-equip-cell {
+    position: relative;
+    cursor: pointer;
+    max-width: 180px;
+}
+.sp-equip-cell:hover { opacity: .8; }
+.sp-equip-cell .sp-equip-content {
+    max-height: 4.2em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.sp-equip-cell .sp-equip-content div {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.sp-equip-cell .sp-equip-more {
+    display: inline-block;
+    color: var(--sp-primary);
+    font-size: .75rem;
+    margin-top: .15rem;
+}
+
+/* ── Equipment detail modal list ── */
+.equip-detail-section { margin-bottom: .75rem; }
+.equip-detail-section .equip-detail-title {
+    font-weight: 600; font-size: .85rem; color: #374151;
+    border-bottom: 1px solid #f3f4f6; padding-bottom: .3rem; margin-bottom: .4rem;
+}
+.equip-detail-section .equip-detail-items {
+    display: flex; flex-wrap: wrap; gap: .35rem;
+}
+.equip-detail-tag {
+    display: inline-flex; align-items: center; gap: .25rem;
+    padding: .25rem .65rem; border-radius: 16px;
+    font-size: .8rem; font-weight: 500;
+}
+.equip-detail-tag.name { background: #ede9fe; color: #5b21b6; }
+.equip-detail-tag.brand { background: #dbeafe; color: #1e40af; }
+.equip-detail-tag.model { background: #d1fae5; color: #065f46; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-lg-4">
+
+<!-- ── Page Header ── -->
+<div class="sp-page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h2><i class="bi bi-box-seam me-2"></i>ทะเบียนอะไหล่คงคลัง</h2>
+        <div class="subtitle">Spare Parts Inventory — บริหารจัดการอะไหล่สำหรับเครื่องมือแพทย์</div>
+    </div>
+</div>
+
+<!-- ── Stat Cards ── -->
+<div class="sp-stats">
+    <div class="sp-stat-card">
+        <div class="sp-stat-icon total"><i class="bi bi-box-seam"></i></div>
+        <div>
+            <div class="sp-stat-value">{{ total_items }}</div>
+            <div class="sp-stat-label">รายการทั้งหมด</div>
+        </div>
+    </div>
+    <div class="sp-stat-card">
+        <div class="sp-stat-icon low"><i class="bi bi-exclamation-triangle"></i></div>
+        <div>
+            <div class="sp-stat-value" style="color: var(--sp-danger);">{{ low_stock_count }}</div>
+            <div class="sp-stat-label">สต็อกต่ำ / หมด</div>
+        </div>
+    </div>
+    <div class="sp-stat-card">
+        <div class="sp-stat-icon value"><i class="bi bi-currency-exchange"></i></div>
+        <div>
+            <div class="sp-stat-value" style="color: var(--sp-success);">{{ total_value|floatformat:"2" }}</div>
+            <div class="sp-stat-label">มูลค่ารวม (บาท)</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Toolbar ── -->
+<div class="sp-toolbar">
+    <div class="sp-search">
+        <i class="bi bi-search"></i>
+        <input type="text" id="searchInput" class="form-control" placeholder="ค้นหา รหัส, ชื่อ, ผู้จำหน่าย..." value="{{ q }}">
+    </div>
+    <div class="sp-filter-chips">
+        <a href="?{% if q %}q={{ q }}{% endif %}" class="sp-chip {% if not status_filter %}active{% endif %}">ทั้งหมด</a>
+        <a href="?status=low{% if q %}&q={{ q }}{% endif %}" class="sp-chip {% if status_filter == 'low' %}active{% endif %}">
+            <i class="bi bi-exclamation-triangle-fill text-danger"></i> สต็อกต่ำ
+        </a>
+        <a href="?status=active{% if q %}&q={{ q }}{% endif %}" class="sp-chip {% if status_filter == 'active' %}active{% endif %}">ใช้งาน</a>
+        <a href="?status=inactive{% if q %}&q={{ q }}{% endif %}" class="sp-chip {% if status_filter == 'inactive' %}active{% endif %}">ปิดใช้งาน</a>
+    </div>
+    <button class="btn btn-add-part" onclick="openAddModal()">
+        <i class="bi bi-plus-lg me-1"></i>เพิ่มอะไหล่
+    </button>
+</div>
+
+<!-- ── Table ── -->
+<div class="sp-table-wrap">
+{% if parts %}
+<table class="sp-table" id="partsTable">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>รหัส</th>
+            <th>ชื่ออะไหล่</th>
+            <th>การใช้งาน</th>
+            <th>ตำแหน่งจัดเก็บ</th>
+            <th class="text-center">คงเหลือ</th>
+            <th class="text-center">ขั้นต่ำ</th>
+            <th class="text-end">ราคา/หน่วย</th>
+            <th>สถานะ</th>
+            <th class="text-center">จัดการ</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for p in parts %}
+        <tr data-id="{{ p.id }}">
+            <td>{{ forloop.counter }}</td>
+            <td><strong>{{ p.code }}</strong></td>
+            <td>
+                {{ p.name }}
+                {% if p.supplier %}<br><small class="text-muted"><i class="bi bi-truck"></i> {{ p.supplier }}</small>{% endif %}
+            </td>
+            <td>
+                {% with names=p.equipment_meta.equipment_names brands=p.equipment_meta.equipment_brands models=p.equipment_meta.equipment_models %}
+                {% if names or brands or models %}
+                    <div class="sp-equip-cell"
+                         data-code="{{ p.code }}" data-name="{{ p.name }}"
+                         data-names="{{ names|join:'|||' }}"
+                         data-brands="{{ brands|join:'|||' }}"
+                         data-models="{{ models|join:'|||' }}"
+                         onclick="openEquipFromEl(this)" title="คลิกเพื่อดูทั้งหมด">
+                        <div class="sp-equip-content">
+                            {% if names %}<div><i class="bi bi-cpu me-1 text-primary"></i>{{ names|join:", " }}</div>{% endif %}
+                            {% if brands %}<div><small class="text-muted"><i class="bi bi-building me-1"></i>{{ brands|join:", " }}</small></div>{% endif %}
+                            {% if models %}<div><small class="text-muted"><i class="bi bi-gear me-1"></i>{{ models|join:", " }}</small></div>{% endif %}
+                        </div>
+                        <!-- <span class="sp-equip-more"><i class="bi bi-three-dots"></i></span> -->
+                    </div>
+                {% else %}
+                    <span class="text-muted">—</span>
+                {% endif %}
+                {% endwith %}
+            </td>
+            <td>{% if p.location %}{{ p.location }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+            <td class="text-center">
+                {% if p.quantity == 0 %}
+                    <span class="badge-stock zero">0 {{ p.unit }}</span>
+                {% elif p.is_low_stock %}
+                    <span class="badge-stock low">{{ p.quantity }} {{ p.unit }}</span>
+                {% else %}
+                    <span class="badge-stock ok">{{ p.quantity }} {{ p.unit }}</span>
+                {% endif %}
+            </td>
+            <td class="text-center">{{ p.min_quantity }}</td>
+            <td class="text-end">{% if p.unit_cost %}{{ p.unit_cost|floatformat:"2" }}{% else %}—{% endif %}</td>
+            <td>
+                {% if p.active %}<span class="badge-active">ใช้งาน</span>
+                {% else %}<span class="badge-inactive">ปิดใช้งาน</span>{% endif %}
+            </td>
+            <td>
+                <div class="sp-actions justify-content-center">
+                    <button class="btn btn-outline-success btn-sm" title="เบิก/รับเข้า" onclick="openAdjustModal({{ p.id }}, '{{ p.code|escapejs }}', '{{ p.name|escapejs }}', {{ p.quantity }}, '{{ p.unit|escapejs }}')">
+                        <i class="bi bi-arrow-left-right"></i>
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" title="แก้ไข" onclick="openEditModal({{ p.id }})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" title="ลบ" onclick="confirmDelete({{ p.id }}, '{{ p.code|escapejs }}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="sp-empty">
+    <i class="bi bi-inbox"></i>
+    <h5>ยังไม่มีอะไหล่ในระบบ</h5>
+    <p>กดปุ่ม <strong>"เพิ่มอะไหล่"</strong> เพื่อเริ่มต้นบันทึกข้อมูล</p>
+</div>
+{% endif %}
+</div>
+
+</div><!-- end container -->
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- Modal: เพิ่ม/แก้ไข อะไหล่                                         -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="modal fade sp-modal" id="partModal" tabindex="-1">
+<div class="modal-dialog modal-lg">
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title" id="partModalTitle">เพิ่มอะไหล่</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+        <input type="hidden" id="sp_id">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">รหัสอะไหล่ <span class="text-danger">*</span></label>
+                <input type="text" id="sp_code" class="form-control" placeholder="เช่น SP-001">
+            </div>
+            <div class="col-md-8">
+                <label class="form-label">ชื่ออะไหล่ <span class="text-danger">*</span></label>
+                <input type="text" id="sp_name" class="form-control" placeholder="ชื่ออะไหล่">
+            </div>
+            <div class="col-md-12">
+                <label class="form-label">หมวดหมู่</label>   
+                <select id="sp_category" name="sp_category" class="form-select modern-select">
+                    <option value="">-- ไม่มีหมวดหมู่ --</option>
+                    {% for c in categories %}
+                        <option value="{{ c.id }}">{{ c.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>            
+            <div class="col-12 mb-4">
+                <label class="form-label">รายละเอียด</label>
+                <textarea id="sp_description" class="form-control" rows="2"></textarea>
+            </div>
+
+
+
+            <!-- ── การใช้งานกับเครื่องมือ (Multi-Select) ── -->
+            <div class="col-12">
+                <div style="font-weight:700;font-size:.9rem;color:#374151;border-bottom:2px solid var(--sp-primary);padding-bottom:.35rem;margin-bottom:.5rem;">
+                    <i class="bi bi-cpu me-1" style="color:var(--sp-primary)"></i>การใช้งานกับเครื่องมือ
+                    <small class="text-muted fw-normal" style="font-size:.78rem">— เลือกได้หลายรายการ หรือเลือกทั้งหมด</small>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">ชื่อเครื่อง</label>
+                <div class="ms-dropdown" id="msd_equip_name">
+                    <div class="ms-dropdown-btn" onclick="toggleMsDropdown('msd_equip_name')">
+                        <span class="ms-placeholder">-- เลือกชื่อเครื่อง --</span>
+                        <span class="ms-count" style="display:none">0</span>
+                        <i class="bi bi-chevron-down" style="font-size:.7rem;color:#9ca3af"></i>
+                    </div>
+                    <div class="ms-dropdown-panel">
+                        <div class="ms-dropdown-search"><input type="text" placeholder="ค้นหาชื่อเครื่อง..." oninput="filterMsItems(this)"></div>
+                        <div class="ms-dropdown-items">
+                            <label class="ms-dropdown-item select-all"><input type="checkbox" onchange="toggleMsAll(this)"> เลือกทั้งหมด</label>
+                            {% for m in master_equipments %}
+                                <label class="ms-dropdown-item" data-val="{{ m.label|escape }}"><input type="checkbox" value="{{ m.label|escape }}"> {{ m.label }}</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="ms-tags"></div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">ยี่ห้อ</label>
+                <div class="ms-dropdown" id="msd_equip_brand">
+                    <div class="ms-dropdown-btn" onclick="toggleMsDropdown('msd_equip_brand')">
+                        <span class="ms-placeholder">-- เลือกยี่ห้อ --</span>
+                        <span class="ms-count" style="display:none">0</span>
+                        <i class="bi bi-chevron-down" style="font-size:.7rem;color:#9ca3af"></i>
+                    </div>
+                    <div class="ms-dropdown-panel">
+                        <div class="ms-dropdown-search"><input type="text" placeholder="ค้นหายี่ห้อ..." oninput="filterMsItems(this)"></div>
+                        <div class="ms-dropdown-items">
+                            <label class="ms-dropdown-item select-all"><input type="checkbox" onchange="toggleMsAll(this)"> เลือกทั้งหมด</label>
+                            {% for m in master_manufacturers %}
+                                {% if not m.ancestors %}
+                                <label class="ms-dropdown-item" data-val="{{ m.label|escape }}"><input type="checkbox" value="{{ m.label|escape }}"> {{ m.label }}</label>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="ms-tags"></div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-4">
+                <label class="form-label">รุ่น</label>
+                <div class="ms-dropdown" id="msd_equip_model">
+                    <div class="ms-dropdown-btn" onclick="toggleMsDropdown('msd_equip_model')">
+                        <span class="ms-placeholder">-- เลือกรุ่น --</span>
+                        <span class="ms-count" style="display:none">0</span>
+                        <i class="bi bi-chevron-down" style="font-size:.7rem;color:#9ca3af"></i>
+                    </div>
+                    <div class="ms-dropdown-panel">
+                        <div class="ms-dropdown-search"><input type="text" placeholder="ค้นหารุ่น..." oninput="filterMsItems(this)"></div>
+                        <div class="ms-dropdown-items">
+                            <label class="ms-dropdown-item select-all"><input type="checkbox" onchange="toggleMsAll(this)"> เลือกทั้งหมด</label>
+                            <!-- models populated by JS from selected brands -->
+                        </div>
+                    </div>
+                    <div class="ms-tags"></div>
+                </div>
+            </div> 
+ 
+            <div class="col-12">
+                <div style="font-weight:700;font-size:.9rem;color:#374151;border-bottom:2px solid var(--sp-primary);padding-bottom:.35rem;margin-bottom:.5rem;">
+                    <i class="bi bi-cpu me-1" style="color:var(--sp-primary)"></i>ข้อมูลสต็อกและอื่นๆ
+                </div>
+            </div>            
+            
+            <div class="col-md-4">
+                <label class="form-label">หน่วยนับ</label>
+                <input type="text" id="sp_unit" class="form-control" value="ชิ้น">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">จำนวนคงเหลือ</label>
+                <input type="number" id="sp_quantity" class="form-control" min="0" value="0">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">จำนวนขั้นต่ำ</label>
+                <input type="number" id="sp_min_quantity" class="form-control" min="0" value="0">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">ราคาต่อหน่วย (บาท)</label>
+                <input type="number" id="sp_unit_cost" class="form-control" step="0.01" min="0">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">ตำแหน่งจัดเก็บ</label>
+                <input type="text" id="sp_location" class="form-control" placeholder="เช่น ชั้น A-3">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">ผู้จำหน่าย</label>
+                <input type="text" id="sp_supplier" class="form-control">
+            </div>
+            <div class="col-12">
+                <label class="form-label">หมายเหตุ</label>
+                <textarea id="sp_notes" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="col-12" id="sp_active_wrap" style="display:none;">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="sp_active" checked>
+                    <label class="form-check-label" for="sp_active">ใช้งาน</label>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <button type="button" class="btn btn-add-part" id="btnSavePart" onclick="savePart()">
+            <i class="bi bi-check-lg me-1"></i>บันทึก
+        </button>
+    </div>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- Modal: เบิก/รับเข้า                                             -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="modal fade sp-modal" id="adjustModal" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-arrow-left-right me-2"></i>ปรับสต็อก</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+        <input type="hidden" id="adj_id">
+        <div class="text-center mb-3">
+            <strong id="adj_label"></strong>
+            <div class="text-muted" id="adj_current"></div>
+        </div>
+        <div class="adjust-action-group">
+            <button type="button" class="adjust-action-btn" id="btnAdjAdd" onclick="selectAdjustAction('add')">
+                <i class="bi bi-box-arrow-in-down"></i><br>รับเข้า
+            </button>
+            <button type="button" class="adjust-action-btn" id="btnAdjWithdraw" onclick="selectAdjustAction('withdraw')">
+                <i class="bi bi-box-arrow-up"></i><br>เบิกออก
+            </button>
+        </div>
+        <input type="hidden" id="adj_action">
+        <label class="form-label">จำนวน</label>
+        <input type="number" id="adj_amount" class="form-control" min="1" value="1">
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <button type="button" class="btn btn-add-part" onclick="submitAdjust()">
+            <i class="bi bi-check-lg me-1"></i>ยืนยัน
+        </button>
+    </div>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- Modal: รายละเอียดการใช้งานกับเครื่องมือ                              -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="modal fade sp-modal" id="equipDetailModal" tabindex="-1">
+<div class="modal-dialog modal-lg">
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-cpu me-2"></i>การใช้งานกับเครื่องมือ</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+        <div class="text-center mb-3">
+            <strong id="equip_modal_label"></strong>
+        </div>
+        <div id="equip_modal_body"></div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+    </div>
+</div>
+</div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const CSRF = '{{ csrf_token }}';
+const URL_CREATE = '{% url "spare_part_create" %}';
+const URL_UPDATE = '{% url "spare_part_update" pk=0 %}'.replace('/0/', '/{id}/');
+const URL_DELETE = '{% url "spare_part_delete" pk=0 %}'.replace('/0/', '/{id}/');
+const URL_ADJUST = '{% url "spare_part_adjust_stock" pk=0 %}'.replace('/0/', '/{id}/');
+
+/* ── Search (debounced) ── */
+let searchTimer;
+
+/* ── Equipment Detail Modal ── */
+function openEquipFromEl(el) {
+    const code = el.dataset.code;
+    const name = el.dataset.name;
+    const names = el.dataset.names ? el.dataset.names.split('|||') : [];
+    const brands = el.dataset.brands ? el.dataset.brands.split('|||') : [];
+    const models = el.dataset.models ? el.dataset.models.split('|||') : [];
+    openEquipModal(code, name, names, brands, models);
+}
+function openEquipModal(code, name, names, brands, models) {
+    document.getElementById('equip_modal_label').textContent = code + ' — ' + name;
+    let html = '';
+    if (names && names.length) {
+        html += '<div class="equip-detail-section"><div class="equip-detail-title"><i class="bi bi-cpu me-1 text-primary"></i>ชื่อเครื่อง</div><div class="equip-detail-items">';
+        names.forEach(n => { html += '<span class="equip-detail-tag name">' + escHtml(n) + '</span>'; });
+        html += '</div></div>';
+    }
+    if (brands && brands.length) {
+        html += '<div class="equip-detail-section"><div class="equip-detail-title"><i class="bi bi-building me-1"></i>ยี่ห้อ</div><div class="equip-detail-items">';
+        brands.forEach(b => { html += '<span class="equip-detail-tag brand">' + escHtml(b) + '</span>'; });
+        html += '</div></div>';
+    }
+    if (models && models.length) {
+        html += '<div class="equip-detail-section"><div class="equip-detail-title"><i class="bi bi-gear me-1"></i>รุ่น</div><div class="equip-detail-items">';
+        models.forEach(m => { html += '<span class="equip-detail-tag model">' + escHtml(m) + '</span>'; });
+        html += '</div></div>';
+    }
+    document.getElementById('equip_modal_body').innerHTML = html;
+    new bootstrap.Modal(document.getElementById('equipDetailModal')).show();
+}
+function escHtml(s) {
+    const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+document.getElementById('searchInput').addEventListener('input', function() {
+    clearTimeout(searchTimer);
+    const val = this.value.trim();
+    searchTimer = setTimeout(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (val) params.set('q', val); else params.delete('q');
+        window.location.search = params.toString();
+    }, 500);
+});
+
+/* ── Add/Edit Modal ── */
+function openAddModal() {
+    document.getElementById('sp_id').value = '';
+    document.getElementById('sp_code').value = '';
+    document.getElementById('sp_name').value = '';
+    document.getElementById('sp_description').value = '';
+    document.getElementById('sp_category').value = '';
+    document.getElementById('sp_unit').value = 'ชิ้น';
+    document.getElementById('sp_quantity').value = 0;
+    document.getElementById('sp_min_quantity').value = 0;
+    document.getElementById('sp_unit_cost').value = '';
+    document.getElementById('sp_location').value = '';
+    document.getElementById('sp_supplier').value = '';
+    document.getElementById('sp_notes').value = '';
+    document.getElementById('sp_active_wrap').style.display = 'none';
+    clearAllMsDropdowns();
+    document.getElementById('partModalTitle').textContent = 'เพิ่มอะไหล่';
+    new bootstrap.Modal(document.getElementById('partModal')).show();
+}
+
+function openEditModal(id) {
+    fetch(URL_UPDATE.replace('{id}', id))
+        .then(r => r.json())
+        .then(res => {
+            if (!res.ok) return alert(res.error);
+            const d = res.data;
+            document.getElementById('sp_id').value = d.id;
+            document.getElementById('sp_code').value = d.code;
+            document.getElementById('sp_name').value = d.name;
+            document.getElementById('sp_description').value = d.description;
+            document.getElementById('sp_category').value = d.category || '';
+            document.getElementById('sp_unit').value = d.unit;
+            document.getElementById('sp_quantity').value = d.quantity;
+            document.getElementById('sp_min_quantity').value = d.min_quantity;
+            document.getElementById('sp_unit_cost').value = d.unit_cost;
+            document.getElementById('sp_location').value = d.location;
+            document.getElementById('sp_supplier').value = d.supplier;
+            document.getElementById('sp_notes').value = d.notes;
+            document.getElementById('sp_active').checked = d.active;
+            document.getElementById('sp_active_wrap').style.display = '';
+            document.getElementById('partModalTitle').textContent = 'แก้ไขอะไหล่';
+
+            // Restore multi-select dropdowns
+            clearAllMsDropdowns();
+            setMsValues('msd_equip_name', d.equipment_names || []);
+            setMsValues('msd_equip_brand', d.equipment_brands || []);
+            // Rebuild model checkboxes based on selected brands first
+            refreshModelCheckboxes();
+            // Then restore selected models
+            setMsValues('msd_equip_model', d.equipment_models || []);
+
+            new bootstrap.Modal(document.getElementById('partModal')).show();
+        });
+}
+
+function savePart() {
+    const id = document.getElementById('sp_id').value;
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF);
+    fd.append('code',          document.getElementById('sp_code').value);
+    fd.append('name',          document.getElementById('sp_name').value);
+    fd.append('description',   document.getElementById('sp_description').value);
+    fd.append('category',      document.getElementById('sp_category').value);
+    fd.append('unit',          document.getElementById('sp_unit').value);
+    fd.append('quantity',      document.getElementById('sp_quantity').value);
+    fd.append('min_quantity',  document.getElementById('sp_min_quantity').value);
+    fd.append('unit_cost',     document.getElementById('sp_unit_cost').value);
+    fd.append('location',      document.getElementById('sp_location').value);
+    fd.append('supplier',      document.getElementById('sp_supplier').value);
+    fd.append('notes',         document.getElementById('sp_notes').value);
+    if (id) fd.append('active', document.getElementById('sp_active').checked ? 'true' : 'false');
+    fd.append('equipment_names',  JSON.stringify(getMsValues('msd_equip_name')));
+    fd.append('equipment_brands', JSON.stringify(getMsValues('msd_equip_brand')));
+    fd.append('equipment_models', JSON.stringify(getMsValues('msd_equip_model')));
+
+    const url = id ? URL_UPDATE.replace('{id}', id) : URL_CREATE;
+    fetch(url, { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(res => {
+            if (!res.ok) return alert(res.error);
+            location.reload();
+        });
+}
+
+/* ── Delete ── */
+function confirmDelete(id, code) {
+    if (!confirm('ลบอะไหล่ ' + code + ' ?')) return;
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF);
+    fetch(URL_DELETE.replace('{id}', id), { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(res => {
+            if (!res.ok) return alert(res.error);
+            location.reload();
+        });
+}
+
+/* ── Adjust Stock ── */
+function openAdjustModal(id, code, name, qty, unit) {
+    document.getElementById('adj_id').value = id;
+    document.getElementById('adj_label').textContent = code + ' — ' + name;
+    document.getElementById('adj_current').textContent = 'คงเหลือ: ' + qty + ' ' + unit;
+    document.getElementById('adj_action').value = '';
+    document.getElementById('adj_amount').value = 1;
+    document.getElementById('btnAdjAdd').className = 'adjust-action-btn';
+    document.getElementById('btnAdjWithdraw').className = 'adjust-action-btn';
+    new bootstrap.Modal(document.getElementById('adjustModal')).show();
+}
+
+function selectAdjustAction(action) {
+    document.getElementById('adj_action').value = action;
+    document.getElementById('btnAdjAdd').className = 'adjust-action-btn' + (action === 'add' ? ' selected-add' : '');
+    document.getElementById('btnAdjWithdraw').className = 'adjust-action-btn' + (action === 'withdraw' ? ' selected-withdraw' : '');
+}
+
+function submitAdjust() {
+    const id = document.getElementById('adj_id').value;
+    const action = document.getElementById('adj_action').value;
+    const amount = document.getElementById('adj_amount').value;
+    if (!action) return alert('กรุณาเลือก รับเข้า หรือ เบิกออก');
+    if (!amount || amount < 1) return alert('กรุณาระบุจำนวน');
+
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF);
+    fd.append('action', action);
+    fd.append('amount', amount);
+    fetch(URL_ADJUST.replace('{id}', id), { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(res => {
+            if (!res.ok) return alert(res.error);
+            location.reload();
+        });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Multi-Select Dropdown (การใช้งานกับเครื่องมือ)
+   ═══════════════════════════════════════════════════════════════ */
+
+// Brand→Model data from server
+const ALL_MODELS = [
+    {% for m in master_manufacturers %}
+        {% if m.ancestors %}
+            { label: '{{ m.label|escapejs }}', ancestors: '{{ m.ancestors|escapejs }}' },
+        {% endif %}
+    {% endfor %}
+];
+
+/* Toggle dropdown open/close */
+function toggleMsDropdown(id) {
+    const el = document.getElementById(id);
+    const panel = el.querySelector('.ms-dropdown-panel');
+    const btn = el.querySelector('.ms-dropdown-btn');
+    const isOpen = panel.classList.contains('show');
+    // close all first
+    document.querySelectorAll('.ms-dropdown-panel.show').forEach(p => {
+        p.classList.remove('show');
+        p.closest('.ms-dropdown').querySelector('.ms-dropdown-btn').classList.remove('open');
+    });
+    if (!isOpen) {
+        panel.classList.add('show');
+        btn.classList.add('open');
+        const searchInput = panel.querySelector('.ms-dropdown-search input');
+        if (searchInput) { searchInput.value = ''; filterMsItems(searchInput); searchInput.focus(); }
+    }
+}
+
+/* Close dropdown when clicking outside */
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.ms-dropdown')) {
+        document.querySelectorAll('.ms-dropdown-panel.show').forEach(p => {
+            p.classList.remove('show');
+            p.closest('.ms-dropdown').querySelector('.ms-dropdown-btn').classList.remove('open');
+        });
+    }
+});
+
+/* Filter items by search text */
+function filterMsItems(input) {
+    const q = (input.value || '').trim().toLowerCase();
+    const items = input.closest('.ms-dropdown-panel').querySelectorAll('.ms-dropdown-item:not(.select-all)');
+    items.forEach(item => {
+        const text = (item.textContent || '').toLowerCase();
+        item.classList.toggle('hidden', q && !text.includes(q));
+    });
+}
+
+/* Select All / Deselect All */
+function toggleMsAll(cb) {
+    const items = cb.closest('.ms-dropdown-items').querySelectorAll('.ms-dropdown-item:not(.select-all):not(.hidden) input[type="checkbox"]');
+    items.forEach(c => { c.checked = cb.checked; });
+    const dd = cb.closest('.ms-dropdown');
+    refreshMsTags(dd);
+    // If brand changed, refresh models
+    if (dd.id === 'msd_equip_brand') refreshModelCheckboxes();
+}
+
+/* Individual checkbox change */
+document.addEventListener('change', function(e) {
+    const cb = e.target;
+    if (cb.type !== 'checkbox') return;
+    const item = cb.closest('.ms-dropdown-item');
+    if (!item || item.classList.contains('select-all')) return;
+    const dd = cb.closest('.ms-dropdown');
+    if (!dd || !dd.classList.contains('ms-dropdown')) return;
+    // Sync "select all" state
+    syncSelectAll(dd);
+    refreshMsTags(dd);
+    if (dd.id === 'msd_equip_brand') refreshModelCheckboxes();
+});
+
+/* Sync the "Select All" checkbox */
+function syncSelectAll(dd) {
+    const allCb = dd.querySelector('.select-all input[type="checkbox"]');
+    if (!allCb) return;
+    const items = dd.querySelectorAll('.ms-dropdown-item:not(.select-all) input[type="checkbox"]');
+    const checked = dd.querySelectorAll('.ms-dropdown-item:not(.select-all) input[type="checkbox"]:checked');
+    allCb.checked = items.length > 0 && items.length === checked.length;
+    allCb.indeterminate = checked.length > 0 && checked.length < items.length;
+}
+
+/* Refresh tag display */
+function refreshMsTags(dd) {
+    const tagsEl = dd.querySelector('.ms-tags');
+    const countEl = dd.querySelector('.ms-count');
+    const phEl = dd.querySelector('.ms-placeholder');
+    const checked = Array.from(dd.querySelectorAll('.ms-dropdown-item:not(.select-all) input[type="checkbox"]:checked'));
+    const total = dd.querySelectorAll('.ms-dropdown-item:not(.select-all) input[type="checkbox"]').length;
+    const n = checked.length;
+
+    tagsEl.innerHTML = '';
+    if (n === 0) {
+        countEl.style.display = 'none';
+        phEl.style.display = '';
+    } else if (n === total && total > 0) {
+        countEl.style.display = 'none';
+        phEl.style.display = 'none';
+        tagsEl.innerHTML = '<span class="ms-all-badge"><i class="bi bi-check2-all"></i> ทั้งหมด (' + total + ')</span>';
+    } else {
+        phEl.style.display = 'none';
+        countEl.style.display = '';
+        countEl.textContent = n;
+        checked.forEach(cb => {
+            const val = cb.value;
+            const tag = document.createElement('span');
+            tag.className = 'ms-tag';
+            tag.innerHTML = val + ' <span class="ms-tag-x" data-dd="' + dd.id + '" data-val="' + val.replace(/"/g, '&quot;') + '">&times;</span>';
+            tagsEl.appendChild(tag);
+        });
+    }
+}
+
+/* Remove a tag by clicking ✕ */
+document.addEventListener('click', function(e) {
+    const x = e.target.closest('.ms-tag-x');
+    if (!x) return;
+    e.stopPropagation();
+    const dd = document.getElementById(x.dataset.dd);
+    const val = x.dataset.val;
+    const cb = dd.querySelector('.ms-dropdown-item:not(.select-all) input[value="' + CSS.escape(val) + '"]');
+    if (cb) cb.checked = false;
+    syncSelectAll(dd);
+    refreshMsTags(dd);
+    if (dd.id === 'msd_equip_brand') refreshModelCheckboxes();
+});
+
+/* Get selected values from a multi-select dropdown */
+function getMsValues(ddId) {
+    const dd = document.getElementById(ddId);
+    if (!dd) return [];
+    return Array.from(dd.querySelectorAll('.ms-dropdown-item:not(.select-all) input[type="checkbox"]:checked')).map(c => c.value);
+}
+
+/* Set values programmatically (for edit mode) */
+function setMsValues(ddId, values) {
+    const dd = document.getElementById(ddId);
+    if (!dd) return;
+    dd.querySelectorAll('.ms-dropdown-item:not(.select-all) input[type="checkbox"]').forEach(cb => {
+        cb.checked = values.includes(cb.value);
+    });
+    syncSelectAll(dd);
+    refreshMsTags(dd);
+}
+
+/* Clear all multi-select dropdowns */
+function clearAllMsDropdowns() {
+    ['msd_equip_name', 'msd_equip_brand', 'msd_equip_model'].forEach(id => {
+        const dd = document.getElementById(id);
+        if (!dd) return;
+        dd.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        refreshMsTags(dd);
+    });
+    refreshModelCheckboxes();
+}
+
+/* ── Brand → Model cascade (multi-select) ── */
+function refreshModelCheckboxes() {
+    const selectedBrands = getMsValues('msd_equip_brand');
+    const container = document.querySelector('#msd_equip_model .ms-dropdown-items');
+    // Remove old dynamic items
+    container.querySelectorAll('.ms-dropdown-item:not(.select-all)').forEach(el => el.remove());
+
+    // Filter models whose parent brand is in selectedBrands
+    const filtered = ALL_MODELS.filter(m => {
+        const parts = (m.ancestors || '').split(' > ');
+        const parentBrand = parts[0] || '';
+        return selectedBrands.length === 0 ? false : selectedBrands.includes(parentBrand);
+    });
+
+    filtered.forEach(m => {
+        const lbl = document.createElement('label');
+        lbl.className = 'ms-dropdown-item';
+        lbl.setAttribute('data-val', m.label);
+        const cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.value = m.label;
+        lbl.appendChild(cb);
+        lbl.appendChild(document.createTextNode(' ' + m.label));
+        container.appendChild(lbl);
+    });
+
+    const dd = document.getElementById('msd_equip_model');
+    syncSelectAll(dd);
+    refreshMsTags(dd);
+}
+
+</script>
+{% endblock %}

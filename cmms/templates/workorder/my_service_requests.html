@@ -1,0 +1,1342 @@
+{% extends 'base.html' %}
+{% load thai_dates %}
+{% block title %}<title>คำขอรับบริการของฉัน - My Service Requests</title>{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+        --secondary-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+        --success-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        --danger-gradient: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.08);
+        --shadow-medium: 0 8px 32px rgba(0, 0, 0, 0.12);
+        --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
+    }
+
+    .msr-page {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 50%, #ecfeff 100%);
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .msr-page::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 80%;
+        height: 80%;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .msr-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Header */
+    .msr-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        animation: fadeInDown 0.6s ease-out;
+    }
+
+    @keyframes fadeInDown {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .msr-header-icon {
+        width: 80px;
+        height: 80px;
+        background: var(--primary-gradient);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        box-shadow: var(--shadow-medium), var(--shadow-glow);
+        transform: rotate(-5deg);
+        transition: transform 0.3s ease;
+    }
+
+    .msr-header-icon:hover {
+        transform: rotate(0deg) scale(1.05);
+    }
+
+    .msr-header-icon i {
+        font-size: 2.5rem;
+        color: white;
+    }
+
+    .msr-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+    }
+
+    .msr-header p {
+        color: #64748b;
+        font-size: 1rem;
+    }
+
+    /* Stats Bar */
+    .msr-stats {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        animation: fadeIn 0.6s ease-out 0.2s both;
+    }
+
+    .srl-search {
+        position: relative;
+    }
+
+    .srl-search input {
+        padding: 0.625rem 1rem 0.625rem 2.5rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.875rem;
+        width: 220px;
+        transition: all 0.3s ease;
+    }
+
+    .srl-search input:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .srl-search i {
+        position: absolute;
+        left: 0.875rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+    }
+
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .msr-stat-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 1.25rem 1.75rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        min-width: 150px;
+    }
+
+    .msr-stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+    }
+
+    .msr-stat-icon.total { background: var(--primary-gradient); }
+    .msr-stat-icon.new { background: var(--secondary-gradient); }
+    .msr-stat-icon.reviewed { background: var(--warning-gradient); }
+    .msr-stat-icon.converted { background: var(--success-gradient); }
+
+    .msr-stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        line-height: 1;
+    }
+
+    .msr-stat-info p {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin: 0.25rem 0 0 0;
+    }
+
+    /* Action Bar */
+    .msr-action-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+        animation: fadeIn 0.6s ease-out 0.3s both;
+    }
+
+    .btn-create-new {
+        background: var(--success-gradient);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 14px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        text-decoration: none;
+        box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-create-new:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+        color: white;
+    }
+
+    .btn-create-new i {
+        font-size: 1.25rem;
+    }
+
+    .msr-filter {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .filter-btn {
+        padding: 0.625rem 1rem;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .filter-btn:hover, .filter-btn.active {
+        border-color: #6366f1;
+        color: #6366f1;
+        background: #eef2ff;
+    }
+
+    /* View Toggle */
+    .view-toggle {
+        display: flex;
+        gap: 0.25rem;
+        background: #f1f5f9;
+        padding: 0.25rem;
+        border-radius: 10px;
+    }
+
+    .view-btn {
+        padding: 0.5rem 0.75rem;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .view-btn:hover { color: #6366f1; }
+    .view-btn.active {
+        background: white;
+        color: #6366f1;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    /* Table View */
+    .msr-table-wrapper {
+        display: none;
+        background: var(--glass-bg);
+        border-radius: 16px;
+        box-shadow: var(--shadow-soft);
+        overflow: hidden;
+    }
+
+    .msr-table-wrapper.active { display: block; }
+    .msr-cards.active { display: flex; }
+    .msr-cards:not(.active) { display: none; }
+
+    .msr-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+    .msr-table thead {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    }
+
+    .msr-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: #475569;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .msr-table td {
+        padding: 0.875rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+
+    /* SR cell: type badge, title link, short description */
+    .sr-cell .sr-type-badge {
+        display: inline-block;
+        padding: 0.18rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #fff;
+        margin-right: 0.5rem;
+        text-transform: none;
+    }
+    .sr-type-badge.maintenance { background: linear-gradient(135deg,#06b6d4 0%,#3b82f6 100%); }
+    .sr-type-badge.calibration { background: linear-gradient(135deg,#f59e0b 0%,#f97316 100%); }
+    .sr-type-badge.inspection { background: linear-gradient(135deg,#10b981 0%,#34d399 100%); }
+    .sr-type-badge.installation { background: linear-gradient(135deg,#7c3aed 0%,#c084fc 100%); }
+    .sr-type-badge.other { background: #64748b; }
+
+    .sr-title-link {
+        color: #0f172a;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 2px;
+    }
+    .sr-title-link:hover { color: #6366f1; text-decoration: underline; }
+
+    .sr-desc { color: #64748b; font-size: 0.85rem; margin-top: 0.35rem; }
+
+    .msr-table tbody tr {
+        transition: background 0.15s;
+    }
+
+    .msr-table tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    .msr-table .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: white;
+    }
+
+    .msr-table .status-badge.new { background: var(--secondary-gradient); }
+    .msr-table .status-badge.reviewed { background: var(--warning-gradient); }
+    .msr-table .status-badge.converted { background: var(--success-gradient); }
+    .msr-table .status-badge.rejected { background: var(--danger-gradient); }
+    .msr-table .status-badge.closed { background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%); }
+    .msr-table .status-badge.deleted { background: linear-gradient(135deg, #ef4444 0%, #fb7185 100%); }
+
+    .msr-table .btn-sm {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.75rem;
+        border-radius: 6px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .msr-table .btn-view-sm {
+        background: var(--primary-gradient);
+        color: white;
+    }
+
+    .msr-table .btn-delete-sm {
+        background: #fef2f2;
+        color: #ef4444;
+        border: 1px solid #fecaca;
+    }
+
+    /* Request Cards */
+    .msr-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .msr-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        box-shadow: var(--shadow-soft);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        overflow: hidden;
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.5s ease-out both;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .msr-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-medium), var(--shadow-glow);
+    }
+
+    .msr-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem 1.5rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-bottom: 1px solid #e2e8f0;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .msr-card-id {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .msr-card-id-icon {
+        width: 44px;
+        height: 44px;
+        background: var(--primary-gradient);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+    }
+
+    .msr-card-id-text h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .msr-card-id-text span {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+
+    .msr-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: white;
+    }
+
+    .msr-status.new { background: var(--secondary-gradient); }
+    .msr-status.reviewed { background: var(--warning-gradient); }
+    .msr-status.converted { background: var(--success-gradient); }
+    .msr-status.rejected { background: var(--danger-gradient); }
+    .msr-status.closed { background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%); }
+    .msr-status.deleted { background: linear-gradient(135deg, #ef4444 0%, #fb7185 100%); }
+
+    .msr-card-body {
+        padding: 1.5rem;
+    }
+
+    /* Info Grid */
+    .msr-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .msr-info-section {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 12px;
+        padding: 1rem;
+    }
+
+    .msr-info-section-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6366f1;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .msr-info-item {
+        display: flex;
+        align-items: start;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .msr-info-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .msr-info-item i {
+        color: #6366f1;
+        font-size: 0.875rem;
+        margin-top: 0.125rem;
+        opacity: 0.7;
+    }
+
+    .msr-info-item .label {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+
+    .msr-info-item .value {
+        font-size: 0.875rem;
+        color: #1e293b;
+        font-weight: 500;
+    }
+
+    /* Description Box */
+    .msr-description {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
+        border-radius: 12px;
+        border-left: 4px solid #6366f1;
+    }
+
+    .msr-description-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6366f1;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .msr-description-text {
+        font-size: 0.875rem;
+        color: #374151;
+        line-height: 1.5;
+    }
+
+    /* Card Footer */
+    .msr-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-top: 1px solid #e2e8f0;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .msr-card-date {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: #64748b;
+    }
+
+    .msr-card-date i {
+        color: #6366f1;
+    }
+
+    .msr-card-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .btn-view {
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        padding: 0.625rem 1.25rem;
+        border-radius: 10px;
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+    }
+
+    .btn-view:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+        color: white;
+    }
+
+    .btn-delete {
+        background: white;
+        color: #ef4444;
+        border: 2px solid #fecaca;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+
+    .btn-delete:hover {
+        background: #fef2f2;
+        border-color: #ef4444;
+        transform: translateY(-2px);
+    }
+
+    /* WO Status Mini-Stepper */
+    .wo-mini-stepper {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        margin-top: 0.5rem;
+    }
+
+    .wo-mini-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 0 0 auto;
+    }
+
+    .wo-mini-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.5rem;
+        font-weight: 700;
+        background: #f1f5f9;
+        color: #94a3b8;
+        border: 2px solid #e2e8f0;
+        transition: all 0.3s;
+    }
+
+    .wo-mini-dot i { font-size: 0.5rem; }
+
+    .wo-mini-step.done .wo-mini-dot {
+        background: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+
+    .wo-mini-step.active .wo-mini-dot {
+        background: #6366f1;
+        color: white;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .wo-mini-label {
+        font-size: 0.5rem;
+        color: #94a3b8;
+        margin-top: 0.125rem;
+        white-space: nowrap;
+    }
+
+    .wo-mini-step.done .wo-mini-label { color: #10b981; }
+    .wo-mini-step.active .wo-mini-label { color: #6366f1; font-weight: 600; }
+
+    .wo-mini-line {
+        flex: 0 0 auto;
+        width: 12px;
+        height: 2px;
+        background: #e2e8f0;
+        margin: 0 1px;
+        margin-bottom: 12px;
+        border-radius: 1px;
+    }
+
+    .wo-mini-line.done { background: #10b981; }
+
+    .wo-progress-section {
+        background: linear-gradient(135deg, #eef2ff 0%, #f0fdf4 100%);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+        border: 1px solid #e0e7ff;
+    }
+
+    .wo-progress-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6366f1;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .wo-progress-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        color: #475569;
+        margin-bottom: 0.5rem;
+    }
+
+    .wo-progress-info a {
+        color: #6366f1;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .wo-progress-info a:hover { text-decoration: underline; }
+
+    /* WO Status Badge in Table */
+    .wo-status-compact {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .wo-status-compact.ws-open { background: #dbeafe; color: #1e40af; }
+    .wo-status-compact.ws-assigned { background: #ede9fe; color: #5b21b6; }
+    .wo-status-compact.ws-in_progress { background: #fef3c7; color: #92400e; }
+    .wo-status-compact.ws-completed { background: #d1fae5; color: #065f46; }
+    .wo-status-compact.ws-on_hold { background: #ffedd5; color: #c2410c; }
+    .wo-status-compact.ws-verified { background: #cffafe; color: #155e75; }
+    .wo-status-compact.ws-closed { background: #f1f5f9; color: #475569; }
+
+    .wo-link-sm {
+        color: #6366f1;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+
+    .wo-link-sm:hover { text-decoration: underline; }
+
+    .wo-priority {
+        display: inline-block;
+        margin-top: 0.25rem;
+        padding: 0.18rem 0.45rem;
+        background: #f1f5f9;
+        color: #1f2937;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    /* Empty State */
+    .msr-empty {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: var(--glass-bg);
+        border-radius: 24px;
+        box-shadow: var(--shadow-soft);
+        animation: fadeInUp 0.5s ease-out;
+    }
+
+    .msr-empty-icon {
+        width: 120px;
+        height: 120px;
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 2rem;
+    }
+
+    .msr-empty-icon i {
+        font-size: 4rem;
+        color: #94a3b8;
+    }
+
+    .msr-empty h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+
+    .msr-empty p {
+        color: #64748b;
+        margin-bottom: 2rem;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .msr-page {
+            padding: 1rem;
+        }
+
+        .msr-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .msr-header-icon {
+            width: 64px;
+            height: 64px;
+        }
+
+        .msr-header-icon i {
+            font-size: 2rem;
+        }
+
+        .msr-stat-card {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .msr-action-bar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .btn-create-new {
+            justify-content: center;
+        }
+
+        .msr-filter {
+            justify-content: center;
+        }
+
+        .msr-card-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .msr-info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .msr-card-footer {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .msr-card-actions {
+            width: 100%;
+        }
+
+        .msr-card-actions .btn-view {
+            flex: 1;
+            justify-content: center;
+        }
+    }
+</style>
+
+<div class="msr-page">
+    <div class="msr-container">
+        <!-- Header -->
+        <div class="msr-header">
+            <div class="msr-header-icon">
+                <i class="bi bi-clipboard-check-fill"></i>
+            </div>
+            <h1>คำขอรับบริการของฉัน</h1>
+            <p>ติดตามสถานะและประวัติการแจ้งขอรับบริการทั้งหมดของคุณ</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="msr-stats">
+            <div class="msr-stat-card" style="display: none;">
+                <div class="msr-stat-icon total">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
+                <div class="msr-stat-info" >
+                    <h3>{{ requests|length|default:0 }}</h3>
+                    <p>คำขอทั้งหมด</p>
+                </div>
+            </div>
+            <div class="msr-stat-card">
+                <div class="msr-stat-icon new">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <div class="msr-stat-info">
+                    <h3 id="stat-new">0</h3>
+                    <p>รอตรวจคำขอ</p>
+                </div>
+            </div>
+            <div class="msr-stat-card" style="display: none;">
+                <div class="msr-stat-icon reviewed">
+                    <i class="bi bi-eye-fill"></i>
+                </div>
+                <div class="msr-stat-info">
+                    <h3 id="stat-reviewed">0</h3>
+                    <p>กำลังแก้ไขคำขอ</p>
+                </div>
+            </div>
+            <div class="msr-stat-card">
+                <div class="msr-stat-icon converted">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div class="msr-stat-info">
+                    <h3 id="stat-converted">0</h3>
+                    <p>รับคำขอแล้ว</p>
+                </div>
+            </div>
+            <div class="msr-stat-card" style="display: none;">
+                <div class="msr-stat-icon" style="background:linear-gradient(135deg,#ef4444 0%,#fb7185 100%);">
+                    <i class="bi bi-trash"></i>
+                </div>
+                <div class="msr-stat-info">
+                    <h3 id="stat-deleted">0</h3>
+                    <p>ยกเลิกคำขอ</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="msr-action-bar">
+            <a href="{% url 'service_request_create' %}" class="btn-create-new">
+                <i class="bi bi-plus-circle-fill"></i>
+                แจ้งขอรับบริการใหม่
+            </a>
+
+                <div class="srl-search">
+                    <i class="bi bi-search"></i>
+                    <input type="search" id="searchInput" placeholder="ค้นหา...">
+                </div>
+
+            <div class="msr-filter">
+                <button class="filter-btn active" data-filter="all">ทั้งหมด</button>
+                <button class="filter-btn" data-filter="new">รอตรวจคำขอ</button>
+                <button class="filter-btn" data-filter="reviewed" style="display: none;">กำลังแก้ไขคำขอ</button>
+                <button class="filter-btn" data-filter="converted">รับคำขอแล้ว</button>
+                <button class="filter-btn" data-filter="deleted" style="display: none;">ยกเลิกคำขอ</button>
+            </div>
+            <div class="view-toggle">
+                <button class="view-btn active" data-view="table" title="มุมมองตาราง"><i class="bi bi-list-ul"></i></button>
+                <button class="view-btn" data-view="card" title="มุมมองการ์ด"><i class="bi bi-grid-3x2-gap-fill"></i></button>
+            </div>
+        </div>
+
+        <!-- Table View -->
+        <div class="msr-table-wrapper active" id="tableView">
+            <table class="msr-table">
+                <thead>
+                    <tr>
+                        <th>หมายเลขคำขอ</th>
+                        <th>ประเภทงาน</th>
+                        <th>เครื่องมือ</th>
+                        <th>ผู้ขอรับบริการ</th>
+                        <th>นัดหมาย</th>
+                        <th>สถานะคำขอ</th>
+                        <th>สถานะงาน</th>
+                        <th>จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in requests %}
+                    <tr data-status="{{ r.status }}">
+                        <td><strong>{{ r.display_id }}</strong></td>
+                        <td>
+                            <div class="sr-cell">
+                                <div>
+                                    <a href="{% url 'service_request_detail' r.id %}" class="sr-title-link">{{ r.title|default:'(ไม่มีหัวข้อ)'|truncatechars:60 }}</a>
+                                </div>
+                                {% if r.description %}
+                                <div class="sr-desc">{{ r.description|truncatewords:18 }}</div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td style="white-space: nowrap;">{{ r.equipment.equipment_id|default:r.equipment_display_code|default:'-' }}
+                        <br>
+                            {% if r.equipment %}
+                                {{ r.equipment.equipment_name_EN|default:r.equipment.equipment_name_TH|default:'-' }}
+                            {% elif r.equipment_display_name %}
+                                {{ r.equipment_display_name }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td >{{ r.customer_name|default:'-' }}
+                        <br>{{ r.customer_department|default:'-' }}
+                        <br>{{ r.customer_telephone|default:'-' }}
+                        <br>{{ r.requested_at|thai_datetime }}
+                        </td>
+                        <td>                        
+                        {% if r.converted_to %}
+                        <span class="wo-priority">{{ r.converted_to.get_priority_label }}</span>
+                        {% endif %}
+                        <br>{{ r.preferred_service_date|thai_date }}</td>
+                        <td style="white-space: nowrap;">
+                            <span class="status-badge {{ r.status }}">
+                                {% if r.status == 'new' %}<i class="bi bi-hourglass-split"></i> รอตรวจคำขอ
+                                {% elif r.status == 'reviewed' %}<i class="bi bi-eye-fill"></i> กำลังแก้ไขคำขอ
+                                {% elif r.status == 'converted' %}<i class="bi bi-check-circle-fill"></i> รับคำขอแล้ว
+                                {% elif r.status == 'rejected' %}<i class="bi bi-x-circle-fill"></i> ปฏิเสธ
+                                {% elif r.status == 'closed' %}<i class="bi bi-archive-fill"></i> ปิด
+                                {% elif r.status == 'deleted' %}<i class="bi bi-trash"></i> ยกเลิก
+                                {% else %}{{ r.get_status_display }}{% endif %}
+                            </span>
+                        </td>
+                        <td style="white-space: nowrap;">
+                            {% if r.converted_to %}
+                                <a href="{% url 'workorder_detail' r.converted_to.id %}" class="wo-link-sm">WO-{{ r.converted_to.id }}</a>
+                                <br>
+                                <span class="wo-status-compact ws-{{ r.converted_to.status }}">
+                                    {% if r.converted_to.status == 'open' %}<i class="bi bi-circle"></i> เปิด
+                                    {% elif r.converted_to.status == 'assigned' %}<i class="bi bi-person-check"></i> มอบหมาย
+                                    {% elif r.converted_to.status == 'in_progress' %}<i class="bi bi-gear-wide-connected"></i> ดำเนินงาน
+                                    {% elif r.converted_to.status == 'on_hold' %}<i class="bi bi-pause-circle"></i> ระงับชั่วคราว
+                                    {% elif r.converted_to.status == 'completed' %}<i class="bi bi-check-circle"></i> เสร็จสิ้น
+                                    {% elif r.converted_to.status == 'verified' %}<i class="bi bi-patch-check"></i> รับรอง
+                                    {% elif r.converted_to.status == 'closed' %}<i class="bi bi-lock"></i> ปิด
+                                    {% endif %}
+                                </span>
+                            {% else %}
+                                <span style="color:#94a3b8; font-size:0.75rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="white-space: nowrap;">
+                            <a href="{% url 'service_request_detail' r.id %}" class="btn-sm btn-view-sm"><i class="bi bi-eye"></i> ดู</a>
+                            {% if not r.converted_to %}
+                            <a href="{% url 'service_request_delete' r.id %}" class="btn-sm btn-delete-sm"><i class="bi bi-trash"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="9" class="text-center py-4 text-muted">ไม่มีรายการ</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Cards -->
+        <div class="msr-cards" id="cardView">
+            {% if requests %}
+                {% for r in requests %}
+                <div class="msr-card" data-status="{{ r.status }}" style="animation-delay: {{ forloop.counter0|add:0 }}00ms;">
+                    <div class="msr-card-header">
+                        <div class="msr-card-id">
+                            <div class="msr-card-id-icon">
+                                <i class="bi bi-file-earmark-text"></i>
+                            </div>
+                            <div class="msr-card-id-text">
+                                <h3>คำขอรับบริการที่ : {{ r.id }}</h3>
+                                <span>{{ r.title|default:'ไม่ระบุประเภท' }}</span>
+                            </div>
+                        </div>
+                        <span class="msr-status {{ r.status }}">
+                            {% if r.status == 'new' %}
+                                <i class="bi bi-hourglass-split"></i> รอตรวจคำขอ
+                            {% elif r.status == 'reviewed' %}
+                                <i class="bi bi-eye-fill"></i> กำลังแก้ไขคำขอ
+                            {% elif r.status == 'converted' %}
+                                <i class="bi bi-check-circle-fill"></i> รับคำขอแล้ว
+                            {% elif r.status == 'rejected' %}
+                                <i class="bi bi-x-circle-fill"></i> ปฏิเสธ
+                            {% elif r.status == 'closed' %}
+                                <i class="bi bi-archive-fill"></i> ปิดแล้ว
+                            {% else %}
+                                {{ r.get_status_display }}
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div class="msr-card-body">
+                        <div class="msr-info-grid">
+                            <!-- Equipment Info -->
+                            <div class="msr-info-section">
+                                <div class="msr-info-section-title">
+                                    <i class="bi bi-cpu"></i> ข้อมูลอุปกรณ์
+                                </div>
+                                <div class="msr-info-item">
+                                    <i class="bi bi-upc"></i>
+                                    <div>
+                                        <div class="label">รหัสเครื่อง</div>
+                                        <div class="value">{{ r.equipment.equipment_id|default:r.equipment_display_code|default:'-' }}</div>
+                                    </div>
+                                </div>
+                                <div class="msr-info-item">
+                                    <i class="bi bi-tools"></i>
+                                    <div>
+                                        <div class="label">ชื่อเครื่อง</div>
+                                        <div class="value">
+                                            {% if r.equipment %}
+                                                {{ r.equipment.equipment_name_EN|default:r.equipment.equipment_name_TH|default:'-' }}
+                                            {% elif r.equipment_display_name %}
+                                                {{ r.equipment_display_name }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="msr-info-item">
+                                    <i class="bi bi-tag"></i>
+                                    <div>
+                                        <div class="label">ยี่ห้อ / รุ่น</div>
+                                        <div class="value">
+                                            {% if r.equipment and r.equipment.equipment_brand %}
+                                                {{ r.equipment.equipment_brand }}{% if r.equipment.equipment_model %} / {{ r.equipment.equipment_model }}{% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Contact Info -->
+                            <div class="msr-info-section">
+                                <div class="msr-info-section-title">
+                                    <i class="bi bi-person"></i> ข้อมูลผู้แจ้ง
+                                </div>
+                                <div class="msr-info-item">
+                                    <i class="bi bi-person-fill"></i>
+                                    <div>
+                                        <div class="label">ชื่อผู้แจ้ง</div>
+                                        <div class="value">{{ r.customer_name|default:'-' }}</div>
+                                    </div>
+                                </div>
+                                <div class="msr-info-item">
+                                    <i class="bi bi-telephone-fill"></i>
+                                    <div>
+                                        <div class="label">โทรศัพท์</div>
+                                        <div class="value">{{ r.customer_telephone|default:'-' }}</div>
+                                    </div>
+                                </div>
+                                <div class="msr-info-item">
+                                    <i class="bi bi-building"></i>
+                                    <div>
+                                        <div class="label">หน่วยงาน</div>
+                                        <div class="value">{{ r.customer_department|default:'-' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if r.description %}
+                        <div class="msr-description">
+                            <div class="msr-description-title">
+                                <i class="bi bi-chat-left-text"></i> รายละเอียด
+                            </div>
+                            <div class="msr-description-text">{{ r.description|truncatewords:30 }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if r.converted_to %}
+                        <div class="wo-progress-section">
+                            <div class="wo-progress-title">
+                                <i class="bi bi-clipboard2-pulse"></i> สถานะใบงาน
+                            </div>
+                            <div class="wo-progress-info">
+                                <a href="{% url 'workorder_detail' r.converted_to.id %}">WO-{{ r.converted_to.id }}</a>
+                                {% if r.converted_to.assigned_to %}
+                                    <span style="color:#94a3b8;">·</span>
+                                    <span><i class="bi bi-wrench" style="font-size:0.75rem; color:#6366f1;"></i> {{ r.converted_to.assigned_to.get_full_name|default:r.converted_to.assigned_to.username }}</span>
+                                {% endif %}
+                            </div>
+                            {% with ws=r.converted_to.status %}
+                            <div class="wo-mini-stepper">
+                                <div class="wo-mini-step {% if ws == 'open' %}active{% else %}done{% endif %}">
+                                    <div class="wo-mini-dot">{% if ws != 'open' %}<i class="bi bi-check-lg"></i>{% else %}1{% endif %}</div>
+                                    <span class="wo-mini-label">เปิด</span>
+                                </div>
+                                <div class="wo-mini-line {% if ws != 'open' %}done{% endif %}"></div>
+                                <div class="wo-mini-step {% if ws == 'assigned' %}active{% elif ws == 'in_progress' or ws == 'on_hold' or ws == 'completed' or ws == 'verified' or ws == 'closed' %}done{% endif %}">
+                                    <div class="wo-mini-dot">{% if ws == 'in_progress' or ws == 'on_hold' or ws == 'completed' or ws == 'verified' or ws == 'closed' %}<i class="bi bi-check-lg"></i>{% else %}2{% endif %}</div>
+                                    <span class="wo-mini-label">มอบหมาย</span>
+                                </div>
+                                <div class="wo-mini-line {% if ws == 'in_progress' or ws == 'on_hold' or ws == 'completed' or ws == 'verified' or ws == 'closed' %}done{% endif %}"></div>
+                                <div class="wo-mini-step {% if ws == 'in_progress' %}active{% elif ws == 'on_hold' %}active{% elif ws == 'completed' or ws == 'verified' or ws == 'closed' %}done{% endif %}">
+                                    <div class="wo-mini-dot">{% if ws == 'on_hold' %}<i class="bi bi-pause-fill" style="color:#c2410c;"></i>{% elif ws == 'completed' or ws == 'verified' or ws == 'closed' %}<i class="bi bi-check-lg"></i>{% else %}3{% endif %}</div>
+                                    <span class="wo-mini-label">{% if ws == 'on_hold' %}ระงับ{% else %}ดำเนินงาน{% endif %}</span>
+                                </div>
+                                <div class="wo-mini-line {% if ws == 'completed' or ws == 'verified' or ws == 'closed' %}done{% endif %}"></div>
+                                <div class="wo-mini-step {% if ws == 'completed' %}active{% elif ws == 'verified' or ws == 'closed' %}done{% endif %}">
+                                    <div class="wo-mini-dot">{% if ws == 'verified' or ws == 'closed' %}<i class="bi bi-check-lg"></i>{% else %}4{% endif %}</div>
+                                    <span class="wo-mini-label">เสร็จสิ้น</span>
+                                </div>
+                                <div class="wo-mini-line {% if ws == 'verified' or ws == 'closed' %}done{% endif %}"></div>
+                                <div class="wo-mini-step {% if ws == 'verified' %}active{% elif ws == 'closed' %}done{% endif %}">
+                                    <div class="wo-mini-dot">{% if ws == 'closed' %}<i class="bi bi-check-lg"></i>{% else %}5{% endif %}</div>
+                                    <span class="wo-mini-label">ยืนยัน</span>
+                                </div>
+                            </div>
+                            {% endwith %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="msr-card-footer">
+                        <div class="msr-card-date">
+                            <i class="bi bi-calendar3"></i>
+                            <span>แจ้งเมื่อ {{ r.requested_at|thai_datetime }} น.</span>
+                        </div>
+                        <div class="msr-card-actions">
+                            <a href="{% url 'service_request_detail' r.id %}" class="btn-view">
+                                <i class="bi bi-eye-fill"></i>
+                                ดูรายละเอียด
+                            </a>
+                            {% if not r.converted_to %}
+                            <a href="{% url 'service_request_delete' r.id %}" class="btn-delete">
+                                <i class="bi bi-trash"></i>
+                                ลบ
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="msr-empty">
+                    <div class="msr-empty-icon">
+                        <i class="bi bi-inbox"></i>
+                    </div>
+                    <h3>ยังไม่มีคำขอรับบริการ</h3>
+                    <p>คุณยังไม่เคยแจ้งขอรับบริการในระบบ เริ่มต้นแจ้งขอรับบริการได้เลย!</p>
+                    <a href="{% url 'service_request_create' %}" class="btn-create-new">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        แจ้งขอรับบริการเลย
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calculate stats
+    const cards = document.querySelectorAll('.msr-card');
+    let newCount = 0, reviewedCount = 0, convertedCount = 0, deletedCount = 0;
+    
+    cards.forEach(card => {
+        const status = card.dataset.status;
+        if (status === 'new') newCount++;
+        else if (status === 'reviewed') reviewedCount++;
+        else if (status === 'converted') convertedCount++;
+        else if (status === 'deleted') deletedCount++;
+    });
+    
+    document.getElementById('stat-new').textContent = newCount;
+    document.getElementById('stat-reviewed').textContent = reviewedCount;
+    document.getElementById('stat-converted').textContent = convertedCount;
+    const statDeleted = document.getElementById('stat-deleted');
+    if (statDeleted) statDeleted.textContent = deletedCount;
+
+    // Filter functionality
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const tableRows = document.querySelectorAll('.msr-table tbody tr');
+
+    // Update total to exclude deleted requests (prefer counting table rows)
+
+    
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            const filter = this.dataset.filter;
+            
+            // Filter cards
+            cards.forEach(card => {
+                if (filter === 'all') {
+                    card.style.display = '';
+                } else if (filter === card.dataset.status) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Filter table rows
+            tableRows.forEach(row => {
+                if (filter === 'all') {
+                    row.style.display = '';
+                } else if (filter === row.dataset.status) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Apply initial filter on load (respect any button already marked `.active`)
+    const initialFilterBtn = document.querySelector('.filter-btn.active') || filterBtns[0];
+    if (initialFilterBtn) initialFilterBtn.click();
+
+    // View toggle functionality
+    const viewBtns = document.querySelectorAll('.view-btn');
+    const cardView = document.getElementById('cardView');
+    const tableView = document.getElementById('tableView');
+
+    viewBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            viewBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            const view = this.dataset.view;
+            if (view === 'card') {
+                cardView.classList.add('active');
+                tableView.classList.remove('active');
+            } else {
+                cardView.classList.remove('active');
+                tableView.classList.add('active');
+            }
+        });
+    });
+        // Search (cards + table)
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase().trim();
+            // filter cards
+            cards.forEach(c => {
+                const text = c.textContent.toLowerCase();
+                c.style.display = q === '' || text.includes(q) ? '' : 'none';
+            });
+            // filter table rows
+            tableRows.forEach(r => {
+                const text = r.textContent.toLowerCase();
+                r.style.display = q === '' || text.includes(q) ? '' : 'none';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

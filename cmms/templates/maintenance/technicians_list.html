@@ -1,0 +1,440 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}<title>ทะเบียนช่างเทคนิค</title>{% endblock %}
+{% block content %}
+
+<style>
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --success-gradient: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+  --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  --card-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  --hover-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+.page-header {
+  background: var(--primary-gradient);
+  color: white;
+  padding: 2.5rem 0;
+  margin-bottom: 2rem;
+  border-radius: 0 0 30px 30px;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.page-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-header .subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin-top: 0.5rem;
+}
+
+.stats-card {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: var(--card-shadow);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: none;
+  margin-bottom: 1.5rem;
+}
+
+.stats-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--hover-shadow);
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  background: var(--primary-gradient);
+  color: white;
+}
+
+.search-box {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 2rem;
+}
+
+.search-input {
+  border: 2px solid #e2e8f0;
+  border-radius: 15px;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.search-input-rounded {
+  border-radius: 0 15px 15px 0;
+}
+
+.search-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  outline: none;
+}
+
+.btn-gradient {
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  border-radius: 15px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  color: white;
+}
+
+.tech-card {
+  background: white;
+  border-radius: 20px;
+  padding: 1.8rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.tech-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 100%;
+  background: var(--primary-gradient);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tech-card:hover {
+  transform: translateX(5px);
+  box-shadow: var(--hover-shadow);
+  border-color: #667eea;
+}
+
+.tech-card:hover::before {
+  opacity: 1;
+}
+
+.tech-avatar {
+  width: 70px;
+  height: 70px;
+  min-width: 70px;
+  min-height: 70px;
+  border-radius: 20px;
+  background: var(--primary-gradient);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  flex-shrink: 0;
+}
+
+.tech-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 0.3rem;
+}
+
+.tech-username {
+  color: #718096;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.tech-phone {
+  color: #4a5568;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.skills-section {
+  background: #f7fafc;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.skill-badge {
+  display: inline-block;
+  background: white;
+  border: 2px solid #667eea;
+  color: #667eea;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0.3rem;
+  transition: all 0.3s ease;
+}
+
+.skill-badge:hover {
+  background: var(--primary-gradient);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.skills-count-badge {
+  background: var(--primary-gradient);
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+}
+
+.status-badge {
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-active {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.status-inactive {
+  background: #fed7d7;
+  color: #742a2a;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.btn-action {
+  padding: 0.6rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.btn-edit {
+  background: #667eea;
+  color: white;
+}
+
+.btn-edit:hover {
+  background: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  color: white;
+}
+
+.btn-delete {
+  background: #fc8181;
+  color: white;
+}
+
+.btn-delete:hover {
+  background: #f56565;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(252, 129, 129, 0.4);
+  color: white;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
+}
+
+.empty-state-icon {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+@media (max-width: 768px) {
+  .tech-card {
+    padding: 1.2rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+}
+</style>
+
+<div class="page-header">
+  <div class="container">
+    <h1>
+      <i class="bi bi-people-fill"></i>
+      ทะเบียนช่างเทคนิค
+    </h1>
+    <div class="subtitle">จัดการข้อมูลช่างเทคนิคและทักษะ</div>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Stats Card -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="stats-card">
+        <div class="d-flex align-items-center">
+          <div class="stat-icon">
+            <i class="bi bi-people"></i>
+          </div>
+          <div class="ms-3">
+            <div class="text-muted small">จำนวนที่พบทั้งหมด</div>
+            <h3 class="mb-0">{{ technicians|length }} คน</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search and Add Button -->
+  <div class="search-box">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <form method="get">
+          <div class="input-group">
+            <input type="text" name="q" class="form-control search-input search-input-rounded border-start-0" 
+                   placeholder="🔍 ค้นหาชื่อช่าง, ทักษะ, เบอร์โทร..." value="{{ q }}">
+          </div>
+        </form>
+      </div>
+      <div class="col-md-4 text-end mt-3 mt-md-0">
+        <a href="{% url 'technician_create' %}" class="btn btn-gradient w-100">
+          <i class="bi bi-plus-circle me-2"></i>เพิ่มช่างใหม่
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Technicians List -->
+  {% for t in technicians %}
+    <div class="tech-card">
+      <div class="row align-items-center">
+        <!-- Avatar & Info -->
+        <div class="col-md-8">
+          <div class="d-flex align-items-start">
+            <div class="tech-avatar">
+              {{ t.name|slice:":1"|upper }}
+            </div>
+            <div class="ms-3 flex-grow-1">
+              <div class="tech-name">
+                {% if t.prefix_name == 'other' %}
+                  {{ t.prefix_name_custom }}
+                {% else %}
+                  {{ t.prefix_name }}
+                {% endif %}
+                {{ t.name }}
+                <span class="status-badge {% if t.active %}status-active{% else %}status-inactive{% endif %} ms-2">
+                  {% if t.active %}
+                    <i class="bi bi-check-circle"></i> ทำงานปกติ
+                  {% else %}
+                    <i class="bi bi-x-circle"></i> ไม่ทำงาน
+                  {% endif %}
+                </span>
+              </div>
+              
+              {% if t.user %}
+                <div class="tech-username">
+                  <i class="bi bi-person-badge"></i>
+                  <span>{{ t.user.username }}</span>
+                </div>
+              {% endif %}
+
+              {% if t.phone %}
+                <div class="tech-phone">
+                  <i class="bi bi-telephone"></i>
+                  <span>{{ t.phone }}</span>
+                </div>
+              {% endif %}
+
+              <!-- Skills Section -->
+              <div class="skills-section">
+                <div class="d-flex align-items-center mb-2">
+                  <i class="bi bi-tools me-2 text-muted"></i>
+                  <strong class="text-muted small">ทักษะ / ความเชี่ยวชาญ</strong>
+                  <span class="skills-count-badge ms-2">{{ t.skills_m.count }}</span>
+                </div>
+                <div>
+                  {% with skills=t.skills_m.all %}
+                    {% if skills %}
+                      {% for s in skills %}
+                        <span class="skill-badge">{{ s.label }}</span>
+                      {% endfor %}
+                    {% else %}
+                      <span class="text-muted small">- ยังไม่ได้ระบุทักษะ -</span>
+                    {% endif %}
+                  {% endwith %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="col-md-4 text-end mt-3 mt-md-0">
+          <div class="action-buttons">
+            <a href="{% url 'technician_edit' tech_id=t.id %}" class="btn btn-action btn-edit flex-fill">
+              <i class="bi bi-pencil-square me-1"></i>แก้ไข
+            </a>
+            <a href="{% url 'technician_delete' tech_id=t.id %}" 
+               class="btn btn-action btn-delete flex-fill"
+               onclick="return confirm('⚠️ ยืนยันลบช่าง {{ t.name }} ใช่หรือไม่?')">
+              <i class="bi bi-trash me-1"></i>ลบ
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="empty-state">
+      <div class="empty-state-icon">🔧</div>
+      <h3>ยังไม่มีข้อมูลช่างเทคนิค</h3>
+      <p class="text-muted">เริ่มต้นเพิ่มช่างคนแรกของคุณ</p>
+      <a href="{% url 'technician_create' %}" class="btn btn-gradient mt-3">
+        <i class="bi bi-plus-circle me-2"></i>เพิ่มช่างใหม่
+      </a>
+    </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

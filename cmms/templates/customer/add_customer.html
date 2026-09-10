@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+
+
+{% block title %}
+    <title>CMMS MedCMU : ขึ้นทะเบียนลูกค้า</title>
+{% endblock %}
+
+
+{% block content %}
+
+<nav class="container">
+    <div>
+        <h2 class="text-center">ขึ้นทะเบียนลูกค้า</h2>
+    </div>
+    <div class="text-end mb-2">
+        <a href="{% url 'import_customer_list' %}" class="btn btn-success">อัพโหลดไฟล์</a>
+    </div>
+</nav>    
+
+<div class="container">
+    <br>
+    <form method="post" action="add_customer">
+    {% csrf_token %}
+        <h3>ข้อมูลทั่วไป</h3>
+            <div class="form-group  mb-2">
+                <label for="customer_id">รหัสลูกค้า</label>
+                <input type="text" id="customer_id" name="customer_id" class="form-control">
+            </div>
+
+            <div class="form-group  mb-2">
+                <label for="customer_unit">สถานที่ใช้งาน</label>
+                <input type="text" id="customer_unit" name="customer_unit" class="form-control">
+            </div>
+            <div class="form-group  mb-2">
+                <label for="customer_section">หน่วย/สาขา</label>
+                <input type="text" id="customer_section" name="customer_section" class="form-control">
+            </div>
+            <div class="form-group  mb-2">
+                <label for="customer_semi_department">งาน (ในฝ่าย)</label>
+                <input type="text" id="customer_semi_department" name="customer_semi_department" class="form-control">
+            </div>
+            <div class="form-group  mb-2">
+                <label for="customer_department">ภาควิชา/ฝ่าย/งาน</label>
+                <input type="text" id="customer_department" name="customer_department" class="form-control">
+            </div>
+            <div class="form-group  mb-2">
+                <label for="customer_division">สังกัด</label>
+                <input type="text" id="customer_division" name="customer_division" class="form-control">
+            </div>
+            <div class="form-group  mb-2">
+                <label for="customer_customer">ในกำกับ</label>
+                <input type="text" id="customer_customer" name="customer_customer" class="form-control">
+            </div>
+            <div class="form-group  mb-2">
+                <label for="customer_name">ชื่อผู้ติดต่อ</label>
+                <input type="text" id="customer_name" name="customer_name" class="form-control">
+            </div>
+            <div class="form-group  mb-2">
+                <label for="customer_position">ตำแหน่ง</label>
+                <input type="text" id="customer_position" name="customer_position" class="form-control">
+            </div>
+            <div class="form-group  mb-2">
+                <label for="customer_phone">เบอร์โทรศัพท์</label>
+                <input type="text" id="customer_phone" name="customer_phone" class="form-control">
+            </div>
+            <div class="form-group  mb-2">
+                <label for="customer_email">อีเมล</label>
+                <input type="email" id="customer_email" name="customer_email" class="form-control">
+            </div>
+            <div class="form-group  mb-2">
+                <label for="customer_address">ที่อยู่</label>
+                <input type="text" id="customer_address" name="customer_address" class="form-control">
+            </div>
+            <div class="form-group  mb-2">
+                <label for="customer_note" class="h3">หมายเหตุ</label>
+                <input type="text" id="customer_note" name="customer_note" class="form-control">
+            </div>
+            <br>
+
+            <div class="form-group  mb-2">
+                <label for="equipment_note" class="h3">หมายเหตุ</label>
+                <input type="text" id="equipment_note" name="equipment_note" class="form-control" value="{{equipment_list.equipment_note}}">     
+            
+        <br>
+            <div class="text-center">
+                <input type="submit" value="บันทึกข้อมูล" class="btn btn-success">
+            </div>
+
+    </form>
+</div>
+<br>
+{% endblock %}
+{% include "../add_customer.html" %}
